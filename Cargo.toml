@@ -6,3 +6,4 @@ edition = "2018"
 
 [dependencies]
 clap="2.32.0"
+dirs="1.0.4"

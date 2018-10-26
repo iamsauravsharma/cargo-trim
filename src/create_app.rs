@@ -22,6 +22,7 @@ pub(super) fn app() -> ArgMatches<'static> {
         .arg(
             Arg::with_name("set directory")
                 .short("s")
+                .multiple(true)
                 .long("set-directory")
                 .value_name("Directory")
                 .help("Set directory of Rust project")
@@ -34,7 +35,7 @@ pub(super) fn app() -> ArgMatches<'static> {
                 .help("Clean orphan cache crates"),
         )
         .arg(
-            Arg::with_name("Old clean")
+            Arg::with_name("old clean")
                 .short("o")
                 .long("old-clean")
                 .help("Clean old cache crates"),
