@@ -12,14 +12,6 @@ pub(super) fn app() -> ArgMatches<'static> {
                 .help("Clean up all .cargo/registry"),
         )
         .arg(
-            Arg::with_name("config")
-                .short("c")
-                .long("config")
-                .value_name("FILE")
-                .help("Set a custom config file")
-                .takes_value(true),
-        )
-        .arg(
             Arg::with_name("set directory")
                 .short("s")
                 .multiple(true)
