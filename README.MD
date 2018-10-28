@@ -1,7 +1,7 @@
 # CARGO_CACHE
 
 **Status:**
-[![Travis Build Status](https://travis-ci.org/iamsauravsharma/cargo_cache.svg?branch=master)](https://travis-ci.com/iamsauravsharma/cargo_cache)
+[![Travis Build Status](https://travis-ci.org/iamsauravsharma/cargo_cache.svg?branch=master)](https://travis-ci.org/iamsauravsharma/cargo_cache)
 
 **Project Info:**
 [![License: MIT](https://img.shields.io/github/license/iamsauravsharma/cargo_cache.svg)](LICENSE)
