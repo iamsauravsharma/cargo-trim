@@ -20,7 +20,7 @@ jobs:
   
   - name: docs
     install:
-    - cargo install cargo-deadlinks
+    - cargo install cargo-deadlinks --force
     script:
     - cargo doc --no-deps
     - cargo deadlinks --dir target/doc
