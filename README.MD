@@ -2,6 +2,7 @@
 
 **Status:**
 [![Travis Build Status](https://travis-ci.org/iamsauravsharma/cargo_cache.svg?branch=master)](https://travis-ci.org/iamsauravsharma/cargo_cache)
+[![Dependency status](https://deps.rs/repo/github/iamsauravsharma/cargo_cache/status.svg)](https://deps.rs/repo/github/iamsauravsharma/cargo_cache)
 
 **Project Info:**
 [![License: MIT](https://img.shields.io/github/license/iamsauravsharma/cargo_cache.svg)](LICENSE)
