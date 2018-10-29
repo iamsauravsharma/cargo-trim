@@ -1,4 +1,8 @@
-use clap::{App, Arg, ArgMatches};
+use clap::{
+    App,
+    Arg,
+    ArgMatches,
+};
 
 pub(super) fn app() -> ArgMatches<'static> {
     App::new("Cargo Cache")

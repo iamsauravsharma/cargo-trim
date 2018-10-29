@@ -2,8 +2,10 @@ extern crate clap;
 extern crate dirs;
 extern crate find_folder;
 
-use std::fs;
-use std::io::prelude::*;
+use std::{
+    fs,
+    io::prelude::*,
+};
 
 mod create_app;
 
@@ -29,7 +31,7 @@ fn main() {
         let mut buffer = String::new();
         file.read_to_string(&mut buffer).unwrap();
         if !buffer.is_empty() {
-            buffer.push_str(format!("\n").as_str());
+            buffer.push_str("\n");
         }
         buffer.push_str(format!("directory:{}", directory).as_str());
         fs::write(config_dir, buffer.as_bytes()).unwrap();
