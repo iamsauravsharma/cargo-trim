@@ -2,7 +2,6 @@ unstable_features=true
 wrap_comments=true
 edition="2018"
 format_strings=true
-imports_layout="Vertical"
 merge_imports=true
 merge_derives=true
 normalize_comments=true

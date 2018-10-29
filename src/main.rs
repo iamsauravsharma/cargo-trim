@@ -2,10 +2,7 @@ extern crate clap;
 extern crate dirs;
 extern crate find_folder;
 
-use std::{
-    fs,
-    io::prelude::*,
-};
+use std::{fs, io::prelude::*};
 
 mod create_app;
 
