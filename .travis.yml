@@ -28,7 +28,7 @@ jobs:
   - name : clippy
     install:
     - rustup component add clippy-preview
-    - clippy -V
+    - cargo clippy -V
     script:
     - cargo clippy --all -- -D warnings
 
