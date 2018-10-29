@@ -1,5 +1,41 @@
 language: rust
+
 rust:
   - nightly
+
 git:
-  depth : false
+  depth: false
+
+cache: cargo
+
+jobs:
+  
+  include:
+  - name: fmt
+    install: 
+    - rustup component add rustfmt-preview
+    - rustfmt -V
+    script:
+    - cargo fmt --all -- --check
+  
+  - name: docs
+    install:
+    - cargo install cargo-deadlinks
+    script:
+    - cargo doc --no-deps
+    - cargo deadlinks --dir target/doc
+  
+  - name : clippy
+    install:
+    - rustup component add clippy-preview
+    - clippy -V
+    script:
+    - cargo clippy --all -- -D warnings
+
+  - name: test
+    script:
+    - cargo test --all
+
+  - name: build
+    script:
+    - cargo build --all
