@@ -33,6 +33,15 @@ pub(super) fn app() -> ArgMatches<'static> {
                 .help("Clean old cache crates"),
         )
         .arg(
+            Arg::with_name("remove")
+                .short("r")
+                .long("remove")
+                .help("Remove listed crates")
+                .multiple(true)
+                .takes_value(true)
+                .value_name("Crate"),
+        )
+        .arg(
             Arg::with_name("exclude")
                 .short("e")
                 .long("exclude")
