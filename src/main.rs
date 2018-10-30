@@ -23,14 +23,31 @@ fn main() {
     if app.is_present("all") {
         fs::remove_dir_all(home_dir).unwrap();
     }
-    if app.is_present("set directory") {
-        let directory = app.value_of("set directory").unwrap();
+    write_to_file("set directory", &mut file, &app, &config_dir);
+    write_to_file("exclude-conf", &mut file, &app, &config_dir);
+    write_to_file("include-conf", &mut file, &app, &config_dir);
+}
+
+fn write_to_file(
+    name: &str,
+    file: &mut fs::File,
+    app: &clap::ArgMatches,
+    config_dir: &std::path::PathBuf,
+) {
+    if app.is_present(name) {
+        let value = app.value_of(name).unwrap();
         let mut buffer = String::new();
         file.read_to_string(&mut buffer).unwrap();
         if !buffer.is_empty() {
             buffer.push_str("\n");
         }
-        buffer.push_str(format!("directory:{}", directory).as_str());
+        let title = match name {
+            "set directory" => "directory",
+            "exclude-conf" => "exclude",
+            "include-conf" => "include",
+            _ => "",
+        };
+        buffer.push_str(format!("{}:{}", title, value).as_str());
         fs::write(config_dir, buffer.as_bytes()).unwrap();
     }
 }
