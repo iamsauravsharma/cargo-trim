@@ -1,6 +1,3 @@
-extern crate clap;
-extern crate dirs;
-
 use std::{fs, io::prelude::*};
 
 mod create_app;
