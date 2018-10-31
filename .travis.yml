@@ -19,6 +19,7 @@ jobs:
   - name: deadlinks
     install:
     - cargo install cargo-deadlinks --force
+    - cargo deadlinks -V
     script:
     - cargo deadlinks --dir target/doc
 
