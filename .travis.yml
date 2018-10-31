@@ -6,6 +6,8 @@ rust:
 git:
   depth: false
 
+cache: cargo
+
 jobs:
   
   include:
@@ -21,11 +23,8 @@ jobs:
     - cargo install cargo-deadlinks --force
     - cargo deadlinks -V
     script:
-    - cargo deadlinks --dir target/doc
-
-  - name: doc
-    script:
     - cargo doc --no-deps
+    - cargo deadlinks --dir target/doc
   
   - name : clippy
     install:
