@@ -16,12 +16,15 @@ jobs:
     script:
     - cargo fmt --all -- --check
   
-  - name: docs
+  - name: deadlinks
     install:
     - cargo install cargo-deadlinks --force
     script:
-    - cargo doc --no-deps
     - cargo deadlinks --dir target/doc
+
+  - name: doc
+    script:
+    -cargo doc --no-deps
   
   - name : clippy
     install:
