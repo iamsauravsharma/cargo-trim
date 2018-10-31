@@ -25,7 +25,7 @@ jobs:
 
   - name: doc
     script:
-    -cargo doc --no-deps
+    - cargo doc --no-deps
   
   - name : clippy
     install:
