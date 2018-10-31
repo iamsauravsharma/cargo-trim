@@ -71,10 +71,8 @@ fn visit_dir(path: &std::path::Path, value: &str) {
             } else if path.is_dir() {
                 fs::remove_dir_all(path).unwrap();
             }
-        } else {
-            if path.is_dir() {
-                visit_dir(&path, value);
-            }
+        } else if path.is_dir() {
+            visit_dir(&path, value);
         }
     }
 }

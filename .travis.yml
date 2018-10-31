@@ -6,8 +6,6 @@ rust:
 git:
   depth: false
 
-cache: cargo
-
 jobs:
   
   include:
