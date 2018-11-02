@@ -6,6 +6,12 @@ pub(super) fn app() -> ArgMatches<'static> {
         .author("Saurav Sharma <appdroiddeveloper@gmail.com>")
         .about("Clean cache from .cargo/registry")
         .arg(
+            Arg::with_name("list")
+                .short("l")
+                .long("list")
+                .help("List installed crate"),
+        )
+        .arg(
             Arg::with_name("all")
                 .short("a")
                 .long("all")
