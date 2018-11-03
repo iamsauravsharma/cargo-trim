@@ -6,6 +6,8 @@ rust:
 git:
   depth: false
 
+cache: cargo
+
 os:
   - linux
   - osx
