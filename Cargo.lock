@@ -69,7 +69,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "cargo_cache"
+name = "cargo-cleaner"
 version = "0.1.0"
 dependencies = [
  "clap 2.32.0 (registry+https://github.com/rust-lang/crates.io-index)",

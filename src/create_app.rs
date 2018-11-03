@@ -1,7 +1,7 @@
 use clap::{App, Arg, ArgMatches};
 
 pub(super) fn app() -> ArgMatches<'static> {
-    App::new("Cargo Cache")
+    App::new("Cargo Cleaner")
         .version("0.1.0")
         .author("Saurav Sharma <appdroiddeveloper@gmail.com>")
         .about("Clean cache from .cargo/registry")
