@@ -1,7 +1,7 @@
 # CARGO-CLEANER
 
 **Status:**
-[![Travis Build Status](https://travis-ci.org/iamsauravsharma/cargo-cleaner.svg?branch=master)](https://travis-ci.org/iamsauravsharma/cargo-cleaner)
+[![Travis Build Status](https://travis-ci.com/iamsauravsharma/cargo-cleaner.svg?branch=master)](https://travis-ci.com/iamsauravsharma/cargo-cleaner)
 [![Dependency status](https://deps.rs/repo/github/iamsauravsharma/cargo-cleaner/status.svg)](https://deps.rs/repo/github/iamsauravsharma/cargo-cleaner)
 
 **Project Info:**
