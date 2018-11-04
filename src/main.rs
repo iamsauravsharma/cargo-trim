@@ -6,6 +6,27 @@ use std::{
 
 mod create_app;
 
+struct GitDir {
+    git_cache_dir: String,
+    git_src_dir: String,
+}
+
+impl GitDir {
+    fn new(cache_dir: &Path, src_dir: &Path) -> GitDir {
+        let git_cache_dir = open_github_folder(&cache_dir).unwrap();
+        let git_src_dir = open_github_folder(&src_dir).unwrap();
+        GitDir {
+            git_cache_dir,
+            git_src_dir,
+        }
+    }
+
+    fn remove_crate(&self, crate_name: &str) {
+        remove_value(Path::new(&self.git_cache_dir), crate_name);
+        remove_value(Path::new(&self.git_src_dir), crate_name);
+    }
+}
+
 fn main() {
     let mut config_dir = dirs::config_dir().unwrap();
     let mut home_dir = dirs::home_dir().unwrap();
@@ -29,9 +50,10 @@ fn main() {
     cache_dir.push("cache");
     let mut src_dir = home_dir.clone();
     src_dir.push("src");
-    let git_cache_dir = open_github_folder(&cache_dir).unwrap();
-    let git_src_dir = open_github_folder(&src_dir).unwrap();
-    let installed_crate = list_crate(Path::new(&git_src_dir));
+    let gitdir = GitDir::new(&cache_dir, &src_dir);
+    let installed_crate = list_crate(Path::new(&gitdir.git_src_dir));
+    let read_include = read_config("include");
+    let read_exculde = read_config("exclude");
 
     if app.is_present("list") {
         for list in installed_crate.iter() {
@@ -39,16 +61,50 @@ fn main() {
         }
     }
 
+    let mut cmd_include = Vec::new();
+    let mut cmd_exclude = Vec::new();
+    if app.is_present("include") {
+        let value = app.value_of("include").unwrap().to_string();
+        cmd_include.push(value);
+    }
+    if app.is_present("exclude") {
+        let value = app.value_of("include").unwrap().to_string();
+        cmd_exclude.push(value);
+    }
+
     if app.is_present("remove") {
         let value = app.value_of("remove").unwrap();
-        remove_value(Path::new(&git_cache_dir), value);
-        remove_value(Path::new(&git_src_dir), value);
+        gitdir.remove_crate(value);
     }
 
     if app.is_present("all") {
-        let home_dir = home_dir.clone();
-        fs::remove_dir_all(home_dir).unwrap();
+        for crate_name in installed_crate.iter() {
+            if cmd_include.contains(crate_name) {
+                gitdir.remove_crate(crate_name);
+            }
+            if !cmd_exclude.contains(crate_name) {
+                gitdir.remove_crate(crate_name);
+            }
+            if read_include.contains(crate_name) {
+                gitdir.remove_crate(crate_name);
+            }
+            if !read_exculde.contains(crate_name) {
+                gitdir.remove_crate(crate_name);
+            }
+        }
     }
+}
+
+fn list_crate(src_dir: &Path) -> Vec<String> {
+    let mut list = Vec::new();
+    for entry in fs::read_dir(src_dir).unwrap() {
+        let entry = entry.unwrap().path();
+        let path = entry.as_path();
+        let file_name = path.file_name().unwrap();
+        let crate_name = file_name.to_str().unwrap().to_string();
+        list.push(crate_name)
+    }
+    list
 }
 
 fn open_github_folder(path: &Path) -> Option<String> {
@@ -62,16 +118,39 @@ fn open_github_folder(path: &Path) -> Option<String> {
     None
 }
 
-fn list_crate(src_dir: &Path) -> Vec<String> {
-    let mut list = Vec::new();
-    for entry in fs::read_dir(src_dir).unwrap() {
-        let entry = entry.unwrap().path();
-        let path = entry.as_path();
-        let file_name = path.file_name().unwrap();
-        let crate_name = file_name.to_str().unwrap().to_string();
-        list.push(crate_name)
+fn read_config(to_search: &str) -> Vec<String> {
+    let mut data = Vec::new();
+    let config_dir = dirs::config_dir().unwrap();
+    let cargo_cache_config = format!(
+        "{}/{}",
+        config_dir.to_str().unwrap(),
+        "cargo_cache_config.txt"
+    );
+    let file = fs::read_to_string(cargo_cache_config).unwrap();
+    for lines in file.lines() {
+        if lines.contains(to_search) {
+            let mut crates = lines.split_whitespace();
+            crates.next();
+            data.push(crates.next().unwrap().to_string());
+        }
     }
-    list
+    data
+}
+
+fn remove_value(path: &Path, value: &str) {
+    for entry in fs::read_dir(path).unwrap() {
+        let entry = entry.unwrap();
+        let path = entry.path();
+        if path.to_str().unwrap().contains(value) {
+            if path.is_file() {
+                fs::remove_file(path).unwrap();
+            } else if path.is_dir() {
+                fs::remove_dir_all(path).unwrap();
+            }
+        } else if path.is_dir() {
+            remove_value(&path, value);
+        }
+    }
 }
 
 fn write_to_file(name: &str, file: &mut fs::File, app: &clap::ArgMatches, config_dir: &PathBuf) {
@@ -88,23 +167,7 @@ fn write_to_file(name: &str, file: &mut fs::File, app: &clap::ArgMatches, config
             "include-conf" => "include",
             _ => "",
         };
-        buffer.push_str(format!("{}:{}", title, value).as_str());
+        buffer.push_str(format!("{}= {}", title, value).as_str());
         fs::write(config_dir, buffer.as_bytes()).unwrap();
-    }
-}
-
-fn remove_value(path: &Path, value: &str) {
-    for entry in fs::read_dir(path).unwrap() {
-        let entry = entry.unwrap();
-        let path = entry.path();
-        if path.to_str().unwrap().contains(value) {
-            if path.is_file() {
-                fs::remove_file(path).unwrap();
-            } else if path.is_dir() {
-                fs::remove_dir_all(path).unwrap();
-            }
-        } else if path.is_dir() {
-            remove_value(&path, value);
-        }
     }
 }

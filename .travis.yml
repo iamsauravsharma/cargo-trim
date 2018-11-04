@@ -22,8 +22,7 @@ before_script:
   - cargo clippy -V
 
 script:
-  - cargo fmt  --verbose --all -- --check
-  - cargo doc --verbose --no-deps
+  - cargo fmt --verbose --all -- --check
   - cargo clippy --verbose --all -- -D warnings
   - cargo build --verbose --all
   - cargo test --verbose --all
