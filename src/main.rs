@@ -61,6 +61,10 @@ fn main() {
         }
     }
 
+    if app.is_present("clear config") {
+        fs::remove_file(Path::new(&cargo_cache_config)).unwrap();
+    }
+
     let mut cmd_include = Vec::new();
     let mut cmd_exclude = Vec::new();
     if app.is_present("include") {
