@@ -51,13 +51,30 @@ fn main() {
     let mut src_dir = home_dir.clone();
     src_dir.push("src");
     let gitdir = GitDir::new(&cache_dir, &src_dir);
-    let installed_crate = list_crate(Path::new(&gitdir.git_src_dir));
+    let mut installed_crate = list_crate(Path::new(&gitdir.git_src_dir));
+    installed_crate.sort();
     let read_include = read_config("include");
     let read_exculde = read_config("exclude");
 
     if app.is_present("list") {
-        for list in installed_crate.iter() {
+        for list in &installed_crate {
             println!("{}", list);
+        }
+    }
+    if app.is_present("old clean") {
+        let mut old_version = Vec::new();
+        let mut version_removed_crate = remove_version(&installed_crate);
+        version_removed_crate.sort();
+        println!("{:?}", version_removed_crate);
+        for i in 0..(version_removed_crate.len() - 1) {
+            if version_removed_crate[i] == version_removed_crate[i + 1] {
+                old_version.push(&installed_crate[i])
+            }
+        }
+        old_version.sort();
+        for crate_name in &old_version {
+            println!("{:?}", crate_name);
+            gitdir.remove_crate(crate_name);
         }
     }
 
@@ -82,7 +99,7 @@ fn main() {
     }
 
     if app.is_present("all") {
-        for crate_name in installed_crate.iter() {
+        for crate_name in &installed_crate {
             if cmd_include.contains(crate_name) {
                 gitdir.remove_crate(crate_name);
             }
@@ -97,6 +114,17 @@ fn main() {
             }
         }
     }
+}
+
+fn clear_version_value(a: &str) -> String {
+    let list = a.rsplitn(2, '-');
+    let mut value = String::new();
+    for (i, val) in list.enumerate() {
+        if i == 1 {
+            value = val.to_string()
+        }
+    }
+    value
 }
 
 fn list_crate(src_dir: &Path) -> Vec<String> {
@@ -155,6 +183,15 @@ fn remove_value(path: &Path, value: &str) {
             remove_value(&path, value);
         }
     }
+}
+
+fn remove_version(installed_crate: &[String]) -> Vec<String> {
+    let mut removed_version = Vec::new();
+    for i in installed_crate.iter() {
+        let data = clear_version_value(i);
+        removed_version.push(data);
+    }
+    removed_version
 }
 
 fn write_to_file(name: &str, file: &mut fs::File, app: &clap::ArgMatches, config_dir: &PathBuf) {
