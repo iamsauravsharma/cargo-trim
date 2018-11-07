@@ -4,6 +4,8 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use serde_derive::{Deserialize, Serialize};
+
 mod create_app;
 
 struct GitDir {
@@ -27,6 +29,23 @@ impl GitDir {
     }
 }
 
+#[derive(Serialize, Deserialize)]
+struct ConfigFile {
+    directory: Vec<String>,
+    include: Vec<String>,
+    exclude: Vec<String>,
+}
+
+impl ConfigFile {
+    fn new() -> ConfigFile {
+        ConfigFile {
+            directory: Vec::new(),
+            include: Vec::new(),
+            exclude: Vec::new(),
+        }
+    }
+}
+
 fn main() {
     let mut config_dir = dirs::config_dir().unwrap();
     let mut home_dir = dirs::home_dir().unwrap();
@@ -35,16 +54,16 @@ fn main() {
     let cargo_cache_config = format!(
         "{}/{}",
         config_dir.to_str().unwrap(),
-        "cargo_cache_config.txt"
+        "cargo_cache_config.json"
     );
-    let mut file = fs::File::open(&cargo_cache_config)
-        .unwrap_or_else(|_| fs::File::create(&cargo_cache_config).unwrap());
-    config_dir.push("cargo_cache_config.txt");
+    if !Path::new(&cargo_cache_config).exists() {
+        fs::File::create(&cargo_cache_config).unwrap();
+    }
+    let mut file = fs::File::open(&cargo_cache_config).unwrap();
+    config_dir.push("cargo_cache_config.json");
     let app = create_app::app();
 
-    write_to_file("set directory", &mut file, &app, &config_dir);
-    write_to_file("exclude-conf", &mut file, &app, &config_dir);
-    write_to_file("include-conf", &mut file, &app, &config_dir);
+    let config_file = write_to_file(&mut file, &app, &config_dir);
 
     let mut cache_dir = home_dir.clone();
     cache_dir.push("cache");
@@ -53,19 +72,19 @@ fn main() {
     let gitdir = GitDir::new(&cache_dir, &src_dir);
     let mut installed_crate = list_crate(Path::new(&gitdir.git_src_dir));
     installed_crate.sort();
-    let read_include = read_config("include");
-    let read_exculde = read_config("exclude");
+    let read_include = config_file.include;
+    let read_exculde = config_file.exclude;
 
     if app.is_present("list") {
         for list in &installed_crate {
             println!("{}", list);
         }
     }
+
     if app.is_present("old clean") {
         let mut old_version = Vec::new();
         let mut version_removed_crate = remove_version(&installed_crate);
         version_removed_crate.sort();
-        println!("{:?}", version_removed_crate);
         for i in 0..(version_removed_crate.len() - 1) {
             if version_removed_crate[i] == version_removed_crate[i + 1] {
                 old_version.push(&installed_crate[i])
@@ -73,7 +92,6 @@ fn main() {
         }
         old_version.sort();
         for crate_name in &old_version {
-            println!("{:?}", crate_name);
             gitdir.remove_crate(crate_name);
         }
     }
@@ -104,16 +122,10 @@ fn main() {
 
     if app.is_present("all") {
         for crate_name in &installed_crate {
-            if cmd_include.contains(crate_name) {
+            if cmd_include.contains(crate_name) || read_include.contains(crate_name) {
                 gitdir.remove_crate(crate_name);
             }
-            if !cmd_exclude.contains(crate_name) {
-                gitdir.remove_crate(crate_name);
-            }
-            if read_include.contains(crate_name) {
-                gitdir.remove_crate(crate_name);
-            }
-            if !read_exculde.contains(crate_name) {
+            if !cmd_exclude.contains(crate_name) && !read_exculde.contains(crate_name) {
                 gitdir.remove_crate(crate_name);
             }
         }
@@ -154,25 +166,6 @@ fn open_github_folder(path: &Path) -> Option<String> {
     None
 }
 
-fn read_config(to_search: &str) -> Vec<String> {
-    let mut data = Vec::new();
-    let config_dir = dirs::config_dir().unwrap();
-    let cargo_cache_config = format!(
-        "{}/{}",
-        config_dir.to_str().unwrap(),
-        "cargo_cache_config.txt"
-    );
-    let file = fs::read_to_string(cargo_cache_config).unwrap();
-    for lines in file.lines() {
-        if lines.contains(to_search) {
-            let mut crates = lines.split_whitespace();
-            crates.next();
-            data.push(crates.next().unwrap().to_string());
-        }
-    }
-    data
-}
-
 fn remove_value(path: &Path, value: &str) {
     for entry in fs::read_dir(path).unwrap() {
         let entry = entry.unwrap();
@@ -198,21 +191,32 @@ fn remove_version(installed_crate: &[String]) -> Vec<String> {
     removed_version
 }
 
-fn write_to_file(name: &str, file: &mut fs::File, app: &clap::ArgMatches, config_dir: &PathBuf) {
-    if app.is_present(name) {
-        let value = app.value_of(name).unwrap();
-        let mut buffer = String::new();
-        file.read_to_string(&mut buffer).unwrap();
-        if !buffer.is_empty() {
-            buffer.push_str("\n");
-        }
-        let title = match name {
-            "set directory" => "directory",
-            "exclude-conf" => "exclude",
-            "include-conf" => "include",
-            _ => "",
-        };
-        buffer.push_str(format!("{}= {}", title, value).as_str());
-        fs::write(config_dir, buffer.as_bytes()).unwrap();
+fn write_to_file(file: &mut fs::File, app: &clap::ArgMatches, config_dir: &PathBuf) -> ConfigFile {
+    let mut buffer = String::new();
+    file.read_to_string(&mut buffer).unwrap();
+    if buffer.is_empty() {
+        let initial_config = ConfigFile::new();
+        let serialize = serde_json::to_string(&initial_config).unwrap();
+        buffer.push_str(&serialize)
     }
+    let mut deserialized: ConfigFile = serde_json::from_str(&buffer).unwrap();
+    for &name in &["set-directory", "exclude-conf", "include-conf"] {
+        if app.is_present(name) {
+            let value = app.value_of(name).unwrap();
+            if name == "set-directory" {
+                deserialized.directory.push(value.to_string());
+            }
+            if name == "exclude-conf" {
+                deserialized.exclude.push(value.to_string());
+            }
+            if name == "include-conf" {
+                deserialized.include.push(value.to_string());
+            }
+        }
+    }
+    let serialized = serde_json::to_string(&deserialized).unwrap();
+    buffer.clear();
+    buffer.push_str(&serialized);
+    fs::write(config_dir, buffer).unwrap();
+    deserialized
 }
