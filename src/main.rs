@@ -98,6 +98,10 @@ fn main() {
         gitdir.remove_crate(value);
     }
 
+    if app.is_present("force remove") {
+        fs::remove_dir_all(home_dir).unwrap();
+    }
+
     if app.is_present("all") {
         for crate_name in &installed_crate {
             if cmd_include.contains(crate_name) {

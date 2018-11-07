@@ -36,6 +36,12 @@ pub(super) fn app() -> ArgMatches<'static> {
                 .value_name("Crate"),
         )
         .arg(
+            Arg::with_name("force remove")
+                .short("f")
+                .long("force")
+                .help("Force clear cache without reading conf file"),
+        )
+        .arg(
             Arg::with_name("include")
                 .short("i")
                 .long("include")
