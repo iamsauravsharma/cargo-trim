@@ -51,16 +51,11 @@ fn main() {
     let mut home_dir = dirs::home_dir().unwrap();
     home_dir.push(".cargo");
     home_dir.push("registry");
-    let cargo_cache_config = format!(
-        "{}/{}",
-        config_dir.to_str().unwrap(),
-        "cargo_cache_config.json"
-    );
-    if !Path::new(&cargo_cache_config).exists() {
-        fs::File::create(&cargo_cache_config).unwrap();
-    }
-    let mut file = fs::File::open(&cargo_cache_config).unwrap();
     config_dir.push("cargo_cache_config.json");
+    if !config_dir.exists() {
+        fs::File::create(config_dir.to_str().unwrap()).unwrap();
+    }
+    let mut file = fs::File::open(config_dir.to_str().unwrap()).unwrap();
     let app = create_app::app();
 
     let config_file = write_to_file(&mut file, &app, &config_dir);
@@ -97,7 +92,7 @@ fn main() {
     }
 
     if app.is_present("clear config") {
-        fs::remove_file(Path::new(&cargo_cache_config)).unwrap();
+        fs::remove_file(Path::new(config_dir.to_str().unwrap())).unwrap();
     }
 
     let mut cmd_include = Vec::new();
