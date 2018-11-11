@@ -1,0 +1,24 @@
+Cargo Cleaner 0.1.0
+Saurav Sharma <appdroiddeveloper@gmail.com>
+Clean cache from .cargo/registry
+
+USAGE:
+    cargo-cleaner [FLAGS] [OPTIONS]
+
+FLAGS:
+    -a, --all             Clean up all .cargo/registry
+    -c, --clear           Clear config data
+    -f, --force           Force clear cache without reading conf file
+    -h, --help            Prints help information
+    -l, --list            List installed crate
+    -o, --old-clean       Clean old cache crates
+    -O, --orphan-clean    Clean orphan cache crates
+    -V, --version         Prints version information
+
+OPTIONS:
+    -e, --exclude <Crate>...              Exculde listed crates (override conf file)
+    -E, --exclude-conf <Crate>...         add listed crates to default conf file exclude list
+    -i, --include <Crate>...              Include listed crates (override conf file)
+    -I, --include-conf <Crate>...         add listed crates to default conf file include list
+    -r, --remove <Crate>...               Remove listed crates
+    -s, --set-directory <Directory>...    Set directory of Rust project
