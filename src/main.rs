@@ -221,24 +221,17 @@ mod test {
     use std::{io::Read, process::Command};
     #[test]
     fn test_help() {
-        let output = if cfg!(target_os = "windows") {
-            Command::new("cmd")
-                .arg("/C")
-                .arg("cargo run -- -h")
-                .output()
-                .expect("failed to execute process")
-        } else {
-            Command::new("sh")
+        if !cfg!(target_os = "windows") {
+            let output = Command::new("sh")
                 .arg("-c")
                 .arg("cargo run -- -h")
                 .output()
-                .expect("failed to execute process")
-        };
-
-        let output = String::from_utf8(output.stdout).unwrap();
-        let mut buffer = String::new();
-        let mut file = std::fs::File::open("tests/command_output/help.txt").unwrap();
-        file.read_to_string(&mut buffer).unwrap();
-        assert_eq!(output.trim(), buffer.trim());
+                .expect("failed to execute process");
+            let output = String::from_utf8(output.stdout).unwrap();
+            let mut buffer = String::new();
+            let mut file = std::fs::File::open("tests/command_output/help.txt").unwrap();
+            file.read_to_string(&mut buffer).unwrap();
+            assert_eq!(output, buffer);
+        }
     }
 }
