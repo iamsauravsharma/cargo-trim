@@ -3,7 +3,7 @@ language: rust
 rust:
   - nightly
 
-sudo: true
+# sudo: true
 
 git:
   depth: false
@@ -15,21 +15,21 @@ os:
   - osx
   - windows
 
-before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
-      sudo apt-get update;
-    fi
+# before_install:
+#   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+#       sudo apt-get update;
+#     fi
 
-addons:
-  apt:
-    packages:
-      - libcurl4-openssl-dev
-      - libelf-dev
-      - libdw-dev
-      - cmake
-      - gcc
-      - binutils-dev
-      - libiberty-dev
+# addons:
+#   apt:
+#     packages:
+#       - libcurl4-openssl-dev
+#       - libelf-dev
+#       - libdw-dev
+#       - cmake
+#       - gcc
+#       - binutils-dev
+#       - libiberty-dev
 
 install:
   - rustup component add rustfmt-preview
@@ -45,19 +45,19 @@ script:
   - cargo build --verbose --all
   - cargo test --verbose --all
 
-after_success:
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
-      wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz &&
-      tar xzf master.tar.gz &&
-      cd kcov-master &&
-      mkdir build &&
-      cd build &&
-      cmake .. &&
-      make &&
-      sudo make install &&
-      cd ../.. &&
-      rm -rf kcov-master &&
-      for file in target/debug/*-*[^\.d]; do mkdir -p "target/cov/$(basename $file)"; kcov --exclude-pattern=/.cargo,/usr/lib --verify "target/cov/$(basename $file)" "$file"; done &&
-      bash <(curl -s https://codecov.io/bash) &&
-      echo "Uploaded code coverage";
-    fi
+# after_success:
+#   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+#       wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz &&
+#       tar xzf master.tar.gz &&
+#       cd kcov-master &&
+#       mkdir build &&
+#       cd build &&
+#       cmake .. &&
+#       make &&
+#       sudo make install &&
+#       cd ../.. &&
+#       rm -rf kcov-master &&
+#       for file in target/debug/*-*[^\.d]; do mkdir -p "target/cov/$(basename $file)"; kcov --exclude-pattern=/.cargo,/usr/lib --verify "target/cov/$(basename $file)" "$file"; done &&
+#       bash <(curl -s https://codecov.io/bash) &&
+#       echo "Uploaded code coverage";
+#     fi

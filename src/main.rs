@@ -239,6 +239,6 @@ mod test {
         let mut buffer = String::new();
         let mut file = std::fs::File::open("tests/command_output/help.txt").unwrap();
         file.read_to_string(&mut buffer).unwrap();
-        assert_eq!(output, buffer);
+        assert_eq!(output.trim(), buffer.trim());
     }
 }
