@@ -106,6 +106,18 @@ fn main() {
         cmd_exclude.push(value);
     }
 
+    if app.is_present("orphan clean") {
+        for path in config_file.directory.iter() {
+            let list = list_cargo_lock(&Path::new(path));
+            let used_crate = read_content(list);
+            for crate_name in &installed_crate {
+                if !used_crate.contains(crate_name) {
+                    gitdir.remove_crate(crate_name);
+                }
+            }
+        }
+    }
+
     if app.is_present("remove") {
         let value = app.value_of("remove").unwrap();
         gitdir.remove_crate(value);
@@ -138,6 +150,24 @@ fn clear_version_value(a: &str) -> String {
     value
 }
 
+fn list_cargo_lock(path: &Path) -> Vec<PathBuf> {
+    let mut list = Vec::new();
+    for entry in std::fs::read_dir(path).expect("error 1") {
+        let data = entry.unwrap().path();
+        let data = data.as_path();
+        if data.is_dir() {
+            let mut kids_list = list_cargo_lock(data);
+            list.append(&mut kids_list);
+        }
+        if data.is_file() {
+            if data.ends_with("Cargo.lock") {
+                list.push(data.to_path_buf());
+            }
+        }
+    }
+    list
+}
+
 fn list_crate(src_dir: &Path) -> Vec<String> {
     let mut list = Vec::new();
     for entry in fs::read_dir(src_dir).unwrap() {
@@ -159,6 +189,32 @@ fn open_github_folder(path: &Path) -> Option<String> {
         }
     }
     None
+}
+
+fn read_content(list: Vec<PathBuf>) -> Vec<String> {
+    let mut present_crate = Vec::new();
+    for lock_file in list.iter() {
+        let lock_file = lock_file.to_str().unwrap();
+        let mut buffer = String::new();
+        let mut file = std::fs::File::open(lock_file).unwrap();
+        file.read_to_string(&mut buffer).unwrap();
+        let mut set_flag = 0;
+        for line in buffer.lines() {
+            if line.contains("[metadata]") {
+                set_flag = 1;
+                continue;
+            }
+            if set_flag == 1 {
+                let mut split = line.split_whitespace();
+                split.next();
+                let name = split.next().unwrap();
+                let version = split.next().unwrap();
+                let full_name = format!("{}-{}", name, version);
+                present_crate.push(full_name);
+            }
+        }
+    }
+    present_crate
 }
 
 fn remove_value(path: &Path, value: &str) {
@@ -195,10 +251,10 @@ fn write_to_file(file: &mut fs::File, app: &clap::ArgMatches, config_dir: &PathB
         buffer.push_str(&serialize)
     }
     let mut deserialized: ConfigFile = serde_json::from_str(&buffer).unwrap();
-    for &name in &["set-directory", "exclude-conf", "include-conf"] {
+    for &name in &["set directory", "exclude-conf", "include-conf"] {
         if app.is_present(name) {
             let value = app.value_of(name).unwrap();
-            if name == "set-directory" {
+            if name == "set directory" {
                 deserialized.directory.push(value.to_string());
             }
             if name == "exclude-conf" {

@@ -9,7 +9,7 @@ pub(super) fn app() -> ArgMatches<'static> {
             Arg::with_name("all")
                 .short("a")
                 .long("all")
-                .help("Clean up all .cargo/registry"),
+                .help("Clean up all .cargo/registry follow config file data"),
         )
         .arg(
             Arg::with_name("clear config")
@@ -21,7 +21,7 @@ pub(super) fn app() -> ArgMatches<'static> {
             Arg::with_name("exclude")
                 .short("e")
                 .long("exclude")
-                .help("Exculde listed crates (override conf file)")
+                .help("Exculde listed crates")
                 .multiple(true)
                 .takes_value(true)
                 .value_name("Crate"),
@@ -45,7 +45,7 @@ pub(super) fn app() -> ArgMatches<'static> {
             Arg::with_name("include")
                 .short("i")
                 .long("include")
-                .help("Include listed crates (override conf file)")
+                .help("Include listed crates")
                 .multiple(true)
                 .takes_value(true)
                 .value_name("Crate"),
@@ -73,7 +73,7 @@ pub(super) fn app() -> ArgMatches<'static> {
         )
         .arg(
             Arg::with_name("orphan clean")
-                .short("O")
+                .short("d")
                 .long("orphan-clean")
                 .help("Clean orphan cache crates"),
         )
