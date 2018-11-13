@@ -109,7 +109,7 @@ fn main() {
     if app.is_present("orphan clean") {
         for path in config_file.directory.iter() {
             let list = list_cargo_lock(&Path::new(path));
-            let used_crate = read_content(list);
+            let used_crate = read_content(&list);
             for crate_name in &installed_crate {
                 if !used_crate.contains(crate_name) {
                     gitdir.remove_crate(crate_name);
@@ -159,10 +159,8 @@ fn list_cargo_lock(path: &Path) -> Vec<PathBuf> {
             let mut kids_list = list_cargo_lock(data);
             list.append(&mut kids_list);
         }
-        if data.is_file() {
-            if data.ends_with("Cargo.lock") {
-                list.push(data.to_path_buf());
-            }
+        if data.is_file() && data.ends_with("Cargo.lock") {
+            list.push(data.to_path_buf());
         }
     }
     list
@@ -191,7 +189,7 @@ fn open_github_folder(path: &Path) -> Option<String> {
     None
 }
 
-fn read_content(list: Vec<PathBuf>) -> Vec<String> {
+fn read_content(list: &[PathBuf]) -> Vec<String> {
     let mut present_crate = Vec::new();
     for lock_file in list.iter() {
         let lock_file = lock_file.to_str().unwrap();
