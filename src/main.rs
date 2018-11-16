@@ -8,12 +8,14 @@ use serde_derive::{Deserialize, Serialize};
 
 mod create_app;
 
+// Stores .cargo/registry cache & src information
 struct GitDir {
     git_cache_dir: String,
     git_src_dir: String,
 }
 
 impl GitDir {
+    // Create new GitDir
     fn new(cache_dir: &Path, src_dir: &Path) -> GitDir {
         let git_cache_dir = open_github_folder(&cache_dir).unwrap();
         let git_src_dir = open_github_folder(&src_dir).unwrap();
@@ -23,12 +25,14 @@ impl GitDir {
         }
     }
 
+    // Remove crate from src & cache directory
     fn remove_crate(&self, crate_name: &str) {
-        remove_value(Path::new(&self.git_cache_dir), crate_name);
-        remove_value(Path::new(&self.git_src_dir), crate_name);
+        remove_crate(Path::new(&self.git_cache_dir), crate_name);
+        remove_crate(Path::new(&self.git_src_dir), crate_name);
     }
 }
 
+// Stores config file information
 #[derive(Serialize, Deserialize)]
 struct ConfigFile {
     directory: Vec<String>,
@@ -37,6 +41,7 @@ struct ConfigFile {
 }
 
 impl ConfigFile {
+    // Create new config file
     fn new() -> ConfigFile {
         ConfigFile {
             directory: Vec::new(),
@@ -52,30 +57,37 @@ fn main() {
     home_dir.push(".cargo");
     home_dir.push("registry");
     config_dir.push("cargo_cache_config.json");
+
+    // If config file does not exists create one config file
     if !config_dir.exists() {
         fs::File::create(config_dir.to_str().unwrap()).unwrap();
     }
     let mut file = fs::File::open(config_dir.to_str().unwrap()).unwrap();
     let app = create_app::app();
 
-    let config_file = write_to_file(&mut file, &app, &config_dir);
+    let config_file = modify_conifg_file(&mut file, &app, &config_dir);
 
     let mut cache_dir = home_dir.clone();
     cache_dir.push("cache");
     let mut src_dir = home_dir.clone();
     src_dir.push("src");
     let gitdir = GitDir::new(&cache_dir, &src_dir);
+
+    // List out installed crate list
     let mut installed_crate = list_crate(Path::new(&gitdir.git_src_dir));
     installed_crate.sort();
+
     let read_include = config_file.include;
     let read_exculde = config_file.exclude;
 
+    // Perform action on -l flag
     if app.is_present("list") {
         for list in &installed_crate {
             println!("{}", list);
         }
     }
 
+    // Perfrom action on -o flag
     if app.is_present("old clean") {
         let mut old_version = Vec::new();
         let mut version_removed_crate = remove_version(&installed_crate);
@@ -91,21 +103,28 @@ fn main() {
         }
     }
 
+    // Perform action of removing config file with -c flag
     if app.is_present("clear config") {
         fs::remove_file(Path::new(config_dir.to_str().unwrap())).unwrap();
     }
 
     let mut cmd_include = Vec::new();
     let mut cmd_exclude = Vec::new();
+
+    // Provide one time include crate list for other flag
     if app.is_present("include") {
         let value = app.value_of("include").unwrap().to_string();
         cmd_include.push(value);
     }
+
+    // Provide one time exclude crate list for other flag
     if app.is_present("exclude") {
         let value = app.value_of("include").unwrap().to_string();
         cmd_exclude.push(value);
     }
 
+    // Orphan clean a crates which is not present in directory stored in directory
+    // value of config file
     if app.is_present("orphan clean") {
         for path in config_file.directory.iter() {
             let list = list_cargo_lock(&Path::new(path));
@@ -118,15 +137,18 @@ fn main() {
         }
     }
 
+    // Remove certain crate provided with -r flag
     if app.is_present("remove") {
         let value = app.value_of("remove").unwrap();
         gitdir.remove_crate(value);
     }
 
+    // Force remove all crates without reading config file
     if app.is_present("force remove") {
         fs::remove_dir_all(home_dir).unwrap();
     }
 
+    // Remove all crates by following config file
     if app.is_present("all") {
         for crate_name in &installed_crate {
             if cmd_include.contains(crate_name) || read_include.contains(crate_name) {
@@ -139,6 +161,8 @@ fn main() {
     }
 }
 
+// remove version tag from crates full tag mini function of remove_version
+// function
 fn clear_version_value(a: &str) -> String {
     let list = a.rsplitn(2, '-');
     let mut value = String::new();
@@ -150,6 +174,7 @@ fn clear_version_value(a: &str) -> String {
     value
 }
 
+// List out cargo.lock file present inside directory listed inside config file
 fn list_cargo_lock(path: &Path) -> Vec<PathBuf> {
     let mut list = Vec::new();
     for entry in std::fs::read_dir(path).expect("error 1") {
@@ -166,6 +191,7 @@ fn list_cargo_lock(path: &Path) -> Vec<PathBuf> {
     list
 }
 
+// List out all crates present at .cache/registry
 fn list_crate(src_dir: &Path) -> Vec<String> {
     let mut list = Vec::new();
     for entry in fs::read_dir(src_dir).unwrap() {
@@ -178,6 +204,7 @@ fn list_crate(src_dir: &Path) -> Vec<String> {
     list
 }
 
+// Use to open github folder present inside src and cache folder
 fn open_github_folder(path: &Path) -> Option<String> {
     for entry in fs::read_dir(path).unwrap() {
         let path = entry.unwrap().path();
@@ -189,6 +216,8 @@ fn open_github_folder(path: &Path) -> Option<String> {
     None
 }
 
+// Read out content of cargo.lock file to list out crates present so can be used
+// for orphan clean
 fn read_content(list: &[PathBuf]) -> Vec<String> {
     let mut present_crate = Vec::new();
     for lock_file in list.iter() {
@@ -215,7 +244,8 @@ fn read_content(list: &[PathBuf]) -> Vec<String> {
     present_crate
 }
 
-fn remove_value(path: &Path, value: &str) {
+// Remove crates which name is provided to delete
+fn remove_crate(path: &Path, value: &str) {
     for entry in fs::read_dir(path).unwrap() {
         let entry = entry.unwrap();
         let path = entry.path();
@@ -226,11 +256,13 @@ fn remove_value(path: &Path, value: &str) {
                 fs::remove_dir_all(path).unwrap();
             }
         } else if path.is_dir() {
-            remove_value(&path, value);
+            remove_crate(&path, value);
         }
     }
 }
 
+// Function used to remove version from installed_crate list so can be used for
+// old clean flag
 fn remove_version(installed_crate: &[String]) -> Vec<String> {
     let mut removed_version = Vec::new();
     for i in installed_crate.iter() {
@@ -240,7 +272,12 @@ fn remove_version(installed_crate: &[String]) -> Vec<String> {
     removed_version
 }
 
-fn write_to_file(file: &mut fs::File, app: &clap::ArgMatches, config_dir: &PathBuf) -> ConfigFile {
+// Function to modify config file or read config file
+fn modify_conifg_file(
+    file: &mut fs::File,
+    app: &clap::ArgMatches,
+    config_dir: &PathBuf,
+) -> ConfigFile {
     let mut buffer = String::new();
     file.read_to_string(&mut buffer).unwrap();
     if buffer.is_empty() {
