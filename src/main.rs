@@ -140,7 +140,7 @@ fn main() {
             if !used_crate.contains(crate_name) {
                 git_dir.remove_crate(crate_name);
                 count += 1;
-                println!(" Removed crate: {:?}", crate_name);
+                println!("Removed {:?}", crate_name);
             }
         }
         println!("Successfully removed {:?} crates", count);
@@ -150,7 +150,7 @@ fn main() {
     if app.is_present("remove") {
         let value = app.value_of("remove").unwrap();
         git_dir.remove_crate(value);
-        println!("Removed crate: {:?}", value);
+        println!("Removed {:?}", value);
     }
 
     // Force remove all crates without reading config file

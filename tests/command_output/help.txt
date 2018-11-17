@@ -16,7 +16,7 @@ FLAGS:
     -V, --version         Prints version information
 
 OPTIONS:
-    -e, --exclude <Crate>...              Exculde listed crates
+    -e, --exclude <Crate>...              Exclude listed crates
     -E, --exclude-conf <Crate>...         add listed crates to default conf file exclude list
     -i, --include <Crate>...              Include listed crates
     -I, --include-conf <Crate>...         add listed crates to default conf file include list

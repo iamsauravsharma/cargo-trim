@@ -21,7 +21,7 @@ pub(super) fn app() -> ArgMatches<'static> {
             Arg::with_name("exclude")
                 .short("e")
                 .long("exclude")
-                .help("Exculde listed crates")
+                .help("Exclude listed crates")
                 .multiple(true)
                 .takes_value(true)
                 .value_name("Crate"),
