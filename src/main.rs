@@ -65,20 +65,20 @@ fn main() {
     let mut file = fs::File::open(config_dir.to_str().unwrap()).unwrap();
     let app = create_app::app();
 
-    let config_file = modify_conifg_file(&mut file, &app, &config_dir);
+    let config_file = modify_config_file(&mut file, &app, &config_dir);
 
     let mut cache_dir = home_dir.clone();
     cache_dir.push("cache");
     let mut src_dir = home_dir.clone();
     src_dir.push("src");
-    let gitdir = GitDir::new(&cache_dir, &src_dir);
+    let git_dir = GitDir::new(&cache_dir, &src_dir);
 
     // List out installed crate list
-    let mut installed_crate = list_crate(Path::new(&gitdir.git_src_dir));
+    let mut installed_crate = list_crate(Path::new(&git_dir.git_src_dir));
     installed_crate.sort();
 
     let read_include = config_file.include;
-    let read_exculde = config_file.exclude;
+    let read_exclude = config_file.exclude;
 
     // Perform action on -l flag
     if app.is_present("list") {
@@ -87,7 +87,7 @@ fn main() {
         }
     }
 
-    // Perfrom action on -o flag
+    // Perform action on -o flag
     if app.is_present("old clean") {
         let mut old_version = Vec::new();
         let mut version_removed_crate = remove_version(&installed_crate);
@@ -99,13 +99,16 @@ fn main() {
         }
         old_version.sort();
         for crate_name in &old_version {
-            gitdir.remove_crate(crate_name);
+            git_dir.remove_crate(crate_name);
+            println!("Removed {:?}", crate_name);
         }
+        println!("Successfully removed {:?} crates", old_version.len());
     }
 
     // Perform action of removing config file with -c flag
     if app.is_present("clear config") {
         fs::remove_file(Path::new(config_dir.to_str().unwrap())).unwrap();
+        println!("Cleared Config file");
     }
 
     let mut cmd_include = Vec::new();
@@ -126,21 +129,28 @@ fn main() {
     // Orphan clean a crates which is not present in directory stored in directory
     // value of config file
     if app.is_present("orphan clean") {
+        let mut used_crate = Vec::new();
         for path in config_file.directory.iter() {
             let list = list_cargo_lock(&Path::new(path));
-            let used_crate = read_content(&list);
-            for crate_name in &installed_crate {
-                if !used_crate.contains(crate_name) {
-                    gitdir.remove_crate(crate_name);
-                }
+            let mut buffer_crate = read_content(&list);
+            used_crate.append(&mut buffer_crate);
+        }
+        let mut count = 0;
+        for crate_name in &installed_crate {
+            if !used_crate.contains(crate_name) {
+                git_dir.remove_crate(crate_name);
+                count += 1;
+                println!(" Removed crate: {:?}", crate_name);
             }
         }
+        println!("Successfully removed {:?} crates", count);
     }
 
     // Remove certain crate provided with -r flag
     if app.is_present("remove") {
         let value = app.value_of("remove").unwrap();
-        gitdir.remove_crate(value);
+        git_dir.remove_crate(value);
+        println!("Removed crate: {:?}", value);
     }
 
     // Force remove all crates without reading config file
@@ -152,10 +162,10 @@ fn main() {
     if app.is_present("all") {
         for crate_name in &installed_crate {
             if cmd_include.contains(crate_name) || read_include.contains(crate_name) {
-                gitdir.remove_crate(crate_name);
+                git_dir.remove_crate(crate_name);
             }
-            if !cmd_exclude.contains(crate_name) && !read_exculde.contains(crate_name) {
-                gitdir.remove_crate(crate_name);
+            if !cmd_exclude.contains(crate_name) && !read_exclude.contains(crate_name) {
+                git_dir.remove_crate(crate_name);
             }
         }
     }
@@ -273,7 +283,7 @@ fn remove_version(installed_crate: &[String]) -> Vec<String> {
 }
 
 // Function to modify config file or read config file
-fn modify_conifg_file(
+fn modify_config_file(
     file: &mut fs::File,
     app: &clap::ArgMatches,
     config_dir: &PathBuf,
