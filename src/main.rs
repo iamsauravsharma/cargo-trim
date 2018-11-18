@@ -80,6 +80,12 @@ fn main() {
     let read_include = config_file.include;
     let read_exclude = config_file.exclude;
 
+    // Perform action of removing config file with -c flag
+    if app.is_present("clear config") {
+        fs::remove_file(Path::new(config_dir.to_str().unwrap())).unwrap();
+        println!("Cleared Config file");
+    }
+
     // Perform action on -l flag
     if app.is_present("list") {
         for list in &installed_crate {
@@ -114,27 +120,6 @@ fn main() {
         println!("Successfully removed {:?} crates", old_version.len());
     }
 
-    // Perform action of removing config file with -c flag
-    if app.is_present("clear config") {
-        fs::remove_file(Path::new(config_dir.to_str().unwrap())).unwrap();
-        println!("Cleared Config file");
-    }
-
-    let mut cmd_include = Vec::new();
-    let mut cmd_exclude = Vec::new();
-
-    // Provide one time include crate list for other flag
-    if app.is_present("include") {
-        let value = app.value_of("include").unwrap().to_string();
-        cmd_include.push(value);
-    }
-
-    // Provide one time exclude crate list for other flag
-    if app.is_present("exclude") {
-        let value = app.value_of("include").unwrap().to_string();
-        cmd_exclude.push(value);
-    }
-
     // Orphan clean a crates which is not present in directory stored in directory
     // value of config file
     if app.is_present("orphan clean") {
@@ -160,6 +145,21 @@ fn main() {
         let value = app.value_of("remove").unwrap();
         git_dir.remove_crate(value);
         println!("Removed {:?}", value);
+    }
+
+    let mut cmd_include = Vec::new();
+    let mut cmd_exclude = Vec::new();
+
+    // Provide one time include crate list for other flag
+    if app.is_present("include") {
+        let value = app.value_of("include").unwrap().to_string();
+        cmd_include.push(value);
+    }
+
+    // Provide one time exclude crate list for other flag
+    if app.is_present("exclude") {
+        let value = app.value_of("include").unwrap().to_string();
+        cmd_exclude.push(value);
     }
 
     // Force remove all crates without reading config file
