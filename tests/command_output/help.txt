@@ -13,6 +13,7 @@ FLAGS:
     -l, --list            List installed crate
     -o, --old-clean       Clean old cache crates
     -d, --orphan-clean    Clean orphan cache crates
+    -q, --size            Return size of .cargo/registry
     -V, --version         Prints version information
 
 OPTIONS:

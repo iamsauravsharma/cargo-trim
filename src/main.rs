@@ -87,6 +87,15 @@ fn main() {
         }
     }
 
+    // Perform action for -q flag
+    if app.is_present("query size") {
+        let metadata = fs_extra::dir::get_size(home_dir.clone()).unwrap() as f64;
+        println!(
+            "Size taken by .cargo/registry: {:.4} MB",
+            metadata / (1024f64.powf(2.0))
+        );
+    }
+
     // Perform action on -o flag
     if app.is_present("old clean") {
         let mut old_version = Vec::new();
@@ -155,7 +164,7 @@ fn main() {
 
     // Force remove all crates without reading config file
     if app.is_present("force remove") {
-        fs::remove_dir_all(home_dir).unwrap();
+        fs::remove_dir_all(home_dir.clone()).unwrap();
     }
 
     // Remove all crates by following config file
