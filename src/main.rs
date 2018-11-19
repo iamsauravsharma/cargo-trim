@@ -80,11 +80,39 @@ fn main() {
     let read_include = config_file.include;
     let read_exclude = config_file.exclude;
 
+    // Perform action of removing config file with -c flag
+    if app.is_present("clear config") {
+        fs::remove_file(Path::new(config_dir.to_str().unwrap())).unwrap();
+        println!("Cleared Config file");
+    }
+
     // Perform action on -l flag
     if app.is_present("list") {
         for list in &installed_crate {
             println!("{}", list);
         }
+    }
+
+    // Perform action for -q flag
+    if app.is_present("query size") {
+        let metadata_home = fs_extra::dir::get_size(home_dir.clone()).unwrap() as f64;
+        let metadata_cache = fs_extra::dir::get_size(cache_dir.clone()).unwrap() as f64;
+        let metadata_src = fs_extra::dir::get_size(src_dir.clone()).unwrap() as f64;
+        println!(
+            "{:50} {:.3} MB",
+            format!("Size of {} .cargo/registry crates:", installed_crate.len()),
+            metadata_home / (1024f64.powf(2.0))
+        );
+        println!(
+            "{:50} {:.3} MB",
+            "Size of .cargo/registry/cache folder",
+            metadata_cache / (1024f64.powf(2.0))
+        );
+        println!(
+            "{:50} {:.3} MB",
+            "Size of .cargo/registry/src folder",
+            metadata_src / (1024f64.powf(2.0))
+        );
     }
 
     // Perform action on -o flag
@@ -103,27 +131,6 @@ fn main() {
             println!("Removed {:?}", crate_name);
         }
         println!("Successfully removed {:?} crates", old_version.len());
-    }
-
-    // Perform action of removing config file with -c flag
-    if app.is_present("clear config") {
-        fs::remove_file(Path::new(config_dir.to_str().unwrap())).unwrap();
-        println!("Cleared Config file");
-    }
-
-    let mut cmd_include = Vec::new();
-    let mut cmd_exclude = Vec::new();
-
-    // Provide one time include crate list for other flag
-    if app.is_present("include") {
-        let value = app.value_of("include").unwrap().to_string();
-        cmd_include.push(value);
-    }
-
-    // Provide one time exclude crate list for other flag
-    if app.is_present("exclude") {
-        let value = app.value_of("include").unwrap().to_string();
-        cmd_exclude.push(value);
     }
 
     // Orphan clean a crates which is not present in directory stored in directory
@@ -153,9 +160,24 @@ fn main() {
         println!("Removed {:?}", value);
     }
 
+    let mut cmd_include = Vec::new();
+    let mut cmd_exclude = Vec::new();
+
+    // Provide one time include crate list for other flag
+    if app.is_present("include") {
+        let value = app.value_of("include").unwrap().to_string();
+        cmd_include.push(value);
+    }
+
+    // Provide one time exclude crate list for other flag
+    if app.is_present("exclude") {
+        let value = app.value_of("include").unwrap().to_string();
+        cmd_exclude.push(value);
+    }
+
     // Force remove all crates without reading config file
     if app.is_present("force remove") {
-        fs::remove_dir_all(home_dir).unwrap();
+        fs::remove_dir_all(home_dir.clone()).unwrap();
     }
 
     // Remove all crates by following config file

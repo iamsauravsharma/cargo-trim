@@ -87,6 +87,12 @@ pub(super) fn app() -> ArgMatches<'static> {
                 .takes_value(true),
         )
         .arg(
+            Arg::with_name("query size")
+                .short("q")
+                .long("size")
+                .help("Return size of .cargo/registry"),
+        )
+        .arg(
             Arg::with_name("remove")
                 .short("r")
                 .long("remove")
