@@ -95,10 +95,23 @@ fn main() {
 
     // Perform action for -q flag
     if app.is_present("query size") {
-        let metadata = fs_extra::dir::get_size(home_dir.clone()).unwrap() as f64;
+        let metadata_home = fs_extra::dir::get_size(home_dir.clone()).unwrap() as f64;
+        let metadata_cache = fs_extra::dir::get_size(cache_dir.clone()).unwrap() as f64;
+        let metadata_src = fs_extra::dir::get_size(src_dir.clone()).unwrap() as f64;
         println!(
-            "Size taken by .cargo/registry: {:.4} MB",
-            metadata / (1024f64.powf(2.0))
+            "{:50} {:.3} MB",
+            format!("Size of {} .cargo/registry crates:", installed_crate.len()),
+            metadata_home / (1024f64.powf(2.0))
+        );
+        println!(
+            "{:50} {:.3} MB",
+            "Size of .cargo/registry/cache folder",
+            metadata_cache / (1024f64.powf(2.0))
+        );
+        println!(
+            "{:50} {:.3} MB",
+            "Size of .cargo/registry/src folder",
+            metadata_src / (1024f64.powf(2.0))
         );
     }
 
