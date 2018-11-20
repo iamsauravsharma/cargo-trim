@@ -1,3 +1,4 @@
+#![feature(vec_remove_item)]
 use std::{
     fs,
     io::prelude::*,
@@ -71,6 +72,9 @@ fn main() {
     cache_dir.push("cache");
     let mut src_dir = home_dir.clone();
     src_dir.push("src");
+    let mut index_dir = home_dir.clone();
+    index_dir.push("index");
+
     let git_dir = GitDir::new(&cache_dir, &src_dir);
 
     // List out installed crate list
@@ -86,7 +90,7 @@ fn main() {
         println!("Cleared Config file");
     }
 
-    // Perform action on -l flag
+    // Perform action on list subcommand
     if app.is_present("list") {
         for list in &installed_crate {
             println!("{}", list);
@@ -97,6 +101,7 @@ fn main() {
     if app.is_present("query size") {
         let metadata_home = fs_extra::dir::get_size(home_dir.clone()).unwrap() as f64;
         let metadata_cache = fs_extra::dir::get_size(cache_dir.clone()).unwrap() as f64;
+        let metadata_index = fs_extra::dir::get_size(index_dir.clone()).unwrap() as f64;
         let metadata_src = fs_extra::dir::get_size(src_dir.clone()).unwrap() as f64;
         println!(
             "{:50} {:.3} MB",
@@ -105,12 +110,18 @@ fn main() {
         );
         println!(
             "{:50} {:.3} MB",
-            "Size of .cargo/registry/cache folder",
+            "   |-- Size of .cargo/registry/cache folder",
             metadata_cache / (1024f64.powf(2.0))
+        );
+
+        println!(
+            "{:50} {:.3} MB",
+            "   |-- Size of .cargo/registry/index folder",
+            metadata_index / (1024f64.powf(2.0))
         );
         println!(
             "{:50} {:.3} MB",
-            "Size of .cargo/registry/src folder",
+            "   |-- Size of .cargo/registry/src folder",
             metadata_src / (1024f64.powf(2.0))
         );
     }
@@ -154,8 +165,8 @@ fn main() {
     }
 
     // Remove certain crate provided with -r flag
-    if app.is_present("remove") {
-        let value = app.value_of("remove").unwrap();
+    if app.is_present("remove-crate") {
+        let value = app.value_of("remove-crate").unwrap();
         git_dir.remove_crate(value);
         println!("Removed {:?}", value);
     }
@@ -189,6 +200,17 @@ fn main() {
             if !cmd_exclude.contains(crate_name) && !read_exclude.contains(crate_name) {
                 git_dir.remove_crate(crate_name);
             }
+        }
+    }
+
+    if app.is_present("wipe") {
+        let value = app.value_of("wipe").unwrap();
+        match value {
+            "registry" => fs::remove_dir_all(home_dir.clone()).unwrap(),
+            "cache" => fs::remove_dir_all(home_dir.clone()).unwrap(),
+            "index" => fs::remove_dir_all(home_dir.clone()).unwrap(),
+            "src" => fs::remove_dir_all(home_dir.clone()).unwrap(),
+            _ => println!("Please provide one of the given four value registry, cache, index, src"),
         }
     }
 }
@@ -332,11 +354,37 @@ fn modify_config_file(
             }
         }
     }
+
+    if app.is_present("remove") {
+        let subcommand = app.subcommand_matches("remove").unwrap();
+        for &name in &["directory", "exclude", "include"] {
+            if subcommand.is_present(name) {
+                let value = subcommand.value_of(name).unwrap().to_string();
+                if name == "directory" {
+                    remove_item_crate(&mut deserialized.directory, &value);
+                }
+                if name == "exclude" {
+                    remove_item_crate(&mut deserialized.exclude, &value);
+                }
+                if name == "include" {
+                    remove_item_crate(&mut deserialized.include, &value);
+                }
+            }
+        }
+    }
+
     let serialized = serde_json::to_string(&deserialized).unwrap();
     buffer.clear();
     buffer.push_str(&serialized);
     fs::write(config_dir, buffer).unwrap();
     deserialized
+}
+
+fn remove_item_crate(data: &mut Vec<String>, value: &str) {
+    let action = data.remove_item(&value.to_string());
+    if action.is_some() {
+        remove_item_crate(data, value);
+    }
 }
 
 #[cfg(test)]

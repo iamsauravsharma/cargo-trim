@@ -1,4 +1,4 @@
-use clap::{App, Arg, ArgMatches};
+use clap::{App, Arg, ArgMatches, SubCommand};
 
 pub(super) fn app() -> ArgMatches<'static> {
     App::new("Cargo Cleaner")
@@ -60,12 +60,6 @@ pub(super) fn app() -> ArgMatches<'static> {
                 .value_name("Crate"),
         )
         .arg(
-            Arg::with_name("list")
-                .short("l")
-                .long("list")
-                .help("List installed crate"),
-        )
-        .arg(
             Arg::with_name("old clean")
                 .short("o")
                 .long("old-clean")
@@ -73,15 +67,15 @@ pub(super) fn app() -> ArgMatches<'static> {
         )
         .arg(
             Arg::with_name("orphan clean")
-                .short("d")
+                .short("x")
                 .long("orphan-clean")
                 .help("Clean orphan cache crates"),
         )
         .arg(
             Arg::with_name("set directory")
-                .short("s")
+                .short("d")
                 .multiple(true)
-                .long("set-directory")
+                .long("directory")
                 .value_name("Directory")
                 .help("Set directory of Rust project")
                 .takes_value(true),
@@ -93,13 +87,50 @@ pub(super) fn app() -> ArgMatches<'static> {
                 .help("Return size of .cargo/registry"),
         )
         .arg(
-            Arg::with_name("remove")
+            Arg::with_name("remove-crate")
                 .short("r")
                 .long("remove")
                 .help("Remove listed crates")
                 .multiple(true)
                 .takes_value(true)
                 .value_name("Crate"),
+        )
+        .arg(
+            Arg::with_name("wipe")
+                .short("w")
+                .long("wipe")
+                .help("Wipe folder expected value : registry, cache, index, src")
+                .takes_value(true)
+                .value_name("Folder"),
+        )
+        .subcommand(SubCommand::with_name("list").about("List out all of installed crates"))
+        .subcommand(
+            SubCommand::with_name("remove")
+                .about("Remove values from config file")
+                .arg(
+                    Arg::with_name("directory")
+                        .short("d")
+                        .long("directory")
+                        .help("directory name to be removed")
+                        .takes_value(true)
+                        .value_name("Folder"),
+                )
+                .arg(
+                    Arg::with_name("include")
+                        .short("i")
+                        .long("include")
+                        .help("Remove crate from include")
+                        .takes_value(true)
+                        .value_name("Crate"),
+                )
+                .arg(
+                    Arg::with_name("exclude")
+                        .short("e")
+                        .long("exclude")
+                        .help("Remove crate from exclude")
+                        .takes_value(true)
+                        .value_name("Crate"),
+                ),
         )
         .get_matches()
 }

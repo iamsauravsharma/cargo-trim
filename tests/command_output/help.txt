@@ -3,23 +3,28 @@ Saurav Sharma <appdroiddeveloper@gmail.com>
 Clean cache from .cargo/registry
 
 USAGE:
-    cargo-cleaner [FLAGS] [OPTIONS]
+    cargo-cleaner [FLAGS] [OPTIONS] [SUBCOMMAND]
 
 FLAGS:
     -a, --all             Clean up all .cargo/registry follow config file data
     -c, --clear           Clear config data
     -f, --force           Force clear cache without reading conf file
     -h, --help            Prints help information
-    -l, --list            List installed crate
     -o, --old-clean       Clean old cache crates
-    -d, --orphan-clean    Clean orphan cache crates
+    -x, --orphan-clean    Clean orphan cache crates
     -q, --size            Return size of .cargo/registry
     -V, --version         Prints version information
 
 OPTIONS:
-    -e, --exclude <Crate>...              Exclude listed crates
-    -E, --exclude-conf <Crate>...         add listed crates to default conf file exclude list
-    -i, --include <Crate>...              Include listed crates
-    -I, --include-conf <Crate>...         add listed crates to default conf file include list
-    -r, --remove <Crate>...               Remove listed crates
-    -s, --set-directory <Directory>...    Set directory of Rust project
+    -e, --exclude <Crate>...          Exclude listed crates
+    -E, --exclude-conf <Crate>...     add listed crates to default conf file exclude list
+    -i, --include <Crate>...          Include listed crates
+    -I, --include-conf <Crate>...     add listed crates to default conf file include list
+    -r, --remove <Crate>...           Remove listed crates
+    -d, --directory <Directory>...    Set directory of Rust project
+    -w, --wipe <Folder>               Wipe folder expected value : registry, cache, index, src
+
+SUBCOMMANDS:
+    help      Prints this message or the help of the given subcommand(s)
+    list      List out all of installed crates
+    remove    Remove values from config file
