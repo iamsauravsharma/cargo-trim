@@ -1,0 +1,14 @@
+cargo-cleaner-remove 
+Remove values from config file
+
+USAGE:
+    cargo-cleaner remove [OPTIONS]
+
+FLAGS:
+    -h, --help       Prints help information
+    -V, --version    Prints version information
+
+OPTIONS:
+    -d, --directory <Folder>    directory name to be removed
+    -e, --exclude <Crate>       Remove crate from exclude
+    -i, --include <Crate>       Remove crate from include

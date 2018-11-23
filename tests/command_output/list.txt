@@ -1,0 +1,9 @@
+cargo-cleaner-list 
+List out all of installed crates
+
+USAGE:
+    cargo-cleaner list
+
+FLAGS:
+    -h, --help       Prints help information
+    -V, --version    Prints version information
