@@ -1,2 +1,11 @@
-/target
+#rust
+target
 **/*.rs.bk
+
+#IDE file
+.vscode
+.idea
+*.iml
+
+#UNIX file
+.directory
