@@ -29,6 +29,7 @@ fn main() {
     let installed_crate = list_crate.installed();
     let old_crate = list_crate.old();
     let used_crate = list_crate.used();
+    let orphan_crate = list_crate.orphan();
 
     let read_include = config_file.include();
     let read_exclude = config_file.exclude();
@@ -41,8 +42,23 @@ fn main() {
 
     // Perform action on list subcommand
     if app.is_present("list") {
-        for list in &installed_crate {
-            println!("{}", list);
+        let list_subcommand = app.subcommand_matches("list").unwrap();
+        if list_subcommand.is_present("old") {
+            for crates in &old_crate {
+                println!("{}", crates);
+            }
+        } else if list_subcommand.is_present("orphan") {
+            for crates in &orphan_crate {
+                println!("{}", crates);
+            }
+        } else if list_subcommand.is_present("used") {
+            for crates in &used_crate {
+                println!("{}", crates);
+            }
+        } else {
+            for crates in &installed_crate {
+                println!("{}", crates);
+            }
         }
     }
 
@@ -87,15 +103,11 @@ fn main() {
     // Orphan clean a crates which is not present in directory stored in directory
     // value of config file
     if app.is_present("orphan clean") {
-        let mut count = 0;
-        for crate_name in &installed_crate {
-            if !used_crate.contains(crate_name) {
-                git_dir.remove_crate(crate_name);
-                count += 1;
-                println!("Removed {:?}", crate_name);
-            }
+        for crate_name in &orphan_crate {
+            git_dir.remove_crate(crate_name);
+            println!("Removed {:?}", crate_name);
         }
-        println!("Successfully removed {:?} crates", count);
+        println!("Successfully removed {:?} crates", orphan_crate.len());
     }
 
     // Remove certain crate provided with -r flag

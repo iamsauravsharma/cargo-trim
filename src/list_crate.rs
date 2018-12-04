@@ -9,6 +9,7 @@ pub(super) struct CrateList {
     installed_crate: Vec<String>,
     old_crate: Vec<String>,
     used_crate: Vec<String>,
+    orphan_crate: Vec<String>,
 }
 
 impl CrateList {
@@ -38,10 +39,17 @@ impl CrateList {
             let mut buffer_crate = read_content(&list);
             used_crate.append(&mut buffer_crate);
         }
+        let mut orphan_crate = Vec::new();
+        for crates in &installed_crate {
+            if !used_crate.contains(crates) {
+                orphan_crate.push(crates.to_string());
+            }
+        }
         Self {
             installed_crate,
             old_crate,
             used_crate,
+            orphan_crate,
         }
     }
 
@@ -55,6 +63,10 @@ impl CrateList {
 
     pub(super) fn used(&self) -> Vec<String> {
         self.used_crate.to_owned()
+    }
+
+    pub(super) fn orphan(&self) -> Vec<String> {
+        self.orphan_crate.to_owned()
     }
 }
 

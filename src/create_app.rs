@@ -123,6 +123,12 @@ pub(super) fn app() -> ArgMatches<'static> {
                         .short("o")
                         .long("old")
                         .help("List out old crates"),
+                )
+                .arg(
+                    Arg::with_name("used")
+                        .short("u")
+                        .long("use")
+                        .help("List out used crates"),
                 ),
         )
         .subcommand(
