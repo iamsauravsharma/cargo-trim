@@ -103,7 +103,28 @@ pub(super) fn app() -> ArgMatches<'static> {
                 .takes_value(true)
                 .value_name("Folder"),
         )
-        .subcommand(SubCommand::with_name("list").about("List out all of installed crates"))
+        .subcommand(
+            SubCommand::with_name("list")
+                .about("List out all of installed crates")
+                .arg(
+                    Arg::with_name("all")
+                        .short("a")
+                        .long("all")
+                        .help("list out all installed crate"),
+                )
+                .arg(
+                    Arg::with_name("orphan")
+                        .short("x")
+                        .long("orphan")
+                        .help("list out orphan crates"),
+                )
+                .arg(
+                    Arg::with_name("old")
+                        .short("o")
+                        .long("old")
+                        .help("List out old crates"),
+                ),
+        )
         .subcommand(
             SubCommand::with_name("remove")
                 .about("Remove values from config file")

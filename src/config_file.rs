@@ -19,15 +19,15 @@ impl ConfigFile {
         }
     }
 
-    pub(super) fn get_directory(&self) -> Vec<String> {
+    pub(super) fn directory(&self) -> Vec<String> {
         self.directory.to_owned()
     }
 
-    pub(super) fn get_include(&self) -> Vec<String> {
+    pub(super) fn include(&self) -> Vec<String> {
         self.include.to_owned()
     }
 
-    pub(super) fn get_exclude(&self) -> Vec<String> {
+    pub(super) fn exclude(&self) -> Vec<String> {
         self.exclude.to_owned()
     }
 }

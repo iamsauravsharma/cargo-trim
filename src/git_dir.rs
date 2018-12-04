@@ -23,7 +23,7 @@ impl GitDir {
         remove_crate(Path::new(&self.git_src_dir), crate_name);
     }
 
-    pub(super) fn get_src(&self) -> &String {
+    pub(super) fn src(&self) -> &String {
         &self.git_src_dir
     }
 }
