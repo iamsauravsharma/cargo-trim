@@ -13,6 +13,10 @@
 
 (WIP) Binary application for cleaning .cache/registry file
 
+### TODO
+- [ ] Optimize code
+- [ ] Properly arrange code in function and module
+
 [build_badge]: https://img.shields.io/travis/com/iamsauravsharma/cargo-trim.svg?logo=travis
 [build_link]: https://travis-ci.com/iamsauravsharma/cargo-trim
 [deps_badge]: https://deps.rs/repo/github/iamsauravsharma/cargo-trim/status.svg

@@ -7,6 +7,8 @@ mod list_crate;
 #[cfg(test)]
 mod test;
 
+use crate::{config_file::ConfigFile, git_dir::GitDir};
+use clap::ArgMatches;
 use fs_extra::dir as dir_extra;
 use std::{
     fs,
@@ -30,10 +32,6 @@ fn main() {
     let old_crate = list_crate.old();
     let used_crate = list_crate.used();
     let orphan_crate = list_crate.orphan();
-
-    let read_include = config_file.include();
-    let read_exclude = config_file.exclude();
-    let read_directory = config_file.directory();
 
     // Perform action of removing config file with -c flag
     if app.is_present("clear config") {
@@ -118,21 +116,6 @@ fn main() {
         println!("Removed {:?}", value);
     }
 
-    let mut cmd_include = Vec::new();
-    let mut cmd_exclude = Vec::new();
-
-    // Provide one time include crate list for other flag
-    if app.is_present("include") {
-        let value = app.value_of("include").unwrap().to_string();
-        cmd_include.push(value);
-    }
-
-    // Provide one time exclude crate list for other flag
-    if app.is_present("exclude") {
-        let value = app.value_of("include").unwrap().to_string();
-        cmd_exclude.push(value);
-    }
-
     // Force remove all crates without reading config file
     if app.is_present("force remove") {
         fs::remove_dir_all(registry_dir.clone()).unwrap();
@@ -141,12 +124,7 @@ fn main() {
     // Remove all crates by following config file
     if app.is_present("all") {
         for crate_name in &installed_crate {
-            if cmd_include.contains(crate_name) || read_include.contains(crate_name) {
-                git_dir.remove_crate(crate_name);
-            }
-            if !cmd_exclude.contains(crate_name) && !read_exclude.contains(crate_name) {
-                git_dir.remove_crate(crate_name);
-            }
+            remove_all(&config_file, &app, crate_name, &git_dir);
         }
     }
 
@@ -163,21 +141,55 @@ fn main() {
 
     if app.is_present("query") {
         let matches = app.subcommand_matches("query").unwrap();
-        if matches.is_present("directory") {
-            for name in &read_directory {
-                println!("{}", name);
-            }
+        query_subcommand(&config_file, matches)
+    }
+}
+
+fn query_subcommand(config_file: &ConfigFile, matches: &ArgMatches) {
+    let read_include = config_file.include();
+    let read_exclude = config_file.exclude();
+    let read_directory = config_file.directory();
+    if matches.is_present("directory") {
+        for name in &read_directory {
+            println!("{}", name);
         }
-        if matches.is_present("include") {
-            for name in &read_include {
-                println!("{}", name);
-            }
+    }
+    if matches.is_present("include") {
+        for name in &read_include {
+            println!("{}", name);
         }
-        if matches.is_present("exclude") {
-            for name in &read_exclude {
-                println!("{}", name);
-            }
+    }
+    if matches.is_present("exclude") {
+        for name in &read_exclude {
+            println!("{}", name);
         }
+    }
+}
+
+fn remove_all(config_file: &ConfigFile, app: &ArgMatches, crate_name: &str, git_dir: &GitDir) {
+    let mut cmd_include = Vec::new();
+    let mut cmd_exclude = Vec::new();
+    let crate_name = &crate_name.to_string();
+
+    // Provide one time include crate list for other flag
+    if app.is_present("include") {
+        let value = app.value_of("include").unwrap().to_string();
+        cmd_include.push(value);
+    }
+
+    // Provide one time exclude crate list for other flag
+    if app.is_present("exclude") {
+        let value = app.value_of("include").unwrap().to_string();
+        cmd_exclude.push(value);
+    }
+
+    let read_include = config_file.include();
+    let read_exclude = config_file.exclude();
+    if cmd_include.contains(crate_name) || read_include.contains(crate_name) {
+        git_dir.remove_crate(crate_name);
+    }
+    if !cmd_exclude.contains(crate_name) && !read_exclude.contains(crate_name) {
+        git_dir.remove_crate(crate_name);
     }
 }
 
