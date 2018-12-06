@@ -94,7 +94,6 @@ fn main() {
     if app.is_present("old clean") {
         for crate_name in &old_crate {
             git_dir.remove_crate(crate_name);
-            println!("Removed {:?}", crate_name);
         }
         println!("Successfully removed {:?} crates", old_crate.len());
     }
@@ -104,7 +103,6 @@ fn main() {
     if app.is_present("orphan clean") {
         for crate_name in &orphan_crate {
             git_dir.remove_crate(crate_name);
-            println!("Removed {:?}", crate_name);
         }
         println!("Successfully removed {:?} crates", orphan_crate.len());
     }
@@ -112,8 +110,7 @@ fn main() {
     // Remove certain crate provided with -r flag
     if app.is_present("remove-crate") {
         let value = app.value_of("remove-crate").unwrap();
-        git_dir.remove_crate(value);
-        println!("Removed {:?}", value);
+        git_dir.remove_crate(value)
     }
 
     // Force remove all crates without reading config file
@@ -132,9 +129,9 @@ fn main() {
         let value = app.value_of("wipe").unwrap();
         match value {
             "registry" => fs::remove_dir_all(registry_dir.clone()).unwrap(),
-            "cache" => fs::remove_dir_all(registry_dir.clone()).unwrap(),
-            "index" => fs::remove_dir_all(registry_dir.clone()).unwrap(),
-            "src" => fs::remove_dir_all(registry_dir.clone()).unwrap(),
+            "cache" => fs::remove_dir_all(cache_dir.clone()).unwrap(),
+            "index" => fs::remove_dir_all(index_dir.clone()).unwrap(),
+            "src" => fs::remove_dir_all(src_dir.clone()).unwrap(),
             _ => println!("Please provide one of the given four value registry, cache, index, src"),
         }
     }

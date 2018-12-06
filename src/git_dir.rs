@@ -21,6 +21,7 @@ impl GitDir {
     pub(super) fn remove_crate(&self, crate_name: &str) {
         remove_crate(Path::new(&self.git_cache_dir), crate_name);
         remove_crate(Path::new(&self.git_src_dir), crate_name);
+        println!("Removed {:?}", crate_name);
     }
 
     pub(super) fn src(&self) -> &String {
