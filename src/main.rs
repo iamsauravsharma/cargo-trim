@@ -33,6 +33,7 @@ fn main() {
 
     let read_include = config_file.include();
     let read_exclude = config_file.exclude();
+    let read_directory = config_file.directory();
 
     // Perform action of removing config file with -c flag
     if app.is_present("clear config") {
@@ -157,6 +158,25 @@ fn main() {
             "index" => fs::remove_dir_all(registry_dir.clone()).unwrap(),
             "src" => fs::remove_dir_all(registry_dir.clone()).unwrap(),
             _ => println!("Please provide one of the given four value registry, cache, index, src"),
+        }
+    }
+
+    if app.is_present("query") {
+        let matches = app.subcommand_matches("query").unwrap();
+        if matches.is_present("directory") {
+            for name in &read_directory {
+                println!("{}", name);
+            }
+        }
+        if matches.is_present("include") {
+            for name in &read_include {
+                println!("{}", name);
+            }
+        }
+        if matches.is_present("exclude") {
+            for name in &read_exclude {
+                println!("{}", name);
+            }
         }
     }
 }

@@ -104,6 +104,28 @@ pub(super) fn app() -> ArgMatches<'static> {
                 .value_name("Folder"),
         )
         .subcommand(
+            SubCommand::with_name("query")
+                .about("Query config file data")
+                .arg(
+                    Arg::with_name("directory")
+                        .short("d")
+                        .long("directory")
+                        .help("Query about directory data"),
+                )
+                .arg(
+                    Arg::with_name("include")
+                        .short("i")
+                        .long("include")
+                        .help("Query about include data"),
+                )
+                .arg(
+                    Arg::with_name("exclude")
+                        .short("e")
+                        .long("exclude")
+                        .help("Query about exclude data"),
+                ),
+        )
+        .subcommand(
             SubCommand::with_name("list")
                 .about("List out all of installed crates")
                 .arg(
