@@ -1,8 +1,8 @@
-cargo-cleaner-remove 
+cargo-trim-remove 
 Remove values from config file
 
 USAGE:
-    cargo-cleaner remove [OPTIONS]
+    cargo-trim remove [OPTIONS]
 
 FLAGS:
     -h, --help       Prints help information

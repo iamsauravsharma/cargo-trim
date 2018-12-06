@@ -1,0 +1,12 @@
+cargo-trim-query 
+Query config file data
+
+USAGE:
+    cargo-trim query [FLAGS]
+
+FLAGS:
+    -d, --directory    Query about directory data
+    -e, --exclude      Query about exclude data
+    -h, --help         Prints help information
+    -i, --include      Query about include data
+    -V, --version      Prints version information

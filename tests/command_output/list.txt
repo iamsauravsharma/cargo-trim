@@ -1,9 +1,13 @@
-cargo-cleaner-list 
+cargo-trim-list 
 List out all of installed crates
 
 USAGE:
-    cargo-cleaner list
+    cargo-trim list [FLAGS]
 
 FLAGS:
+    -a, --all        list out all installed crate
     -h, --help       Prints help information
+    -o, --old        List out old crates
+    -x, --orphan     list out orphan crates
+    -u, --use        List out used crates
     -V, --version    Prints version information
