@@ -1,5 +1,5 @@
 [package]
-name = "cargo-cleaner"
+name = "cargo-trim"
 version = "0.1.0"
 authors = ["Saurav Sharma <appdroiddeveloper@gmail.com>"]
 edition = "2018"
