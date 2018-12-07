@@ -1,7 +1,11 @@
 language: rust
 
 rust:
+  - stable
+  - beta
   - nightly
+  # minimum version support
+  - 1.31.0
 
 git:
   depth: false
@@ -14,8 +18,8 @@ os:
   - windows
 
 install:
-  - rustup component add rustfmt-preview
-  - rustup component add clippy-preview
+  - rustup component add rustfmt
+  - rustup component add clippy
 
 before_script:
   - rustfmt -V
