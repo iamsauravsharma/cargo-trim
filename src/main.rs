@@ -1,11 +1,11 @@
 mod config_file;
 mod create_app;
-mod git_dir;
 mod list_crate;
+mod registry_dir;
 #[cfg(test)]
 mod test;
 
-use crate::{config_file::ConfigFile, git_dir::GitDir};
+use crate::{config_file::ConfigFile, registry_dir::RegistryDir};
 use clap::ArgMatches;
 use fs_extra::dir as dir_extra;
 use std::{
@@ -22,10 +22,11 @@ fn main() {
     // Perform all modification of config file flag and subcommand operation
     let config_file = config_file::modify_config_file(&mut file, &app, &config_dir);
 
-    let git_dir = git_dir::GitDir::new(&cache_dir, &src_dir);
+    let crates_location = registry_dir::RegistryDir::new(&cache_dir, &src_dir);
 
     // List out crate list
-    let list_crate = list_crate::CrateList::create_list(Path::new(git_dir.src()), &config_file);
+    let list_crate =
+        list_crate::CrateList::create_list(Path::new(crates_location.src()), &config_file);
     let installed_crate = list_crate.installed();
     let old_crate = list_crate.old();
     let used_crate = list_crate.used();
@@ -91,7 +92,7 @@ fn main() {
     // Perform action on -o flag
     if app.is_present("old clean") {
         for crate_name in &old_crate {
-            git_dir.remove_crate(crate_name);
+            crates_location.remove_crate(crate_name);
         }
         println!("Successfully removed {:?} crates", old_crate.len());
     }
@@ -100,7 +101,7 @@ fn main() {
     // value of config file
     if app.is_present("orphan clean") {
         for crate_name in &orphan_crate {
-            git_dir.remove_crate(crate_name);
+            crates_location.remove_crate(crate_name);
         }
         println!("Successfully removed {:?} crates", orphan_crate.len());
     }
@@ -108,7 +109,7 @@ fn main() {
     // Remove certain crate provided with -r flag
     if app.is_present("remove-crate") {
         let value = app.value_of("remove-crate").unwrap();
-        git_dir.remove_crate(value)
+        crates_location.remove_crate(value)
     }
 
     // Force remove all crates without reading config file
@@ -119,7 +120,7 @@ fn main() {
     // Remove all crates by following config file
     if app.is_present("all") {
         for crate_name in &installed_crate {
-            remove_all(&config_file, &app, crate_name, &git_dir);
+            remove_all(&config_file, &app, crate_name, &crates_location);
         }
     }
 
@@ -165,7 +166,12 @@ fn query_subcommand(config_file: &ConfigFile, matches: &ArgMatches) {
 }
 
 // Remove all crates from rigistry folder
-fn remove_all(config_file: &ConfigFile, app: &ArgMatches, crate_name: &str, git_dir: &GitDir) {
+fn remove_all(
+    config_file: &ConfigFile,
+    app: &ArgMatches,
+    crate_name: &str,
+    crates_location: &RegistryDir,
+) {
     let mut cmd_include = Vec::new();
     let mut cmd_exclude = Vec::new();
     let crate_name = &crate_name.to_string();
@@ -185,10 +191,10 @@ fn remove_all(config_file: &ConfigFile, app: &ArgMatches, crate_name: &str, git_
     let read_include = config_file.include();
     let read_exclude = config_file.exclude();
     if cmd_include.contains(crate_name) || read_include.contains(crate_name) {
-        git_dir.remove_crate(crate_name);
+        crates_location.remove_crate(crate_name);
     }
     if !cmd_exclude.contains(crate_name) && !read_exclude.contains(crate_name) {
-        git_dir.remove_crate(crate_name);
+        crates_location.remove_crate(crate_name);
     }
 }
 

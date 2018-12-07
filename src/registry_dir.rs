@@ -1,32 +1,29 @@
 use std::{fs, path::Path};
 
 // Stores .cargo/registry cache & src information
-pub struct GitDir {
-    git_cache_dir: String,
-    git_src_dir: String,
+pub struct RegistryDir {
+    cache_dir: String,
+    src_dir: String,
 }
 
-impl GitDir {
-    // Create new GitDir
-    pub(super) fn new(cache_dir: &Path, src_dir: &Path) -> GitDir {
-        let git_cache_dir = open_github_folder(&cache_dir).unwrap();
-        let git_src_dir = open_github_folder(&src_dir).unwrap();
-        GitDir {
-            git_cache_dir,
-            git_src_dir,
-        }
+impl RegistryDir {
+    // Create new RegistryDir
+    pub(super) fn new(cache_dir: &Path, src_dir: &Path) -> Self {
+        let cache_dir = open_github_folder(&cache_dir).unwrap();
+        let src_dir = open_github_folder(&src_dir).unwrap();
+        Self { cache_dir, src_dir }
     }
 
     // Remove crate from src & cache directory
     pub(super) fn remove_crate(&self, crate_name: &str) {
-        remove_crate(Path::new(&self.git_cache_dir), crate_name);
-        remove_crate(Path::new(&self.git_src_dir), crate_name);
+        remove_crate(Path::new(&self.cache_dir), crate_name);
+        remove_crate(Path::new(&self.src_dir), crate_name);
         println!("Removed {:?}", crate_name);
     }
 
     // Get out src_dir path
     pub(super) fn src(&self) -> &String {
-        &self.git_src_dir
+        &self.src_dir
     }
 }
 
