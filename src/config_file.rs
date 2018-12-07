@@ -88,8 +88,5 @@ pub(super) fn modify_config_file(
 }
 
 fn remove_item_crate(data: &mut Vec<String>, value: &str) {
-    let action = data.remove_item(&value.to_string());
-    if action.is_some() {
-        remove_item_crate(data, value);
-    }
+    data.retain(|data| data != value);
 }

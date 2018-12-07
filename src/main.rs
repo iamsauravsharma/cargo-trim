@@ -1,5 +1,3 @@
-#![feature(vec_remove_item)]
-
 mod config_file;
 mod create_app;
 mod git_dir;
