@@ -24,6 +24,7 @@ impl GitDir {
         println!("Removed {:?}", crate_name);
     }
 
+    // Get out src_dir path
     pub(super) fn src(&self) -> &String {
         &self.git_src_dir
     }

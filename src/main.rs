@@ -16,7 +16,7 @@ use std::{
 };
 
 fn main() {
-    let (config_dir, registry_dir, cache_dir, index_dir, src_dir) = create_dir();
+    let (config_dir, registry_dir, cache_dir, index_dir, src_dir) = get_dir_path();
 
     let mut file = fs::File::open(config_dir.to_str().unwrap()).unwrap();
     let app = create_app::app();
@@ -125,6 +125,7 @@ fn main() {
         }
     }
 
+    // Wipe certain folder all together
     if app.is_present("wipe") {
         let value = app.value_of("wipe").unwrap();
         match value {
@@ -136,12 +137,14 @@ fn main() {
         }
     }
 
+    // Query about config file information
     if app.is_present("query") {
         let matches = app.subcommand_matches("query").unwrap();
         query_subcommand(&config_file, matches)
     }
 }
 
+// Perform all query subcommand call operation
 fn query_subcommand(config_file: &ConfigFile, matches: &ArgMatches) {
     let read_include = config_file.include();
     let read_exclude = config_file.exclude();
@@ -163,6 +166,7 @@ fn query_subcommand(config_file: &ConfigFile, matches: &ArgMatches) {
     }
 }
 
+// Remove all crates from rigistry folder
 fn remove_all(config_file: &ConfigFile, app: &ArgMatches, crate_name: &str, git_dir: &GitDir) {
     let mut cmd_include = Vec::new();
     let mut cmd_exclude = Vec::new();
@@ -190,7 +194,8 @@ fn remove_all(config_file: &ConfigFile, app: &ArgMatches, crate_name: &str, git_
     }
 }
 
-fn create_dir() -> (PathBuf, PathBuf, PathBuf, PathBuf, PathBuf) {
+// get/create dir full path for different dir
+fn get_dir_path() -> (PathBuf, PathBuf, PathBuf, PathBuf, PathBuf) {
     let mut config_dir = dirs::config_dir().unwrap();
     let mut home_dir = dirs::home_dir().unwrap();
     home_dir.push(".cargo");

@@ -1,5 +1,6 @@
 use clap::{App, Arg, ArgMatches, SubCommand};
 
+// Create all list of subcommand options flag using clap
 pub(super) fn app() -> ArgMatches<'static> {
     App::new("cargo trim")
         .version("0.1.0")

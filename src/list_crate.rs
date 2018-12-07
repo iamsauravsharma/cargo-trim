@@ -13,6 +13,7 @@ pub(super) struct CrateList {
 }
 
 impl CrateList {
+    // create list of all types of crate present in directory
     pub(super) fn create_list(src_dir: &Path, config_file: &ConfigFile) -> Self {
         let mut installed_crate = Vec::new();
         for entry in fs::read_dir(src_dir).unwrap() {

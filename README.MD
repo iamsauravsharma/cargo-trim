@@ -16,6 +16,7 @@
 ### TODO
 - [ ] Optimize code
 - [ ] Properly arrange code in function and module
+- [ ] Publish crate to [crates.io][cratesio_link]
 
 [build_badge]: https://img.shields.io/travis/com/iamsauravsharma/cargo-trim.svg?logo=travis
 [build_link]: https://travis-ci.com/iamsauravsharma/cargo-trim
@@ -29,3 +30,4 @@
 [rust_link]: https://rustup.rs
 [loc_badge]: https://tokei.rs/b1/github/iamsauravsharma/cargo-trim
 [loc_link]: https://github.com/iamsauravsharma/cargo-trim
+[cratesio_link]: https://crates.io
