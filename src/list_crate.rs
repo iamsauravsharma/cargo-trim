@@ -121,8 +121,11 @@ fn read_content(list: &[PathBuf]) -> Vec<String> {
                 split.next();
                 let name = split.next().unwrap();
                 let version = split.next().unwrap();
-                let full_name = format!("{}-{}", name, version);
-                present_crate.push(full_name);
+                let source = split.next().unwrap();
+                if !source.contains("(git+") {
+                    let full_name = format!("{}-{}", name, version);
+                    present_crate.push(full_name);
+                }
             }
         }
     }
