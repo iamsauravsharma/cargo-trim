@@ -83,7 +83,7 @@ pub(super) fn app() -> ArgMatches<'static> {
         )
         .arg(
             Arg::with_name("query size")
-                .short("q")
+                .short("s")
                 .long("size")
                 .help("Return size of .cargo/registry"),
         )
