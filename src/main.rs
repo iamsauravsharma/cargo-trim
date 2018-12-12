@@ -18,6 +18,7 @@ fn main() {
 
     let mut file = fs::File::open(config_dir.to_str().unwrap()).unwrap();
     let app = create_app::app();
+    let app = app.subcommand_matches("trim").unwrap();
 
     // Perform all modification of config file flag and subcommand operation
     let config_file = config_file::modify_config_file(&mut file, &app, &config_dir);

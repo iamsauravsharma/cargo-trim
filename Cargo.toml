@@ -6,10 +6,6 @@ edition = "2018"
 description="Binary application to cleanup .cargo/registry cache"
 license="MIT"
 
-[[bin]]
-name= "cargo-trim"
-path="src/main.rs"
-
 [dependencies]
 clap="2.32.0"
 dirs="1.0.4"
