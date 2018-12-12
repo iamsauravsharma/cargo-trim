@@ -21,7 +21,7 @@ fn main() {
     let app = app.subcommand_matches("trim").unwrap();
 
     // Perform all modification of config file flag and subcommand operation
-    let config_file = config_file::modify_config_file(&mut file, &app, &config_dir);
+    let config_file = config_file::modify_config_file(&mut file, app, &config_dir);
 
     let crates_location = registry_dir::RegistryDir::new(&cache_dir, &src_dir);
 
@@ -121,7 +121,7 @@ fn main() {
     // Remove all crates by following config file
     if app.is_present("all") {
         for crate_name in &installed_crate {
-            remove_all(&config_file, &app, crate_name, &crates_location);
+            remove_all(&config_file, app, crate_name, &crates_location);
         }
     }
 

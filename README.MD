@@ -20,9 +20,10 @@
 [![OSX support][osx_supported_badge]][git_link]
 [![Windows support][windows_supported_badge]][git_link]
 
-(WIP) Binary application for cleaning .cache/registry file
+(WIP) Binary application for cleaning $HOME/.cargo/registry file
 
 ### TODO
+- [ ] Proper handling of error
 - [ ] Support git import crates
 - [ ] Optimize code
 - [ ] Properly arrange code in function and module

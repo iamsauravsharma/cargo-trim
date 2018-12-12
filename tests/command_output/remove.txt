@@ -2,7 +2,7 @@ cargo-trim-remove
 Remove values from config file
 
 USAGE:
-    cargo-trim remove [OPTIONS]
+    cargo trim remove [OPTIONS]
 
 FLAGS:
     -h, --help       Prints help information

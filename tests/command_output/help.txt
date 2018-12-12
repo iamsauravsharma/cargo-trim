@@ -1,9 +1,9 @@
-cargo trim 0.1.0
+cargo-trim v 0.1.0
 Saurav Sharma <appdroiddeveloper@gmail.com>
 Clean cache from .cargo/registry
 
 USAGE:
-    cargo-trim [FLAGS] [OPTIONS] [SUBCOMMAND]
+    cargo trim [FLAGS] [OPTIONS] [SUBCOMMAND]
 
 FLAGS:
     -a, --all             Clean up all .cargo/registry follow config file data

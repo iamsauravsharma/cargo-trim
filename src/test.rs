@@ -4,7 +4,7 @@ fn test_help() {
     if !cfg!(target_os = "windows") {
         let output = Command::new("sh")
             .arg("-c")
-            .arg("cargo run -- -h")
+            .arg("cargo run -- trim -h")
             .output()
             .expect("failed to execute process");
         let output = String::from_utf8(output.stdout).unwrap();
@@ -20,7 +20,7 @@ fn test_list_help() {
     if !cfg!(target_os = "windows") {
         let output = Command::new("sh")
             .arg("-c")
-            .arg("cargo run -- help list")
+            .arg("cargo run -- trim help list")
             .output()
             .expect("failed to execute process");
         let output = String::from_utf8(output.stdout).unwrap();
@@ -36,7 +36,7 @@ fn test_remove_help() {
     if !cfg!(target_os = "windows") {
         let output = Command::new("sh")
             .arg("-c")
-            .arg("cargo run -- help remove")
+            .arg("cargo run -- trim help remove")
             .output()
             .expect("failed to execute process");
         let output = String::from_utf8(output.stdout).unwrap();
@@ -52,7 +52,7 @@ fn test_query_help() {
     if !cfg!(target_os = "windows") {
         let output = Command::new("sh")
             .arg("-c")
-            .arg("cargo run -- help query")
+            .arg("cargo run -- trim help query")
             .output()
             .expect("failed to execute process");
         let output = String::from_utf8(output.stdout).unwrap();

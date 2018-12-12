@@ -11,8 +11,8 @@ pub struct ConfigFile {
 
 impl ConfigFile {
     // Create new config file
-    pub(super) fn new() -> ConfigFile {
-        ConfigFile {
+    pub(super) fn new() -> Self {
+        Self {
             directory: Vec::new(),
             include: Vec::new(),
             exclude: Vec::new(),

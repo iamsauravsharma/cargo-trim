@@ -2,7 +2,7 @@ cargo-trim-list
 List out all of installed crates
 
 USAGE:
-    cargo-trim list [FLAGS]
+    cargo trim list [FLAGS]
 
 FLAGS:
     -a, --all        list out all installed crate

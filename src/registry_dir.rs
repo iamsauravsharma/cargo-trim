@@ -9,8 +9,8 @@ pub struct RegistryDir {
 impl RegistryDir {
     // Create new RegistryDir
     pub(super) fn new(cache_dir: &Path, src_dir: &Path) -> Self {
-        let cache_dir = open_github_folder(&cache_dir).unwrap();
-        let src_dir = open_github_folder(&src_dir).unwrap();
+        let cache_dir = open_github_folder(cache_dir).unwrap();
+        let src_dir = open_github_folder(src_dir).unwrap();
         Self { cache_dir, src_dir }
     }
 
