@@ -24,8 +24,6 @@
 ### TODO
 - [ ] Proper handling of error
 - [ ] Support git import crates
-- [ ] Optimize code
-- [ ] Properly arrange code in function and module
 - [ ] Publish crate to [crates.io][cratesio_link]
 
 ### Install
