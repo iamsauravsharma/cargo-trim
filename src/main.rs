@@ -8,16 +8,16 @@ mod test;
 
 use crate::{config_file::ConfigFile, dir_path::DirPath, registry_dir::RegistryDir};
 use clap::ArgMatches;
-use fs_extra::dir as dir_extra;
+use fs_extra::{dir::get_size, error::Error};
 use std::{fs, path::Path};
 
 fn main() {
     let dir_path = DirPath::set_dir_path();
 
     let config_dir = dir_path.config_dir();
-    let _git_dir = dir_path.git_dir();
-    let _checkout_dir = dir_path.checkout_dir();
-    let _db_dir = dir_path.db_dir();
+    let git_dir = dir_path.git_dir();
+    let checkout_dir = dir_path.checkout_dir();
+    let db_dir = dir_path.db_dir();
     let registry_dir = dir_path.registry_dir();
     let cache_dir = dir_path.cache_dir();
     let index_dir = dir_path.index_dir();
@@ -70,13 +70,31 @@ fn main() {
 
     // Perform action for -q flag
     if app.is_present("query size") {
-        let metadata_registry = dir_extra::get_size(registry_dir.clone()).unwrap() as f64;
-        let metadata_cache = dir_extra::get_size(cache_dir.clone()).unwrap() as f64;
-        let metadata_index = dir_extra::get_size(index_dir.clone()).unwrap() as f64;
-        let metadata_src = dir_extra::get_size(src_dir.clone()).unwrap() as f64;
+        let metadata_git = match_size(get_size(git_dir.clone()));
+        let metadata_checkout = match_size(get_size(checkout_dir.clone()));
+        let metadata_db = match_size(get_size(db_dir.clone()));
+        let metadata_registry = match_size(get_size(registry_dir.clone()));
+        let metadata_cache = match_size(get_size(cache_dir.clone()));
+        let metadata_index = match_size(get_size(index_dir.clone()));
+        let metadata_src = match_size(get_size(src_dir.clone()));
         println!(
             "{:50} {:.3} MB",
-            format!("Size of {} .cargo/registry crates:", installed_crate.len()),
+            "Total Size of .cargo/git crates:",
+            metadata_git / (1024f64.powf(2.0))
+        );
+        println!(
+            "{:50} {:.3} MB",
+            "   |-- Size of .cargo/git/checkout folder",
+            metadata_checkout / (1024f64.powf(2.0))
+        );
+        println!(
+            "{:50} {:.3} MB",
+            "   |--    Size of .cargo/git/db folder",
+            metadata_db / (1024f64.powf(2.0))
+        );
+        println!(
+            "{:50} {:.3} MB",
+            "Total Size of .cargo/registry crates:",
             metadata_registry / (1024f64.powf(2.0))
         );
         println!(
@@ -84,7 +102,6 @@ fn main() {
             "   |-- Size of .cargo/registry/cache folder",
             metadata_cache / (1024f64.powf(2.0))
         );
-
         println!(
             "{:50} {:.3} MB",
             "   |-- Size of .cargo/registry/index folder",
@@ -148,6 +165,13 @@ fn main() {
     if app.is_present("query") {
         let matches = app.subcommand_matches("query").unwrap();
         query_subcommand(&config_file, matches)
+    }
+}
+
+fn match_size(size: Result<u64, Error>) -> f64 {
+    match size {
+        Ok(size) => size as f64,
+        Err(_) => 0.0,
     }
 }
 
