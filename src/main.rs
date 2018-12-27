@@ -1,20 +1,27 @@
 mod config_file;
 mod create_app;
+mod dir_path;
 mod list_crate;
 mod registry_dir;
 #[cfg(test)]
 mod test;
 
-use crate::{config_file::ConfigFile, registry_dir::RegistryDir};
+use crate::{config_file::ConfigFile, dir_path::DirPath, registry_dir::RegistryDir};
 use clap::ArgMatches;
 use fs_extra::dir as dir_extra;
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
+use std::{fs, path::Path};
 
 fn main() {
-    let (config_dir, registry_dir, cache_dir, index_dir, src_dir) = get_dir_path();
+    let dir_path = DirPath::set_dir_path();
+
+    let config_dir = dir_path.config_dir();
+    let _git_dir = dir_path.git_dir();
+    let _checkout_dir = dir_path.checkout_dir();
+    let _db_dir = dir_path.db_dir();
+    let registry_dir = dir_path.registry_dir();
+    let cache_dir = dir_path.cache_dir();
+    let index_dir = dir_path.index_dir();
+    let src_dir = dir_path.src_dir();
 
     let mut file = fs::File::open(config_dir.to_str().unwrap()).unwrap();
     let app = create_app::app();
@@ -197,28 +204,4 @@ fn remove_all(
     if !cmd_exclude.contains(crate_name) && !read_exclude.contains(crate_name) {
         crates_location.remove_crate(crate_name);
     }
-}
-
-// get/create dir full path for different dir
-fn get_dir_path() -> (PathBuf, PathBuf, PathBuf, PathBuf, PathBuf) {
-    let mut config_dir = dirs::config_dir().unwrap();
-    let mut home_dir = dirs::home_dir().unwrap();
-    home_dir.push(".cargo");
-    home_dir.push("registry");
-    let registry_dir = home_dir;
-    config_dir.push("cargo_cache_config.json");
-
-    // If config file does not exists create one config file
-    if !config_dir.exists() {
-        fs::File::create(config_dir.to_str().unwrap()).unwrap();
-    }
-
-    let mut cache_dir = registry_dir.clone();
-    cache_dir.push("cache");
-    let mut src_dir = registry_dir.clone();
-    src_dir.push("src");
-    let mut index_dir = registry_dir.clone();
-    index_dir.push("index");
-
-    (config_dir, registry_dir, cache_dir, index_dir, src_dir)
 }
