@@ -1,20 +1,27 @@
 mod config_file;
 mod create_app;
+mod dir_path;
 mod list_crate;
 mod registry_dir;
 #[cfg(test)]
 mod test;
 
-use crate::{config_file::ConfigFile, registry_dir::RegistryDir};
+use crate::{config_file::ConfigFile, dir_path::DirPath, registry_dir::RegistryDir};
 use clap::ArgMatches;
-use fs_extra::dir as dir_extra;
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
+use fs_extra::{dir::get_size, error::Error};
+use std::{fs, path::Path};
 
 fn main() {
-    let (config_dir, registry_dir, cache_dir, index_dir, src_dir) = get_dir_path();
+    let dir_path = DirPath::set_dir_path();
+
+    let config_dir = dir_path.config_dir();
+    let git_dir = dir_path.git_dir();
+    let checkout_dir = dir_path.checkout_dir();
+    let db_dir = dir_path.db_dir();
+    let registry_dir = dir_path.registry_dir();
+    let cache_dir = dir_path.cache_dir();
+    let index_dir = dir_path.index_dir();
+    let src_dir = dir_path.src_dir();
 
     let mut file = fs::File::open(config_dir.to_str().unwrap()).unwrap();
     let app = create_app::app();
@@ -63,13 +70,31 @@ fn main() {
 
     // Perform action for -q flag
     if app.is_present("query size") {
-        let metadata_registry = dir_extra::get_size(registry_dir.clone()).unwrap() as f64;
-        let metadata_cache = dir_extra::get_size(cache_dir.clone()).unwrap() as f64;
-        let metadata_index = dir_extra::get_size(index_dir.clone()).unwrap() as f64;
-        let metadata_src = dir_extra::get_size(src_dir.clone()).unwrap() as f64;
+        let metadata_git = match_size(get_size(git_dir.clone()));
+        let metadata_checkout = match_size(get_size(checkout_dir.clone()));
+        let metadata_db = match_size(get_size(db_dir.clone()));
+        let metadata_registry = match_size(get_size(registry_dir.clone()));
+        let metadata_cache = match_size(get_size(cache_dir.clone()));
+        let metadata_index = match_size(get_size(index_dir.clone()));
+        let metadata_src = match_size(get_size(src_dir.clone()));
         println!(
             "{:50} {:.3} MB",
-            format!("Size of {} .cargo/registry crates:", installed_crate.len()),
+            "Total Size of .cargo/git crates:",
+            metadata_git / (1024f64.powf(2.0))
+        );
+        println!(
+            "{:50} {:.3} MB",
+            "   |-- Size of .cargo/git/checkout folder",
+            metadata_checkout / (1024f64.powf(2.0))
+        );
+        println!(
+            "{:50} {:.3} MB",
+            "   |--    Size of .cargo/git/db folder",
+            metadata_db / (1024f64.powf(2.0))
+        );
+        println!(
+            "{:50} {:.3} MB",
+            "Total Size of .cargo/registry crates:",
             metadata_registry / (1024f64.powf(2.0))
         );
         println!(
@@ -77,7 +102,6 @@ fn main() {
             "   |-- Size of .cargo/registry/cache folder",
             metadata_cache / (1024f64.powf(2.0))
         );
-
         println!(
             "{:50} {:.3} MB",
             "   |-- Size of .cargo/registry/index folder",
@@ -144,6 +168,13 @@ fn main() {
     }
 }
 
+fn match_size(size: Result<u64, Error>) -> f64 {
+    match size {
+        Ok(size) => size as f64,
+        Err(_) => 0.0,
+    }
+}
+
 // Perform all query subcommand call operation
 fn query_subcommand(config_file: &ConfigFile, matches: &ArgMatches) {
     let read_include = config_file.include();
@@ -197,28 +228,4 @@ fn remove_all(
     if !cmd_exclude.contains(crate_name) && !read_exclude.contains(crate_name) {
         crates_location.remove_crate(crate_name);
     }
-}
-
-// get/create dir full path for different dir
-fn get_dir_path() -> (PathBuf, PathBuf, PathBuf, PathBuf, PathBuf) {
-    let mut config_dir = dirs::config_dir().unwrap();
-    let mut home_dir = dirs::home_dir().unwrap();
-    home_dir.push(".cargo");
-    home_dir.push("registry");
-    let registry_dir = home_dir;
-    config_dir.push("cargo_cache_config.json");
-
-    // If config file does not exists create one config file
-    if !config_dir.exists() {
-        fs::File::create(config_dir.to_str().unwrap()).unwrap();
-    }
-
-    let mut cache_dir = registry_dir.clone();
-    cache_dir.push("cache");
-    let mut src_dir = registry_dir.clone();
-    src_dir.push("src");
-    let mut index_dir = registry_dir.clone();
-    index_dir.push("index");
-
-    (config_dir, registry_dir, cache_dir, index_dir, src_dir)
 }

@@ -10,12 +10,12 @@ pub(super) fn app() -> ArgMatches<'static> {
             SubCommand::with_name("trim")
                 .version(concat!("v ", crate_version!()))
                 .author("Saurav Sharma <appdroiddeveloper@gmail.com>")
-                .about("Clean cache from .cargo/registry")
+                .about("Clean cache from $HOME/.cargo")
                 .arg(
                     Arg::with_name("all")
                         .short("a")
                         .long("all")
-                        .help("Clean up all .cargo/registry follow config file data"),
+                        .help("Clean up all .cargo/registry & .cargo/git follow config file data"),
                 )
                 .arg(
                     Arg::with_name("clear config")
@@ -105,7 +105,10 @@ pub(super) fn app() -> ArgMatches<'static> {
                     Arg::with_name("wipe")
                         .short("w")
                         .long("wipe")
-                        .help("Wipe folder expected value : registry, cache, index, src")
+                        .help(
+                            "Wipe folder expected value : git, checkout, db, registry, cache, \
+                             index, src",
+                        )
                         .takes_value(true)
                         .value_name("Folder"),
                 )
