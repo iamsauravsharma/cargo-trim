@@ -50,8 +50,6 @@ fn remove_crate(path: &Path, value: &str) {
             } else if path.is_dir() {
                 fs::remove_dir_all(path).unwrap();
             }
-        } else if path.is_dir() {
-            remove_crate(&path, value);
         }
     }
 }

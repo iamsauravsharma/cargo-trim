@@ -15,28 +15,25 @@ os:
   - osx
   - windows
 
-matrix:
-  allow_failures:
-    - rust: nightly
-  fast_finish: true
-
 install:
-  - if [[ "$TRAVIS_RUST_VERSION" == "nightly" ]]; then
-      rustup component add rustfmt;
-    fi
-  - rustup component add clippy
+  - rustup component add rustfmt || RUSTFMT="no"
+  - rustup component add clippy || CLIPPY="no"
 
 before_script:
-  - if [[ "$TRAVIS_RUST_VERSION" == "nightly" ]]; then
+  - if [[ ! "RUSTFMT" == "no" ]]; then
       rustfmt -V;
     fi
-  - cargo clippy -V
+  - if [[ ! "CLIPPY" == "no" ]]; then
+      cargo clippy -V;
+    fi
 
 script:
-  - if [[ "$TRAVIS_RUST_VERSION" == "nightly" ]]; then
+  - if [[ ! "RUSTFMT" == "no" ]]; then
       cargo fmt --verbose --all -- --check;
     fi
-  - cargo clippy --verbose --all -- -D warnings
+  - if [[ ! "CLIPPY" == "no" ]]; then
+      cargo clippy --verbose --all -- -D warnings;
+    fi
   - cargo build --verbose --all
   - cargo doc --no-deps --all
   - cargo test --verbose --all

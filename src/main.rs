@@ -1,12 +1,15 @@
 mod config_file;
 mod create_app;
 mod dir_path;
+mod git_dir;
 mod list_crate;
 mod registry_dir;
 #[cfg(test)]
 mod test;
 
-use crate::{config_file::ConfigFile, dir_path::DirPath, registry_dir::RegistryDir};
+use crate::{
+    config_file::ConfigFile, dir_path::DirPath, list_crate::CrateList, registry_dir::RegistryDir,
+};
 use clap::ArgMatches;
 use fs_extra::{dir::get_size, error::Error};
 use std::{fs, path::Path};
@@ -30,21 +33,20 @@ fn main() {
     // Perform all modification of config file flag and subcommand operation
     let config_file = config_file::modify_config_file(&mut file, app, &config_dir);
 
-    let crates_location = registry_dir::RegistryDir::new(&cache_dir, &src_dir);
+    let registry_crates_location = registry_dir::RegistryDir::new(&cache_dir, &src_dir);
+    let git_crates_location = git_dir::GitDir::new(&checkout_dir, &db_dir);
 
     // List out crate list
     let list_crate = list_crate::CrateList::create_list(
-        Path::new(crates_location.src()),
+        Path::new(registry_crates_location.src()),
         checkout_dir.as_path(),
         &config_file,
     );
     let installed_registry_crate = list_crate.installed_registry();
     let old_registry_crate = list_crate.old_registry();
-    let used_registry_crate = list_crate.used_registry();
     let orphan_registry_crate = list_crate.orphan_registry();
 
     let installed_git_crate = list_crate.installed_git();
-    let used_git_crate = list_crate.used_git();
     let orphan_git_crate = list_crate.orphan_git();
 
     // Perform action of removing config file with -c flag
@@ -55,33 +57,8 @@ fn main() {
 
     // Perform action on list subcommand
     if app.is_present("list") {
-        let list_subcommand = app.subcommand_matches("list").unwrap();
-        if list_subcommand.is_present("old") {
-            for crates in &old_registry_crate {
-                println!("{}", crates);
-            }
-        } else if list_subcommand.is_present("orphan") {
-            for crates in &orphan_registry_crate {
-                println!("{}", crates);
-            }
-            for crates in &orphan_git_crate {
-                println!("{}", crates);
-            }
-        } else if list_subcommand.is_present("used") {
-            for crates in &used_registry_crate {
-                println!("{}", crates);
-            }
-            for crates in &used_git_crate {
-                println!("{}", crates);
-            }
-        } else {
-            for crates in &installed_registry_crate {
-                println!("{}", crates);
-            }
-            for crates in &installed_git_crate {
-                println!("{}", crates);
-            }
-        }
+        let matches = app.subcommand_matches("list").unwrap();
+        list_subcommand(matches, list_crate)
     }
 
     // Perform action for -q flag
@@ -133,7 +110,7 @@ fn main() {
     // Perform action on -o flag
     if app.is_present("old clean") {
         for crate_name in &old_registry_crate {
-            crates_location.remove_crate(crate_name);
+            registry_crates_location.remove_crate(crate_name);
         }
         println!("Successfully removed {:?} crates", old_registry_crate.len());
     }
@@ -142,7 +119,7 @@ fn main() {
     // value of config file
     if app.is_present("orphan clean") {
         for crate_name in &orphan_registry_crate {
-            crates_location.remove_crate(crate_name);
+            registry_crates_location.remove_crate(crate_name);
         }
         println!(
             "Successfully removed {:?} crates",
@@ -153,7 +130,13 @@ fn main() {
     // Remove certain crate provided with -r flag
     if app.is_present("remove-crate") {
         let value = app.value_of("remove-crate").unwrap();
-        crates_location.remove_crate(value)
+        if installed_registry_crate.contains(&value.to_string()) {
+            registry_crates_location.remove_crate(value)
+        }
+
+        if installed_git_crate.contains(&value.to_string()) {
+            git_crates_location.remove_crate(value)
+        }
     }
 
     // Force remove all crates without reading config file
@@ -167,7 +150,7 @@ fn main() {
     // Remove all crates by following config file
     if app.is_present("all") {
         for crate_name in &installed_registry_crate {
-            remove_registry_all(&config_file, app, crate_name, &crates_location);
+            remove_registry_all(&config_file, app, crate_name, &registry_crates_location);
         }
     }
 
@@ -200,6 +183,35 @@ fn match_size(size: &Result<u64, Error>) -> f64 {
     }
 }
 
+fn list_subcommand(list_subcommand: &ArgMatches, list_crate: CrateList) {
+    if list_subcommand.is_present("old") {
+        for crates in &list_crate.old_registry() {
+            println!("{}", crates);
+        }
+    } else if list_subcommand.is_present("orphan") {
+        for crates in &list_crate.orphan_registry() {
+            println!("{}", crates);
+        }
+        for crates in &list_crate.orphan_git() {
+            println!("{}", crates);
+        }
+    } else if list_subcommand.is_present("used") {
+        for crates in &list_crate.used_registry() {
+            println!("{}", crates);
+        }
+        for crates in &list_crate.used_git() {
+            println!("{}", crates);
+        }
+    } else {
+        for crates in &list_crate.installed_registry() {
+            println!("{}", crates);
+        }
+        for crates in &list_crate.installed_git() {
+            println!("{}", crates);
+        }
+    }
+}
+
 // Perform all query subcommand call operation
 fn query_subcommand(config_file: &ConfigFile, matches: &ArgMatches) {
     let read_include = config_file.include();
@@ -227,7 +239,7 @@ fn remove_registry_all(
     config_file: &ConfigFile,
     app: &ArgMatches,
     crate_name: &str,
-    crates_location: &RegistryDir,
+    registry_crates_location: &RegistryDir,
 ) {
     let mut cmd_include = Vec::new();
     let mut cmd_exclude = Vec::new();
@@ -248,9 +260,9 @@ fn remove_registry_all(
     let read_include = config_file.include();
     let read_exclude = config_file.exclude();
     if cmd_include.contains(crate_name) || read_include.contains(crate_name) {
-        crates_location.remove_crate(crate_name);
+        registry_crates_location.remove_crate(crate_name);
     }
     if !cmd_exclude.contains(crate_name) && !read_exclude.contains(crate_name) {
-        crates_location.remove_crate(crate_name);
+        registry_crates_location.remove_crate(crate_name);
     }
 }
