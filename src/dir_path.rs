@@ -27,7 +27,7 @@ impl DirPath {
         git_dir.push("git");
 
         let mut checkout_dir = git_dir.clone();
-        checkout_dir.push("checkout");
+        checkout_dir.push("checkouts");
         let mut db_dir = git_dir.clone();
         db_dir.push("db");
 

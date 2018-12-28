@@ -106,7 +106,7 @@ pub(super) fn app() -> ArgMatches<'static> {
                         .short("w")
                         .long("wipe")
                         .help(
-                            "Wipe folder expected value : git, checkout, db, registry, cache, \
+                            "Wipe folder expected value : git, checkouts, db, registry, cache, \
                              index, src",
                         )
                         .takes_value(true)

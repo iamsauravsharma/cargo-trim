@@ -6,68 +6,112 @@ use std::{
 };
 
 pub(super) struct CrateList {
-    installed_crate: Vec<String>,
+    installed_crate_registry: Vec<String>,
+    installed_crate_git: Vec<String>,
     old_crate: Vec<String>,
-    used_crate: Vec<String>,
-    orphan_crate: Vec<String>,
+    used_crate_registry: Vec<String>,
+    used_crate_git: Vec<String>,
+    orphan_crate_registry: Vec<String>,
+    orphan_crate_git: Vec<String>,
 }
 
 impl CrateList {
     // create list of all types of crate present in directory
-    pub(super) fn create_list(src_dir: &Path, config_file: &ConfigFile) -> Self {
-        let mut installed_crate = Vec::new();
+    pub(super) fn create_list(
+        src_dir: &Path,
+        checkout_dir: &Path,
+        config_file: &ConfigFile,
+    ) -> Self {
+        let mut installed_crate_registry = Vec::new();
         for entry in fs::read_dir(src_dir).unwrap() {
             let entry = entry.unwrap().path();
             let path = entry.as_path();
             let file_name = path.file_name().unwrap();
             let crate_name = file_name.to_str().unwrap().to_string();
-            installed_crate.push(crate_name)
+            installed_crate_registry.push(crate_name)
         }
-        installed_crate.sort();
+        installed_crate_registry.sort();
+
+        let mut installed_crate_git = Vec::new();
+        for entry in fs::read_dir(checkout_dir).unwrap() {
+            let entry = entry.unwrap().path();
+            let path = entry.as_path();
+            let file_name = path.file_name().unwrap();
+            let file_name = file_name.to_str().unwrap().to_string();
+            let splitted_name = file_name.rsplitn(2, '-').collect::<Vec<&str>>();
+            installed_crate_git.push(splitted_name[1].to_owned());
+        }
+        installed_crate_git.sort();
+
         let mut old_crate = Vec::new();
-        let mut version_removed_crate = remove_version(&installed_crate);
+        let mut version_removed_crate = remove_version(&installed_crate_registry);
         version_removed_crate.sort();
         for i in 0..(version_removed_crate.len() - 1) {
             if version_removed_crate[i] == version_removed_crate[i + 1] {
-                let old_crate_name = installed_crate[i].to_string();
+                let old_crate_name = installed_crate_registry[i].to_string();
                 old_crate.push(old_crate_name);
             }
         }
         old_crate.sort();
-        let mut used_crate = Vec::new();
+
+        let mut used_crate_registry = Vec::new();
+        let mut used_crate_git = Vec::new();
         for path in config_file.directory().iter() {
             let list = list_cargo_lock(&Path::new(path));
-            let mut buffer_crate = read_content(&list);
-            used_crate.append(&mut buffer_crate);
+            let (mut registry_crate, mut git_crate) = read_content(&list);
+            used_crate_registry.append(&mut registry_crate);
+            used_crate_git.append(&mut git_crate);
         }
-        let mut orphan_crate = Vec::new();
-        for crates in &installed_crate {
-            if !used_crate.contains(crates) {
-                orphan_crate.push(crates.to_string());
+
+        let mut orphan_crate_registry = Vec::new();
+        let mut orphan_crate_git = Vec::new();
+        for crates in &installed_crate_registry {
+            if !used_crate_registry.contains(crates) {
+                orphan_crate_registry.push(crates.to_string());
+            }
+        }
+        for crates in &installed_crate_git {
+            if !used_crate_git.contains(crates) {
+                orphan_crate_git.push(crates.to_string());
             }
         }
         Self {
-            installed_crate,
+            installed_crate_registry,
+            installed_crate_git,
             old_crate,
-            used_crate,
-            orphan_crate,
+            used_crate_registry,
+            used_crate_git,
+            orphan_crate_registry,
+            orphan_crate_git,
         }
     }
 
-    pub(super) fn installed(&self) -> Vec<String> {
-        self.installed_crate.to_owned()
+    pub(super) fn installed_registry(&self) -> Vec<String> {
+        self.installed_crate_registry.to_owned()
     }
 
-    pub(super) fn old(&self) -> Vec<String> {
+    pub(super) fn old_registry(&self) -> Vec<String> {
         self.old_crate.to_owned()
     }
 
-    pub(super) fn used(&self) -> Vec<String> {
-        self.used_crate.to_owned()
+    pub(super) fn used_registry(&self) -> Vec<String> {
+        self.used_crate_registry.to_owned()
     }
 
-    pub(super) fn orphan(&self) -> Vec<String> {
-        self.orphan_crate.to_owned()
+    pub(super) fn orphan_registry(&self) -> Vec<String> {
+        self.orphan_crate_registry.to_owned()
+    }
+
+    pub(super) fn installed_git(&self) -> Vec<String> {
+        self.installed_crate_git.to_owned()
+    }
+
+    pub(super) fn used_git(&self) -> Vec<String> {
+        self.used_crate_git.to_owned()
+    }
+
+    pub(super) fn orphan_git(&self) -> Vec<String> {
+        self.orphan_crate_git.to_owned()
     }
 }
 
@@ -103,8 +147,9 @@ fn list_cargo_lock(path: &Path) -> Vec<PathBuf> {
 
 // Read out content of cargo.lock file to list out crates present so can be used
 // for orphan clean
-fn read_content(list: &[PathBuf]) -> Vec<String> {
-    let mut present_crate = Vec::new();
+fn read_content(list: &[PathBuf]) -> (Vec<String>, Vec<String>) {
+    let mut present_crate_registry = Vec::new();
+    let mut present_crate_git = Vec::new();
     for lock_file in list.iter() {
         let lock_file = lock_file.to_str().unwrap();
         let mut buffer = String::new();
@@ -122,21 +167,24 @@ fn read_content(list: &[PathBuf]) -> Vec<String> {
                 let name = split.next().unwrap();
                 let version = split.next().unwrap();
                 let source = split.next().unwrap();
-                if !source.contains("(git+") {
+                if source.contains("(registry+") {
                     let full_name = format!("{}-{}", name, version);
-                    present_crate.push(full_name);
+                    present_crate_registry.push(full_name);
+                }
+                if source.contains("(git+") {
+                    present_crate_git.push(name.to_string());
                 }
             }
         }
     }
-    present_crate
+    (present_crate_registry, present_crate_git)
 }
 
-// Function used to remove version from installed_crate list so can be used for
-// old clean flag
-fn remove_version(installed_crate: &[String]) -> Vec<String> {
+// Function used to remove version from installed_crate_registry list so can be
+// used for old clean flag
+fn remove_version(installed_crate_registry: &[String]) -> Vec<String> {
     let mut removed_version = Vec::new();
-    for i in installed_crate.iter() {
+    for i in installed_crate_registry.iter() {
         let data = clear_version_value(i);
         removed_version.push(data);
     }

@@ -33,12 +33,19 @@ fn main() {
     let crates_location = registry_dir::RegistryDir::new(&cache_dir, &src_dir);
 
     // List out crate list
-    let list_crate =
-        list_crate::CrateList::create_list(Path::new(crates_location.src()), &config_file);
-    let installed_crate = list_crate.installed();
-    let old_crate = list_crate.old();
-    let used_crate = list_crate.used();
-    let orphan_crate = list_crate.orphan();
+    let list_crate = list_crate::CrateList::create_list(
+        Path::new(crates_location.src()),
+        checkout_dir.as_path(),
+        &config_file,
+    );
+    let installed_registry_crate = list_crate.installed_registry();
+    let old_registry_crate = list_crate.old_registry();
+    let used_registry_crate = list_crate.used_registry();
+    let orphan_registry_crate = list_crate.orphan_registry();
+
+    let installed_git_crate = list_crate.installed_git();
+    let used_git_crate = list_crate.used_git();
+    let orphan_git_crate = list_crate.orphan_git();
 
     // Perform action of removing config file with -c flag
     if app.is_present("clear config") {
@@ -50,19 +57,28 @@ fn main() {
     if app.is_present("list") {
         let list_subcommand = app.subcommand_matches("list").unwrap();
         if list_subcommand.is_present("old") {
-            for crates in &old_crate {
+            for crates in &old_registry_crate {
                 println!("{}", crates);
             }
         } else if list_subcommand.is_present("orphan") {
-            for crates in &orphan_crate {
+            for crates in &orphan_registry_crate {
+                println!("{}", crates);
+            }
+            for crates in &orphan_git_crate {
                 println!("{}", crates);
             }
         } else if list_subcommand.is_present("used") {
-            for crates in &used_crate {
+            for crates in &used_registry_crate {
+                println!("{}", crates);
+            }
+            for crates in &used_git_crate {
                 println!("{}", crates);
             }
         } else {
-            for crates in &installed_crate {
+            for crates in &installed_registry_crate {
+                println!("{}", crates);
+            }
+            for crates in &installed_git_crate {
                 println!("{}", crates);
             }
         }
@@ -116,19 +132,22 @@ fn main() {
 
     // Perform action on -o flag
     if app.is_present("old clean") {
-        for crate_name in &old_crate {
+        for crate_name in &old_registry_crate {
             crates_location.remove_crate(crate_name);
         }
-        println!("Successfully removed {:?} crates", old_crate.len());
+        println!("Successfully removed {:?} crates", old_registry_crate.len());
     }
 
     // Orphan clean a crates which is not present in directory stored in directory
     // value of config file
     if app.is_present("orphan clean") {
-        for crate_name in &orphan_crate {
+        for crate_name in &orphan_registry_crate {
             crates_location.remove_crate(crate_name);
         }
-        println!("Successfully removed {:?} crates", orphan_crate.len());
+        println!(
+            "Successfully removed {:?} crates",
+            orphan_registry_crate.len() + orphan_git_crate.len()
+        );
     }
 
     // Remove certain crate provided with -r flag
@@ -139,13 +158,16 @@ fn main() {
 
     // Force remove all crates without reading config file
     if app.is_present("force remove") {
-        fs::remove_dir_all(registry_dir.clone()).unwrap();
+        fs::remove_dir_all(cache_dir.clone()).unwrap();
+        fs::remove_dir_all(src_dir.clone()).unwrap();
+        fs::remove_dir_all(checkout_dir.clone()).unwrap();
+        fs::remove_dir_all(db_dir.clone()).unwrap();
     }
 
     // Remove all crates by following config file
     if app.is_present("all") {
-        for crate_name in &installed_crate {
-            remove_all(&config_file, app, crate_name, &crates_location);
+        for crate_name in &installed_registry_crate {
+            remove_registry_all(&config_file, app, crate_name, &crates_location);
         }
     }
 
@@ -153,11 +175,14 @@ fn main() {
     if app.is_present("wipe") {
         let value = app.value_of("wipe").unwrap();
         match value {
+            "git" => fs::remove_dir_all(git_dir.clone()).unwrap(),
+            "checkouts" => fs::remove_dir_all(checkout_dir.clone()).unwrap(),
+            "db" => fs::remove_dir_all(db_dir.clone()).unwrap(),
             "registry" => fs::remove_dir_all(registry_dir.clone()).unwrap(),
             "cache" => fs::remove_dir_all(cache_dir.clone()).unwrap(),
             "index" => fs::remove_dir_all(index_dir.clone()).unwrap(),
             "src" => fs::remove_dir_all(src_dir.clone()).unwrap(),
-            _ => println!("Please provide one of the given four value registry, cache, index, src"),
+            _ => println!("Please provide one of the given value"),
         }
     }
 
@@ -197,8 +222,8 @@ fn query_subcommand(config_file: &ConfigFile, matches: &ArgMatches) {
     }
 }
 
-// Remove all crates from rigistry folder
-fn remove_all(
+// Remove all crates from registry folder
+fn remove_registry_all(
     config_file: &ConfigFile,
     app: &ArgMatches,
     crate_name: &str,
