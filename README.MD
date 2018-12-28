@@ -22,6 +22,7 @@
 (WIP) Binary application for cleaning $HOME/.cargo/registry file
 
 ### TODO
+- [ ] Better code arrangement
 - [ ] Proper handling of error
 - [ ] Support git import crates
 - [ ] Publish crate to [crates.io][cratesio_link]

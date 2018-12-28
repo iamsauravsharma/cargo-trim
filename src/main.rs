@@ -70,13 +70,13 @@ fn main() {
 
     // Perform action for -q flag
     if app.is_present("query size") {
-        let metadata_git = match_size(get_size(git_dir.clone()));
-        let metadata_checkout = match_size(get_size(checkout_dir.clone()));
-        let metadata_db = match_size(get_size(db_dir.clone()));
-        let metadata_registry = match_size(get_size(registry_dir.clone()));
-        let metadata_cache = match_size(get_size(cache_dir.clone()));
-        let metadata_index = match_size(get_size(index_dir.clone()));
-        let metadata_src = match_size(get_size(src_dir.clone()));
+        let metadata_git = match_size(&get_size(git_dir.clone()));
+        let metadata_checkout = match_size(&get_size(checkout_dir.clone()));
+        let metadata_db = match_size(&get_size(db_dir.clone()));
+        let metadata_registry = match_size(&get_size(registry_dir.clone()));
+        let metadata_cache = match_size(&get_size(cache_dir.clone()));
+        let metadata_index = match_size(&get_size(index_dir.clone()));
+        let metadata_src = match_size(&get_size(src_dir.clone()));
         println!(
             "{:50} {:.3} MB",
             "Total Size of .cargo/git crates:",
@@ -168,8 +168,8 @@ fn main() {
     }
 }
 
-fn match_size(size: Result<u64, Error>) -> f64 {
-    match size {
+fn match_size(size: &Result<u64, Error>) -> f64 {
+    match *size {
         Ok(size) => size as f64,
         Err(_) => 0.0,
     }
