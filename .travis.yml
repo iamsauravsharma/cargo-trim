@@ -15,6 +15,11 @@ os:
   - osx
   - windows
 
+matrix:
+  allow_failures:
+    - rust: nightly
+  fast_finish: true
+
 install:
   - if [[ "$TRAVIS_RUST_VERSION" == "nightly" ]]; then
       rustup component add rustfmt;
