@@ -16,16 +16,12 @@ os:
   - windows
 
 install:
-  - rustup component add rustfmt || RUSTFMT="no"
-  - rustup component add clippy || CLIPPY="no"
+  - rustup component add rustfmt
+  - rustup component add clippy
 
 before_script:
-  - if [[ ! "RUSTFMT" == "no" ]]; then
-      rustfmt -V;
-    fi
-  - if [[ ! "CLIPPY" == "no" ]]; then
-      cargo clippy -V;
-    fi
+  - rustfmt -V || RUSTFMT="no"
+  - cargo clippy -V || CLIPPY="no"
 
 script:
   - if [[ ! "RUSTFMT" == "no" ]]; then

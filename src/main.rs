@@ -58,7 +58,7 @@ fn main() {
     // Perform action on list subcommand
     if app.is_present("list") {
         let matches = app.subcommand_matches("list").unwrap();
-        list_subcommand(matches, list_crate)
+        list_subcommand(matches, &list_crate)
     }
 
     // Perform action for -q flag
@@ -183,7 +183,7 @@ fn match_size(size: &Result<u64, Error>) -> f64 {
     }
 }
 
-fn list_subcommand(list_subcommand: &ArgMatches, list_crate: CrateList) {
+fn list_subcommand(list_subcommand: &ArgMatches, list_crate: &CrateList) {
     if list_subcommand.is_present("old") {
         for crates in &list_crate.old_registry() {
             println!("{}", crates);
