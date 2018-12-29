@@ -27,18 +27,18 @@ install:
   - echo $CLIPPY
 
 before_script:
-  - if [[ "RUSTFMT" == "yes" ]]; then
+  - if [[ "$RUSTFMT" == "yes" ]]; then
       rustfmt -V;
     fi
-  - if [[ "CLIPPY" == "yes" ]]; then
+  - if [[ "$CLIPPY" == "yes" ]]; then
       cargo clippy -V;
     fi
 
 script:
-  - if [[ "RUSTFMT" == "yes" ]]; then
+  - if [[ "$RUSTFMT" == "yes" ]]; then
       cargo fmt --verbose --all -- --check;
     fi
-  - if [[ "CLIPPY" == "yes" ]]; then
+  - if [[ "$CLIPPY" == "yes" ]]; then
       cargo clippy --verbose --all -- -D warnings;
     fi
   - cargo build --verbose --all
