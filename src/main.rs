@@ -8,7 +8,8 @@ mod registry_dir;
 mod test;
 
 use crate::{
-    config_file::ConfigFile, dir_path::DirPath, list_crate::CrateList, registry_dir::RegistryDir,
+    config_file::ConfigFile, dir_path::DirPath, git_dir::GitDir, list_crate::CrateList,
+    registry_dir::RegistryDir,
 };
 use clap::ArgMatches;
 use fs_extra::{dir::get_size, error::Error};
@@ -121,6 +122,9 @@ fn main() {
         for crate_name in &orphan_registry_crate {
             registry_crates_location.remove_crate(crate_name);
         }
+        for crate_name in &orphan_git_crate {
+            git_crates_location.remove_crate(crate_name);
+        }
         println!(
             "Successfully removed {:?} crates",
             orphan_registry_crate.len() + orphan_git_crate.len()
@@ -151,6 +155,9 @@ fn main() {
     if app.is_present("all") {
         for crate_name in &installed_registry_crate {
             remove_registry_all(&config_file, app, crate_name, &registry_crates_location);
+        }
+        for crate_name in &installed_git_crate {
+            remove_git_all(&config_file, app, crate_name, &git_crates_location)
         }
     }
 
@@ -264,5 +271,37 @@ fn remove_registry_all(
     }
     if !cmd_exclude.contains(crate_name) && !read_exclude.contains(crate_name) {
         registry_crates_location.remove_crate(crate_name);
+    }
+}
+
+fn remove_git_all(
+    config_file: &ConfigFile,
+    app: &ArgMatches,
+    crate_name: &str,
+    git_crates_location: &GitDir,
+) {
+    let mut cmd_include = Vec::new();
+    let mut cmd_exclude = Vec::new();
+    let crate_name = &crate_name.to_string();
+
+    // Provide one time include crate list for other flag
+    if app.is_present("include") {
+        let value = app.value_of("include").unwrap().to_string();
+        cmd_include.push(value);
+    }
+
+    // Provide one time exclude crate list for other flag
+    if app.is_present("exclude") {
+        let value = app.value_of("include").unwrap().to_string();
+        cmd_exclude.push(value);
+    }
+
+    let read_include = config_file.include();
+    let read_exclude = config_file.exclude();
+    if cmd_include.contains(crate_name) || read_include.contains(crate_name) {
+        git_crates_location.remove_crate(crate_name);
+    }
+    if !cmd_exclude.contains(crate_name) && !read_exclude.contains(crate_name) {
+        git_crates_location.remove_crate(crate_name);
     }
 }
