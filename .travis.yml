@@ -5,6 +5,11 @@ rust:
   - beta
   - nightly
 
+matrix:
+  allow_failures:
+    - rust: nightly
+  fast_finish: true
+
 git:
   depth: false
  
@@ -16,20 +21,26 @@ os:
   - windows
 
 install:
-  - rustup component add rustfmt
-  - rustup component add clippy
+  - rustup component add rustfmt && RUSTFMT="yes" || RUSTFMT="no"
+  - rustup component add clippy && CLIPPY="yes" || CLIPPY="no"
+  - echo $RUSTFMT
+  - echo $CLIPPY
 
 before_script:
-  - rustfmt -V || RUSTFMT="no"
-  - cargo clippy -V || CLIPPY="no"
+  - if [[ "RUSTFMT" == "yes" ]]; then
+      rustfmt -V;
+    fi
+  - if [[ "CLIPPY" == "yes" ]]; then
+      cargo clippy -V;
+    fi
 
 script:
-  - if [[ ! "RUSTFMT" == "no" ]]; then
+  - if [[ "RUSTFMT" == "yes" ]]; then
       cargo fmt --verbose --all -- --check;
     fi
-  - if [[ ! "CLIPPY" == "no" ]]; then
+  - if [[ "CLIPPY" == "yes" ]]; then
       cargo clippy --verbose --all -- -D warnings;
     fi
   - cargo build --verbose --all
-  - cargo doc --no-deps --all
+  - cargo doc --verbose --no-deps --all
   - cargo test --verbose --all
