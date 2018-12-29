@@ -12,35 +12,30 @@ use crate::{
     registry_dir::RegistryDir,
 };
 use clap::ArgMatches;
-use fs_extra::{dir::get_size, error::Error};
-use std::{fs, path::Path};
+use fs_extra::dir::get_size;
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 fn main() {
     let dir_path = DirPath::set_dir_path();
 
-    let config_dir = dir_path.config_dir();
-    let git_dir = dir_path.git_dir();
-    let checkout_dir = dir_path.checkout_dir();
-    let db_dir = dir_path.db_dir();
-    let registry_dir = dir_path.registry_dir();
-    let cache_dir = dir_path.cache_dir();
-    let index_dir = dir_path.index_dir();
-    let src_dir = dir_path.src_dir();
-
-    let mut file = fs::File::open(config_dir.to_str().unwrap()).unwrap();
+    let mut file = fs::File::open(dir_path.config_dir().to_str().unwrap()).unwrap();
     let app = create_app::app();
     let app = app.subcommand_matches("trim").unwrap();
 
     // Perform all modification of config file flag and subcommand operation
-    let config_file = config_file::modify_config_file(&mut file, app, &config_dir);
+    let config_file = config_file::modify_config_file(&mut file, app, &dir_path.config_dir());
 
-    let registry_crates_location = registry_dir::RegistryDir::new(&cache_dir, &src_dir);
-    let git_crates_location = git_dir::GitDir::new(&checkout_dir, &db_dir);
+    let registry_crates_location =
+        registry_dir::RegistryDir::new(&dir_path.cache_dir(), &dir_path.src_dir());
+    let git_crates_location = git_dir::GitDir::new(&dir_path.checkout_dir(), &dir_path.db_dir());
 
     // List out crate list
     let list_crate = list_crate::CrateList::create_list(
         Path::new(registry_crates_location.src()),
-        checkout_dir.as_path(),
+        dir_path.checkout_dir().as_path(),
         &config_file,
     );
     let installed_registry_crate = list_crate.installed_registry();
@@ -52,7 +47,7 @@ fn main() {
 
     // Perform action of removing config file with -c flag
     if app.is_present("clear config") {
-        fs::remove_file(Path::new(config_dir.to_str().unwrap())).unwrap();
+        fs::remove_file(dir_path.config_dir().as_path()).unwrap();
         println!("Cleared Config file");
     }
 
@@ -64,13 +59,13 @@ fn main() {
 
     // Perform action for -q flag
     if app.is_present("query size") {
-        let metadata_git = match_size(&get_size(git_dir.clone()));
-        let metadata_checkout = match_size(&get_size(checkout_dir.clone()));
-        let metadata_db = match_size(&get_size(db_dir.clone()));
-        let metadata_registry = match_size(&get_size(registry_dir.clone()));
-        let metadata_cache = match_size(&get_size(cache_dir.clone()));
-        let metadata_index = match_size(&get_size(index_dir.clone()));
-        let metadata_src = match_size(&get_size(src_dir.clone()));
+        let metadata_git = match_size(dir_path.git_dir());
+        let metadata_checkout = match_size(dir_path.checkout_dir());
+        let metadata_db = match_size(dir_path.db_dir());
+        let metadata_registry = match_size(dir_path.registry_dir());
+        let metadata_cache = match_size(dir_path.cache_dir());
+        let metadata_index = match_size(dir_path.index_dir());
+        let metadata_src = match_size(dir_path.src_dir());
         println!(
             "{:50} {:.3} MB",
             "Total Size of .cargo/git crates:",
@@ -145,10 +140,10 @@ fn main() {
 
     // Force remove all crates without reading config file
     if app.is_present("force remove") {
-        fs::remove_dir_all(cache_dir.clone()).unwrap();
-        fs::remove_dir_all(src_dir.clone()).unwrap();
-        fs::remove_dir_all(checkout_dir.clone()).unwrap();
-        fs::remove_dir_all(db_dir.clone()).unwrap();
+        fs::remove_dir_all(dir_path.cache_dir()).unwrap();
+        fs::remove_dir_all(dir_path.src_dir()).unwrap();
+        fs::remove_dir_all(dir_path.checkout_dir()).unwrap();
+        fs::remove_dir_all(dir_path.db_dir()).unwrap();
     }
 
     // Remove all crates by following config file
@@ -165,13 +160,13 @@ fn main() {
     if app.is_present("wipe") {
         let value = app.value_of("wipe").unwrap();
         match value {
-            "git" => fs::remove_dir_all(git_dir.clone()).unwrap(),
-            "checkouts" => fs::remove_dir_all(checkout_dir.clone()).unwrap(),
-            "db" => fs::remove_dir_all(db_dir.clone()).unwrap(),
-            "registry" => fs::remove_dir_all(registry_dir.clone()).unwrap(),
-            "cache" => fs::remove_dir_all(cache_dir.clone()).unwrap(),
-            "index" => fs::remove_dir_all(index_dir.clone()).unwrap(),
-            "src" => fs::remove_dir_all(src_dir.clone()).unwrap(),
+            "git" => fs::remove_dir_all(dir_path.git_dir()).unwrap(),
+            "checkouts" => fs::remove_dir_all(dir_path.checkout_dir()).unwrap(),
+            "db" => fs::remove_dir_all(dir_path.db_dir()).unwrap(),
+            "registry" => fs::remove_dir_all(dir_path.registry_dir()).unwrap(),
+            "cache" => fs::remove_dir_all(dir_path.cache_dir()).unwrap(),
+            "index" => fs::remove_dir_all(dir_path.index_dir()).unwrap(),
+            "src" => fs::remove_dir_all(dir_path.src_dir()).unwrap(),
             _ => println!("Please provide one of the given value"),
         }
     }
@@ -183,8 +178,8 @@ fn main() {
     }
 }
 
-fn match_size(size: &Result<u64, Error>) -> f64 {
-    match *size {
+fn match_size(size: PathBuf) -> f64 {
+    match get_size(size) {
         Ok(size) => size as f64,
         Err(_) => 0.0,
     }

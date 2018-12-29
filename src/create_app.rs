@@ -1,6 +1,6 @@
 use clap::{crate_name, crate_version, App, AppSettings, Arg, ArgMatches, SubCommand};
 
-// Create all list of subcommand options flag using clap"0.1.0"
+// Create all list of subcommand options flag using clap
 pub(super) fn app() -> ArgMatches<'static> {
     App::new(crate_name!())
         .bin_name("cargo")
