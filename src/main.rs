@@ -20,7 +20,6 @@ use std::{
 
 fn main() {
     let dir_path = DirPath::set_dir_path();
-
     let mut file = fs::File::open(dir_path.config_dir().to_str().unwrap()).unwrap();
     let app = create_app::app();
     let app = app.subcommand_matches("trim").unwrap();
@@ -38,12 +37,6 @@ fn main() {
         dir_path.checkout_dir().as_path(),
         &config_file,
     );
-    let installed_registry_crate = list_crate.installed_registry();
-    let old_registry_crate = list_crate.old_registry();
-    let orphan_registry_crate = list_crate.orphan_registry();
-
-    let installed_git_crate = list_crate.installed_git();
-    let orphan_git_crate = list_crate.orphan_git();
 
     // Perform action of removing config file with -c flag
     if app.is_present("clear config") {
@@ -105,6 +98,7 @@ fn main() {
 
     // Perform action on -o flag
     if app.is_present("old clean") {
+        let old_registry_crate = list_crate.old_registry();
         for crate_name in &old_registry_crate {
             registry_crates_location.remove_crate(crate_name);
         }
@@ -114,6 +108,8 @@ fn main() {
     // Orphan clean a crates which is not present in directory stored in directory
     // value of config file
     if app.is_present("orphan clean") {
+        let orphan_registry_crate = list_crate.orphan_registry();
+        let orphan_git_crate = list_crate.orphan_git();
         for crate_name in &orphan_registry_crate {
             registry_crates_location.remove_crate(crate_name);
         }
@@ -129,11 +125,11 @@ fn main() {
     // Remove certain crate provided with -r flag
     if app.is_present("remove-crate") {
         let value = app.value_of("remove-crate").unwrap();
-        if installed_registry_crate.contains(&value.to_string()) {
+        if list_crate.installed_registry().contains(&value.to_string()) {
             registry_crates_location.remove_crate(value)
         }
 
-        if installed_git_crate.contains(&value.to_string()) {
+        if list_crate.installed_git().contains(&value.to_string()) {
             git_crates_location.remove_crate(value)
         }
     }
@@ -148,10 +144,10 @@ fn main() {
 
     // Remove all crates by following config file
     if app.is_present("all") {
-        for crate_name in &installed_registry_crate {
+        for crate_name in &list_crate.installed_registry() {
             remove_registry_all(&config_file, app, crate_name, &registry_crates_location);
         }
-        for crate_name in &installed_git_crate {
+        for crate_name in &list_crate.installed_git() {
             remove_git_all(&config_file, app, crate_name, &git_crates_location)
         }
     }

@@ -90,7 +90,7 @@ pub(super) fn app() -> ArgMatches<'static> {
                     Arg::with_name("query size")
                         .short("s")
                         .long("size")
-                        .help("Return size of .cargo/registry"),
+                        .help("Return size of .cargo cache folders"),
                 )
                 .arg(
                     Arg::with_name("remove-crate")

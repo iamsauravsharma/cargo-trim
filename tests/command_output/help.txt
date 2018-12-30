@@ -12,7 +12,7 @@ FLAGS:
     -h, --help            Prints help information
     -o, --old-clean       Clean old cache crates
     -x, --orphan-clean    Clean orphan cache crates
-    -s, --size            Return size of .cargo/registry
+    -s, --size            Return size of .cargo cache folders
     -V, --version         Prints version information
 
 OPTIONS:

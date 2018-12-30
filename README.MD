@@ -19,12 +19,13 @@
 [![OSX support][osx_supported_badge]][git_link]
 [![Windows support][windows_supported_badge]][git_link]
 
-(WIP) Binary application for cleaning $HOME/.cargo/registry file
+(WIP) Binary application for cleaning __\$HOME/.cargo/registry  & \$HOME/.cargo/git__ folder
 
 ### TODO
-- [ ] Better code arrangement
+- [X] Better code arrangement
 - [ ] Proper handling of error
-- [ ] Support git import crates
+- [X] Support git import crates
+- [ ] Documentaion of code for better understanding
 - [ ] Publish crate to [crates.io][cratesio_link]
 
 ### Install
@@ -38,19 +39,19 @@ Initially you should have cargo installed
 ```
 cargo-trim v 0.1.0
 Saurav Sharma <appdroiddeveloper@gmail.com>
-Clean cache from .cargo/registry
+Clean cache from $HOME/.cargo
 
 USAGE:
     cargo trim [FLAGS] [OPTIONS] [SUBCOMMAND]
 
 FLAGS:
-    -a, --all             Clean up all .cargo/registry follow config file data
+    -a, --all             Clean up all .cargo/registry & .cargo/git follow config file data
     -c, --clear           Clear config data
     -f, --force           Force clear cache without reading conf file
     -h, --help            Prints help information
     -o, --old-clean       Clean old cache crates
     -x, --orphan-clean    Clean orphan cache crates
-    -s, --size            Return size of .cargo/registry
+    -s, --size            Return size of .cargo cache folders
     -V, --version         Prints version information
 
 OPTIONS:
@@ -60,7 +61,7 @@ OPTIONS:
     -I, --include-conf <Crate>...     add listed crates to default conf file include list
     -r, --remove <Crate>...           Remove listed crates
     -d, --directory <Directory>...    Set directory of Rust project
-    -w, --wipe <Folder>               Wipe folder expected value : registry, cache, index, src
+    -w, --wipe <Folder>               Wipe folder expected value : git, checkouts, db, registry, cache, index, src
 
 SUBCOMMANDS:
     help      Prints this message or the help of the given subcommand(s)
