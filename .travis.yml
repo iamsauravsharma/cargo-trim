@@ -29,11 +29,11 @@ before_script:
 
 script:
   - if [[ "$RUSTFMT" == "yes" ]]; then
-      cargo fmt --verbose --all -- --check;
+      cargo fmt --all -- --check;
     fi
   - if [[ "$CLIPPY" == "yes" ]]; then
-      cargo clippy --verbose --all -- -D warnings;
+      cargo clippy --all -- -D warnings;
     fi
-  - cargo build --verbose --all
-  - cargo doc --verbose --no-deps --all
-  - cargo test --verbose --all
+  - cargo build --all
+  - cargo doc --no-deps --all
+  - cargo test --all
