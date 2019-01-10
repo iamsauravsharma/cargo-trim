@@ -52,47 +52,40 @@ fn main() {
 
     // Perform action for -q flag
     if app.is_present("query size") {
-        let metadata_git = match_size(dir_path.git_dir());
-        let metadata_checkout = match_size(dir_path.checkout_dir());
-        let metadata_db = match_size(dir_path.db_dir());
-        let metadata_registry = match_size(dir_path.registry_dir());
-        let metadata_cache = match_size(dir_path.cache_dir());
-        let metadata_index = match_size(dir_path.index_dir());
-        let metadata_src = match_size(dir_path.src_dir());
+        let size_git = match_size(dir_path.git_dir());
+        let size_checkout = match_size(dir_path.checkout_dir());
+        let size_db = match_size(dir_path.db_dir());
+        let size_registry = match_size(dir_path.registry_dir());
+        let size_cache = match_size(dir_path.cache_dir());
+        let size_index = match_size(dir_path.index_dir());
+        let size_src = match_size(dir_path.src_dir());
         println!(
             "{:50} {:.3} MB",
-            "Total Size of .cargo/git crates:",
-            metadata_git / (1024f64.powf(2.0))
+            "Total Size of .cargo/git crates:", size_git
         );
         println!(
             "{:50} {:.3} MB",
-            "   |-- Size of .cargo/git/checkout folder",
-            metadata_checkout / (1024f64.powf(2.0))
+            "   |-- Size of .cargo/git/checkout folder", size_checkout
         );
         println!(
             "{:50} {:.3} MB",
-            "   |--    Size of .cargo/git/db folder",
-            metadata_db / (1024f64.powf(2.0))
+            "   |-- Size of .cargo/git/db folder", size_db
         );
         println!(
             "{:50} {:.3} MB",
-            "Total Size of .cargo/registry crates:",
-            metadata_registry / (1024f64.powf(2.0))
+            "Total Size of .cargo/registry crates:", size_registry
         );
         println!(
             "{:50} {:.3} MB",
-            "   |-- Size of .cargo/registry/cache folder",
-            metadata_cache / (1024f64.powf(2.0))
+            "   |-- Size of .cargo/registry/cache folder", size_cache
         );
         println!(
             "{:50} {:.3} MB",
-            "   |-- Size of .cargo/registry/index folder",
-            metadata_index / (1024f64.powf(2.0))
+            "   |-- Size of .cargo/registry/index folder", size_index
         );
         println!(
             "{:50} {:.3} MB",
-            "   |-- Size of .cargo/registry/src folder",
-            metadata_src / (1024f64.powf(2.0))
+            "   |-- Size of .cargo/registry/src folder", size_src
         );
     }
 
@@ -176,7 +169,7 @@ fn main() {
 
 fn match_size(size: PathBuf) -> f64 {
     match get_size(size) {
-        Ok(size) => size as f64,
+        Ok(size) => (size as f64) / (1024f64.powf(2.0)),
         Err(_) => 0.0,
     }
 }
