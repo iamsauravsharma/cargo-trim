@@ -2,17 +2,17 @@
 
 **Status:**
 | Travis Build Status | Dependency Status |
-|:-------:|:-------:| 
+| :---: | :---: | 
 | [![Travis Build Status][build_badge]][build_link] | [![Dependency status][deps_badge]][deps_link] |
 
 **Project Info:**
 | License | LoC |
-|:-------:|:-------:|
+| :---: | :---: |
 | [![License: MIT][license_badge]][license_link] | [![LoC][loc_badge]][loc_link] |
 
 **Rust version support**
 | Stable | Beta | Nightly |
-|:-------:|:-------:|:-------:|
+| :---: | :---: | :---: |
 | [![Stable support][stable_supported_badge]][git_link] | [![Beta support][beta_supported_badge]][git_link] | [![Nightly support][nightly_supported_badge]][git_link] |
 
 **OS support**
