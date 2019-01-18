@@ -12,13 +12,13 @@
 | :---: | :---: |
 | [![License: MIT][license_badge]][license_link] | [![LoC][loc_badge]][loc_link] |
 
-**Rust version support**
+**Rust version support:**
 
 | Stable | Beta | Nightly |
 | :---: | :---: | :---: |
 | [![Stable support][stable_supported_badge]][git_link] | [![Beta support][beta_supported_badge]][git_link] | [![Nightly support][nightly_supported_badge]][git_link] |
 
-**OS support**
+**OS support:**
 
 | Linux | OSX | Windows |
 | :---: | :---: | :---: |
@@ -67,10 +67,12 @@ OPTIONS:
     -w, --wipe <Folder>               Wipe folder expected value : git, checkouts, db, registry, cache, index, src
 
 SUBCOMMANDS:
-    help      Prints this message or the help of the given subcommand(s)
-    list      List out all of installed crates
-    query     Query config file data
-    remove    Remove values from config file
+    git         Perform operation only to git related cache file
+    help        Prints this message or the help of the given subcommand(s)
+    list        List out all of installed crates
+    query       Query config file data
+    registry    Perform operation only to registry related cache file
+    remove      Remove values from config file
 ```
 
 [git_link]: https://github.com/iamsauravsharma/cargo-trim

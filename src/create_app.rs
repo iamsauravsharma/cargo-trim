@@ -135,6 +135,74 @@ pub(super) fn app() -> ArgMatches<'static> {
                         ),
                 )
                 .subcommand(
+                    SubCommand::with_name("git")
+                        .about("Perform operation only to git related cache file")
+                        .arg(
+                            Arg::with_name("all")
+                                .short("a")
+                                .long("all")
+                                .help("Clean up all .cargo/git follow config file data"),
+                        )
+                        .arg(
+                            Arg::with_name("force remove")
+                                .short("f")
+                                .long("force")
+                                .help("Force clear cache without reading conf file"),
+                        )
+                        .arg(
+                            Arg::with_name("orphan clean")
+                                .short("x")
+                                .long("orphan-clean")
+                                .help("Clean orphan cache crates"),
+                        )
+                        .arg(
+                            Arg::with_name("remove-crate")
+                                .short("r")
+                                .long("remove")
+                                .help("Remove listed crates")
+                                .multiple(true)
+                                .takes_value(true)
+                                .value_name("Crate"),
+                        ),
+                )
+                .subcommand(
+                    SubCommand::with_name("registry")
+                        .about("Perform operation only to registry related cache file")
+                        .arg(
+                            Arg::with_name("all")
+                                .short("a")
+                                .long("all")
+                                .help("Clean up all .cargo/registry follow config file data"),
+                        )
+                        .arg(
+                            Arg::with_name("force remove")
+                                .short("f")
+                                .long("force")
+                                .help("Force clear cache without reading conf file"),
+                        )
+                        .arg(
+                            Arg::with_name("old clean")
+                                .short("o")
+                                .long("old-clean")
+                                .help("Clean old cache crates"),
+                        )
+                        .arg(
+                            Arg::with_name("orphan clean")
+                                .short("x")
+                                .long("orphan-clean")
+                                .help("Clean orphan cache crates"),
+                        )
+                        .arg(
+                            Arg::with_name("remove-crate")
+                                .short("r")
+                                .long("remove")
+                                .help("Remove listed crates")
+                                .multiple(true)
+                                .takes_value(true)
+                                .value_name("Crate"),
+                        ),
+                )
+                .subcommand(
                     SubCommand::with_name("list")
                         .about("List out all of installed crates")
                         .arg(

@@ -23,6 +23,8 @@ fn main() {
     let mut file = fs::File::open(dir_path.config_dir().to_str().unwrap()).unwrap();
     let app = create_app::app();
     let app = app.subcommand_matches("trim").unwrap();
+    let git_subcommand = app.subcommand_matches("git").unwrap();
+    let registry_subcommand = app.subcommand_matches("registry").unwrap();
 
     // Perform all modification of config file flag and subcommand operation
     let config_file = config_file::modify_config_file(&mut file, app, &dir_path.config_dir());
@@ -90,7 +92,7 @@ fn main() {
     }
 
     // Perform action on -o flag
-    if app.is_present("old clean") {
+    if app.is_present("old clean") || registry_subcommand.is_present("old clean") {
         let old_registry_crate = list_crate.old_registry();
         for crate_name in &old_registry_crate {
             registry_crates_location.remove_crate(crate_name);
@@ -100,48 +102,76 @@ fn main() {
 
     // Orphan clean a crates which is not present in directory stored in directory
     // value of config file
-    if app.is_present("orphan clean") {
-        let orphan_registry_crate = list_crate.orphan_registry();
-        let orphan_git_crate = list_crate.orphan_git();
-        for crate_name in &orphan_registry_crate {
-            registry_crates_location.remove_crate(crate_name);
+    let orphan_app = app.is_present("orphan clean");
+    let orphan_git = git_subcommand.is_present("orphan clean");
+    let orphan_registry = registry_subcommand.is_present("orphan clean");
+    if orphan_app || orphan_git || orphan_registry {
+        if orphan_app || orphan_registry {
+            let orphan_registry_crate = list_crate.orphan_registry();
+            for crate_name in &orphan_registry_crate {
+                registry_crates_location.remove_crate(crate_name);
+            }
         }
-        for crate_name in &orphan_git_crate {
-            git_crates_location.remove_crate(crate_name);
+        if orphan_app || orphan_git {
+            let orphan_git_crate = list_crate.orphan_git();
+            for crate_name in &orphan_git_crate {
+                git_crates_location.remove_crate(crate_name);
+            }
         }
-        println!(
-            "Successfully removed {:?} crates",
-            orphan_registry_crate.len() + orphan_git_crate.len()
-        );
     }
 
+    let remove_crate_app = app.is_present("remove-crate");
+    let remove_crate_git = git_subcommand.is_present("remove-crate");
+    let remove_crate_registry = registry_subcommand.is_present("remove-crate");
     // Remove certain crate provided with -r flag
-    if app.is_present("remove-crate") {
-        let value = app.value_of("remove-crate").unwrap();
-        if list_crate.installed_registry().contains(&value.to_string()) {
+    if remove_crate_app || remove_crate_git || remove_crate_registry {
+        let value = app.value_of("remove-crate").unwrap_or_else(|| {
+            git_subcommand
+                .value_of("remove-crate")
+                .unwrap_or_else(|| registry_subcommand.value_of("remove-crate").unwrap())
+        });
+        if list_crate.installed_registry().contains(&value.to_string())
+            && (remove_crate_app || remove_crate_registry)
+        {
             registry_crates_location.remove_crate(value)
         }
 
-        if list_crate.installed_git().contains(&value.to_string()) {
+        if list_crate.installed_git().contains(&value.to_string())
+            && (remove_crate_app || remove_crate_git)
+        {
             git_crates_location.remove_crate(value)
         }
     }
 
+    let force_remove_app = app.is_present("force remove");
+    let force_remove_git = git_subcommand.is_present("force remove");
+    let force_remove_registry = registry_subcommand.is_present("force remove");
     // Force remove all crates without reading config file
-    if app.is_present("force remove") {
-        fs::remove_dir_all(dir_path.cache_dir()).unwrap();
-        fs::remove_dir_all(dir_path.src_dir()).unwrap();
-        fs::remove_dir_all(dir_path.checkout_dir()).unwrap();
-        fs::remove_dir_all(dir_path.db_dir()).unwrap();
+    if force_remove_app || force_remove_git || force_remove_registry {
+        if force_remove_app || force_remove_registry {
+            fs::remove_dir_all(dir_path.cache_dir()).unwrap();
+            fs::remove_dir_all(dir_path.src_dir()).unwrap();
+        }
+        if force_remove_app || force_remove_git {
+            fs::remove_dir_all(dir_path.checkout_dir()).unwrap();
+            fs::remove_dir_all(dir_path.db_dir()).unwrap();
+        }
     }
 
     // Remove all crates by following config file
-    if app.is_present("all") {
-        for crate_name in &list_crate.installed_registry() {
-            remove_registry_all(&config_file, app, crate_name, &registry_crates_location);
+    let all_app = app.is_present("all");
+    let all_git = git_subcommand.is_present("all");
+    let all_registry = registry_subcommand.is_present("all");
+    if all_app || all_git || all_registry {
+        if all_app || all_registry {
+            for crate_name in &list_crate.installed_registry() {
+                remove_registry_all(&config_file, app, crate_name, &registry_crates_location);
+            }
         }
-        for crate_name in &list_crate.installed_git() {
-            remove_git_all(&config_file, app, crate_name, &git_crates_location)
+        if all_app || all_git {
+            for crate_name in &list_crate.installed_git() {
+                remove_git_all(&config_file, app, crate_name, &git_crates_location);
+            }
         }
     }
 

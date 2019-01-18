@@ -1,0 +1,15 @@
+cargo-trim-git 
+Perform operation only to git related cache file
+
+USAGE:
+    cargo trim git [FLAGS] [OPTIONS]
+
+FLAGS:
+    -a, --all             Clean up all .cargo/git follow config file data
+    -f, --force           Force clear cache without reading conf file
+    -h, --help            Prints help information
+    -x, --orphan-clean    Clean orphan cache crates
+    -V, --version         Prints version information
+
+OPTIONS:
+    -r, --remove <Crate>...    Remove listed crates
