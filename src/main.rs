@@ -23,8 +23,14 @@ fn main() {
     let mut file = fs::File::open(dir_path.config_dir().to_str().unwrap()).unwrap();
     let app = create_app::app();
     let app = app.subcommand_matches("trim").unwrap();
-    let git_subcommand = app.subcommand_matches("git").unwrap();
-    let registry_subcommand = app.subcommand_matches("registry").unwrap();
+    let mut git_subcommand = &ArgMatches::new();
+    let mut registry_subcommand = &ArgMatches::new();
+    if app.is_present("git") {
+        git_subcommand = app.subcommand_matches("git").unwrap();
+    }
+    if app.is_present("registry") {
+        registry_subcommand = app.subcommand_matches("registry").unwrap();
+    }
 
     // Perform all modification of config file flag and subcommand operation
     let config_file = config_file::modify_config_file(&mut file, app, &dir_path.config_dir());
@@ -52,44 +58,15 @@ fn main() {
         list_subcommand(matches, &list_crate)
     }
 
-    // Perform action for -q flag
-    if app.is_present("query size") {
-        let size_git = match_size(dir_path.git_dir());
-        let size_checkout = match_size(dir_path.checkout_dir());
-        let size_db = match_size(dir_path.db_dir());
-        let size_registry = match_size(dir_path.registry_dir());
-        let size_cache = match_size(dir_path.cache_dir());
-        let size_index = match_size(dir_path.index_dir());
-        let size_src = match_size(dir_path.src_dir());
-        println!(
-            "{:50} {:.3} MB",
-            "Total Size of .cargo/git crates:", size_git
-        );
-        println!(
-            "{:50} {:.3} MB",
-            "   |-- Size of .cargo/git/checkout folder", size_checkout
-        );
-        println!(
-            "{:50} {:.3} MB",
-            "   |-- Size of .cargo/git/db folder", size_db
-        );
-        println!(
-            "{:50} {:.3} MB",
-            "Total Size of .cargo/registry crates:", size_registry
-        );
-        println!(
-            "{:50} {:.3} MB",
-            "   |-- Size of .cargo/registry/cache folder", size_cache
-        );
-        println!(
-            "{:50} {:.3} MB",
-            "   |-- Size of .cargo/registry/index folder", size_index
-        );
-        println!(
-            "{:50} {:.3} MB",
-            "   |-- Size of .cargo/registry/src folder", size_src
-        );
-    }
+    // Perform action for -s flag
+    let query_size_app = app.is_present("query size");
+    let query_size_git = git_subcommand.is_present("query size");
+    let query_size_registry = registry_subcommand.is_present("query size");
+    query_size(
+        &dir_path,
+        &list_crate,
+        (query_size_app, query_size_git, query_size_registry),
+    );
 
     // Perform action on -o flag
     if app.is_present("old clean") || registry_subcommand.is_present("old clean") {
@@ -97,7 +74,6 @@ fn main() {
         for crate_name in &old_registry_crate {
             registry_crates_location.remove_crate(crate_name);
         }
-        println!("Successfully removed {:?} crates", old_registry_crate.len());
     }
 
     // Orphan clean a crates which is not present in directory stored in directory
@@ -105,25 +81,17 @@ fn main() {
     let orphan_app = app.is_present("orphan clean");
     let orphan_git = git_subcommand.is_present("orphan clean");
     let orphan_registry = registry_subcommand.is_present("orphan clean");
-    if orphan_app || orphan_git || orphan_registry {
-        if orphan_app || orphan_registry {
-            let orphan_registry_crate = list_crate.orphan_registry();
-            for crate_name in &orphan_registry_crate {
-                registry_crates_location.remove_crate(crate_name);
-            }
-        }
-        if orphan_app || orphan_git {
-            let orphan_git_crate = list_crate.orphan_git();
-            for crate_name in &orphan_git_crate {
-                git_crates_location.remove_crate(crate_name);
-            }
-        }
-    }
+    orphan_clean(
+        &list_crate,
+        (orphan_app, orphan_git, orphan_registry),
+        &registry_crates_location,
+        &git_crates_location,
+    );
 
+    // Remove certain crate provided with -r flag
     let remove_crate_app = app.is_present("remove-crate");
     let remove_crate_git = git_subcommand.is_present("remove-crate");
     let remove_crate_registry = registry_subcommand.is_present("remove-crate");
-    // Remove certain crate provided with -r flag
     if remove_crate_app || remove_crate_git || remove_crate_registry {
         let value = app.value_of("remove-crate").unwrap_or_else(|| {
             git_subcommand
@@ -229,6 +197,84 @@ fn list_subcommand(list_subcommand: &ArgMatches, list_crate: &CrateList) {
         }
         for crates in &list_crate.installed_git() {
             println!("{}", crates);
+        }
+    }
+}
+
+fn orphan_clean(
+    list_crate: &CrateList,
+    (orphan_app, orphan_git, orphan_registry): (bool, bool, bool),
+    registry_crates_location: &RegistryDir,
+    git_crates_location: &GitDir,
+) {
+    if orphan_app || orphan_git || orphan_registry {
+        if orphan_app || orphan_registry {
+            let orphan_registry_crate = list_crate.orphan_registry();
+            for crate_name in &orphan_registry_crate {
+                registry_crates_location.remove_crate(crate_name);
+            }
+        }
+        if orphan_app || orphan_git {
+            let orphan_git_crate = list_crate.orphan_git();
+            for crate_name in &orphan_git_crate {
+                git_crates_location.remove_crate(crate_name);
+            }
+        }
+    }
+}
+
+fn query_size(
+    dir_path: &DirPath,
+    list_crate: &CrateList,
+    (query_size_app, query_size_git, query_size_registry): (bool, bool, bool),
+) {
+    if query_size_app || query_size_git || query_size_registry {
+        let size_git = match_size(dir_path.git_dir());
+        let size_checkout = match_size(dir_path.checkout_dir());
+        let size_db = match_size(dir_path.db_dir());
+        let size_registry = match_size(dir_path.registry_dir());
+        let size_cache = match_size(dir_path.cache_dir());
+        let size_index = match_size(dir_path.index_dir());
+        let size_src = match_size(dir_path.src_dir());
+        if query_size_app || query_size_git {
+            println!(
+                "{:50} {:10.3} MB",
+                format!(
+                    "Total Size of .cargo/git {} crates:",
+                    list_crate.installed_git().len()
+                ),
+                size_git
+            );
+            println!(
+                "{:50} {:10.3} MB",
+                "   |-- Size of .cargo/git/checkout folder", size_checkout
+            );
+            println!(
+                "{:50} {:10.3} MB",
+                "   |-- Size of .cargo/git/db folder", size_db
+            );
+        }
+        if query_size_app || query_size_registry {
+            println!(
+                "{:50} {:10.3} MB",
+                format!(
+                    "Total Size of .cargo/registry {} crates:",
+                    list_crate.installed_registry().len()
+                ),
+                size_registry
+            );
+            println!(
+                "{:50} {:10.3} MB",
+                "   |-- Size of .cargo/registry/cache folder", size_cache
+            );
+            println!(
+                "{:50} {:10.3} MB",
+                "   |-- Size of .cargo/registry/index folder", size_index
+            );
+            println!(
+                "{:50} {:10.3} MB",
+                "   |-- Size of .cargo/registry/src folder", size_src
+            );
         }
     }
 }

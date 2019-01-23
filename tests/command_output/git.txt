@@ -9,6 +9,7 @@ FLAGS:
     -f, --force           Force clear cache without reading conf file
     -h, --help            Prints help information
     -x, --orphan-clean    Clean orphan cache crates
+    -s, --size            Return size of .cargo/git cache folders
     -V, --version         Prints version information
 
 OPTIONS:

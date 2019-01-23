@@ -156,6 +156,12 @@ pub(super) fn app() -> ArgMatches<'static> {
                                 .help("Clean orphan cache crates"),
                         )
                         .arg(
+                            Arg::with_name("query size")
+                                .short("s")
+                                .long("size")
+                                .help("Return size of .cargo/git cache folders"),
+                        )
+                        .arg(
                             Arg::with_name("remove-crate")
                                 .short("r")
                                 .long("remove")
@@ -191,6 +197,12 @@ pub(super) fn app() -> ArgMatches<'static> {
                                 .short("x")
                                 .long("orphan-clean")
                                 .help("Clean orphan cache crates"),
+                        )
+                        .arg(
+                            Arg::with_name("query size")
+                                .short("s")
+                                .long("size")
+                                .help("Return size of .cargo/registry cache folders"),
                         )
                         .arg(
                             Arg::with_name("remove-crate")
