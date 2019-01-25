@@ -23,23 +23,27 @@ impl CrateList {
         config_file: &ConfigFile,
     ) -> Self {
         let mut installed_crate_registry = Vec::new();
-        for entry in fs::read_dir(src_dir).unwrap() {
-            let entry = entry.unwrap().path();
-            let path = entry.as_path();
-            let file_name = path.file_name().unwrap();
-            let crate_name = file_name.to_str().unwrap().to_string();
-            installed_crate_registry.push(crate_name)
+        if src_dir.exists() {
+            for entry in fs::read_dir(src_dir).unwrap() {
+                let entry = entry.unwrap().path();
+                let path = entry.as_path();
+                let file_name = path.file_name().unwrap();
+                let crate_name = file_name.to_str().unwrap().to_string();
+                installed_crate_registry.push(crate_name)
+            }
         }
         installed_crate_registry.sort();
 
         let mut installed_crate_git = Vec::new();
-        for entry in fs::read_dir(checkout_dir).unwrap() {
-            let entry = entry.unwrap().path();
-            let path = entry.as_path();
-            let file_name = path.file_name().unwrap();
-            let file_name = file_name.to_str().unwrap().to_string();
-            let splitted_name = file_name.rsplitn(2, '-').collect::<Vec<&str>>();
-            installed_crate_git.push(splitted_name[1].to_owned());
+        if checkout_dir.exists() {
+            for entry in fs::read_dir(checkout_dir).unwrap() {
+                let entry = entry.unwrap().path();
+                let path = entry.as_path();
+                let file_name = path.file_name().unwrap();
+                let file_name = file_name.to_str().unwrap().to_string();
+                let splitted_name = file_name.rsplitn(2, '-').collect::<Vec<&str>>();
+                installed_crate_git.push(splitted_name[1].to_owned());
+            }
         }
         installed_crate_git.sort();
 

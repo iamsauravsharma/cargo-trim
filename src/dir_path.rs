@@ -14,7 +14,7 @@ pub(crate) struct DirPath {
 impl DirPath {
     pub(crate) fn set_dir_path() -> DirPath {
         let mut config_dir = dirs::config_dir().unwrap();
-        config_dir.push("cargo_cache_config.json");
+        config_dir.push("cargo_trim_config.json");
 
         // If config file does not exists create one config file
         if !config_dir.exists() {
