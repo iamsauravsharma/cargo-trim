@@ -18,8 +18,10 @@ pub(super) struct CrateList {
 impl CrateList {
     // create list of all types of crate present in directory
     pub(super) fn create_list(
+        cache_dir: &Path,
         src_dir: &Path,
         checkout_dir: &Path,
+        db_dir: &Path,
         config_file: &ConfigFile,
     ) -> Self {
         let mut installed_crate_registry = Vec::new();
@@ -32,7 +34,18 @@ impl CrateList {
                 installed_crate_registry.push(crate_name)
             }
         }
+        if cache_dir.exists() {
+            for entry in fs::read_dir(cache_dir).unwrap() {
+                let entry = entry.unwrap().path();
+                let path = entry.as_path();
+                let file_name = path.file_name().unwrap();
+                let crate_name = file_name.to_str().unwrap().to_string();
+                let splitted_name = crate_name.rsplitn(2, '.').collect::<Vec<&str>>();
+                installed_crate_registry.push(splitted_name[1].to_owned());
+            }
+        }
         installed_crate_registry.sort();
+        installed_crate_registry.dedup();
 
         let mut installed_crate_git = Vec::new();
         if checkout_dir.exists() {
@@ -45,7 +58,18 @@ impl CrateList {
                 installed_crate_git.push(splitted_name[1].to_owned());
             }
         }
+        if db_dir.exists() {
+            for entry in fs::read_dir(db_dir).unwrap() {
+                let entry = entry.unwrap().path();
+                let path = entry.as_path();
+                let file_name = path.file_name().unwrap();
+                let file_name = file_name.to_str().unwrap().to_string();
+                let splitted_name = file_name.rsplitn(2, '-').collect::<Vec<&str>>();
+                installed_crate_git.push(splitted_name[1].to_owned());
+            }
+        }
         installed_crate_git.sort();
+        installed_crate_git.dedup();
 
         let mut old_crate = Vec::new();
         let mut version_removed_crate = remove_version(&installed_crate_registry);

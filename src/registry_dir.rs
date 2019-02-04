@@ -25,6 +25,11 @@ impl RegistryDir {
     pub(super) fn src(&self) -> &String {
         &self.src_dir
     }
+
+    // Get out src_dir path
+    pub(super) fn cache(&self) -> &String {
+        &self.cache_dir
+    }
 }
 
 // Use to open github folder present inside src and cache folder

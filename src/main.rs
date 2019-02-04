@@ -42,8 +42,10 @@ fn main() {
 
     // List out crate list
     let list_crate = list_crate::CrateList::create_list(
+        Path::new(registry_crates_location.cache()),
         Path::new(registry_crates_location.src()),
         dir_path.checkout_dir().as_path(),
+        dir_path.db_dir().as_path(),
         &config_file,
     );
 
