@@ -4,11 +4,11 @@ use clap::{crate_name, crate_version, App, AppSettings, Arg, ArgMatches, SubComm
 pub(super) fn app() -> ArgMatches<'static> {
     App::new(crate_name!())
         .bin_name("cargo")
+        .version(concat!("v", crate_version!()))
         .setting(AppSettings::GlobalVersion)
         .setting(AppSettings::SubcommandRequired)
         .subcommand(
             SubCommand::with_name("trim")
-                .version(concat!("v ", crate_version!()))
                 .author("Saurav Sharma <appdroiddeveloper@gmail.com>")
                 .about("Clean cache from $HOME/.cargo")
                 .arg(
