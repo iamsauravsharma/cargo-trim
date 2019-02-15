@@ -1,4 +1,4 @@
-cargo-trim-remove 
+cargo-trim-remove v0.1.0
 Remove values from config file
 
 USAGE:

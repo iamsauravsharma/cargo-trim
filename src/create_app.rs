@@ -105,10 +105,16 @@ pub(super) fn app() -> ArgMatches<'static> {
                     Arg::with_name("wipe")
                         .short("w")
                         .long("wipe")
-                        .help(
-                            "Wipe folder expected value : git, checkouts, db, registry, cache, \
-                             index, src",
-                        )
+                        .help("Wipe folder")
+                        .possible_values(&[
+                            "git",
+                            "checkouts",
+                            "db",
+                            "registry",
+                            "cache",
+                            "index",
+                            "src",
+                        ])
                         .takes_value(true)
                         .value_name("Folder"),
                 )
@@ -216,7 +222,7 @@ pub(super) fn app() -> ArgMatches<'static> {
                 )
                 .subcommand(
                     SubCommand::with_name("list")
-                        .about("List out all of installed crates")
+                        .about("List out crates")
                         .arg(
                             Arg::with_name("all")
                                 .short("a")

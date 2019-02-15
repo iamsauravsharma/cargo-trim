@@ -439,7 +439,7 @@ fn wipe_directory(app: &ArgMatches, dir_path: &DirPath) {
             "cache" => fs::remove_dir_all(dir_path.cache_dir()).unwrap(),
             "index" => fs::remove_dir_all(dir_path.index_dir()).unwrap(),
             "src" => fs::remove_dir_all(dir_path.src_dir()).unwrap(),
-            _ => println!("Please provide one of the given value"),
+            _ => (),
         }
     }
 }

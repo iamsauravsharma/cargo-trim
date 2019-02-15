@@ -1,4 +1,4 @@
-cargo-trim v 0.1.0
+cargo-trim v0.1.0
 Saurav Sharma <appdroiddeveloper@gmail.com>
 Clean cache from $HOME/.cargo
 
@@ -22,12 +22,12 @@ OPTIONS:
     -I, --include-conf <Crate>...     add listed crates to default conf file include list
     -r, --remove <Crate>...           Remove listed crates
     -d, --directory <Directory>...    Set directory of Rust project
-    -w, --wipe <Folder>               Wipe folder expected value : git, checkouts, db, registry, cache, index, src
+    -w, --wipe <Folder>               Wipe folder [possible values: git, checkouts, db, registry, cache, index, src]
 
 SUBCOMMANDS:
     git         Perform operation only to git related cache file
     help        Prints this message or the help of the given subcommand(s)
-    list        List out all of installed crates
+    list        List out crates
     query       Query config file data
     registry    Perform operation only to registry related cache file
     remove      Remove values from config file

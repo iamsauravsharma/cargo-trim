@@ -1,5 +1,5 @@
-cargo-trim-list 
-List out all of installed crates
+cargo-trim-list v0.1.0
+List out crates
 
 USAGE:
     cargo trim list [FLAGS]
