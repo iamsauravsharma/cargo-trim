@@ -268,8 +268,8 @@ fn query_size(
 
 // Perform all query subcommand call operation
 fn query_subcommand(app: &ArgMatches, config_file: &ConfigFile) {
-    if app.is_present("query") {
-        let matches = app.subcommand_matches("query").unwrap();
+    if app.is_present("config") {
+        let matches = app.subcommand_matches("config").unwrap();
         let read_include = config_file.include();
         let read_exclude = config_file.exclude();
         let read_directory = config_file.directory();

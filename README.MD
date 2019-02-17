@@ -40,7 +40,7 @@ Initially you should have cargo installed
 ### Command output
 ```cargo trim -h``` will produce out following output
 ```
-cargo-trim v 0.1.0
+cargo-trim v0.1.0
 Saurav Sharma <appdroiddeveloper@gmail.com>
 Clean cache from $HOME/.cargo
 
@@ -54,23 +54,23 @@ FLAGS:
     -h, --help            Prints help information
     -o, --old-clean       Clean old cache crates
     -x, --orphan-clean    Clean orphan cache crates
-    -s, --size            Return size of .cargo cache folders
+    -q, --query           Return size of .cargo/cache folders
     -V, --version         Prints version information
 
 OPTIONS:
-    -e, --exclude <Crate>...          Exclude listed crates
-    -E, --exclude-conf <Crate>...     add listed crates to default conf file exclude list
-    -i, --include <Crate>...          Include listed crates
-    -I, --include-conf <Crate>...     add listed crates to default conf file include list
-    -r, --remove <Crate>...           Remove listed crates
-    -d, --directory <Directory>...    Set directory of Rust project
-    -w, --wipe <Folder>               Wipe folder expected value : git, checkouts, db, registry, cache, index, src
+    -e, --exclude <Crate>...              Exclude listed crates
+    -E, --exclude-conf <Crate>...         add listed crates to default conf file exclude list
+    -i, --include <Crate>...              Include listed crates
+    -I, --include-conf <Crate>...         add listed crates to default conf file include list
+    -r, --remove <Crate>...               Remove listed crates
+    -s, --set-directory <Directory>...    Set directory of Rust project
+    -w, --wipe <Folder>                   Wipe folder [possible values: git, checkouts, db, registry, cache, index, src]
 
 SUBCOMMANDS:
+    config      Query config file data
     git         Perform operation only to git related cache file
     help        Prints this message or the help of the given subcommand(s)
-    list        List out all of installed crates
-    query       Query config file data
+    list        List out crates
     registry    Perform operation only to registry related cache file
     remove      Remove values from config file
 ```

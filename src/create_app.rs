@@ -79,18 +79,18 @@ pub(super) fn app() -> ArgMatches<'static> {
                 )
                 .arg(
                     Arg::with_name("set directory")
-                        .short("d")
+                        .short("s")
                         .multiple(true)
-                        .long("directory")
+                        .long("set-directory")
                         .value_name("Directory")
                         .help("Set directory of Rust project")
                         .takes_value(true),
                 )
                 .arg(
                     Arg::with_name("query size")
-                        .short("s")
-                        .long("size")
-                        .help("Return size of .cargo cache folders"),
+                        .short("q")
+                        .long("query")
+                        .help("Return size of .cargo/cache folders"),
                 )
                 .arg(
                     Arg::with_name("remove-crate")
@@ -119,7 +119,7 @@ pub(super) fn app() -> ArgMatches<'static> {
                         .value_name("Folder"),
                 )
                 .subcommand(
-                    SubCommand::with_name("query")
+                    SubCommand::with_name("config")
                         .about("Query config file data")
                         .arg(
                             Arg::with_name("directory")

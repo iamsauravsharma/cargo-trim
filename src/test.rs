@@ -51,15 +51,15 @@ fn test_remove_help() {
 }
 
 #[test]
-fn test_query_help() {
+fn test_config_help() {
     let output = Command::new("sh")
         .arg("-c")
-        .arg("cargo run -- trim help query")
+        .arg("cargo run -- trim help config")
         .output()
         .expect("failed to execute process");
     let output = String::from_utf8(output.stdout).unwrap();
     let mut buffer = String::new();
-    let mut file = std::fs::File::open("tests/command_output/query.txt").unwrap();
+    let mut file = std::fs::File::open("tests/command_output/config.txt").unwrap();
     file.read_to_string(&mut buffer).unwrap();
     assert_eq!(
         output.replace("\r", "").replace("\n", ""),

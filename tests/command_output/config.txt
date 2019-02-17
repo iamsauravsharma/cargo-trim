@@ -1,8 +1,8 @@
-cargo-trim-query v0.1.0
+cargo-trim-config v0.1.0
 Query config file data
 
 USAGE:
-    cargo trim query [FLAGS]
+    cargo trim config [FLAGS]
 
 FLAGS:
     -d, --directory    Query about directory data
