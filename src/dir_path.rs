@@ -12,7 +12,7 @@ pub(crate) struct DirPath {
 }
 
 impl DirPath {
-    pub(crate) fn set_dir_path() -> DirPath {
+    pub(crate) fn set_dir_path() -> Self {
         let mut config_dir = dirs::config_dir().unwrap();
         config_dir.push("cargo_trim_config.json");
 
@@ -41,7 +41,7 @@ impl DirPath {
         let mut index_dir = registry_dir.clone();
         index_dir.push("index");
 
-        DirPath {
+        Self {
             config_dir,
             git_dir,
             checkout_dir,

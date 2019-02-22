@@ -84,7 +84,7 @@ impl CrateList {
 
         let mut used_crate_registry = Vec::new();
         let mut used_crate_git = Vec::new();
-        for path in config_file.directory().iter() {
+        for path in &config_file.directory() {
             let list = list_cargo_lock(&Path::new(path));
             let (mut registry_crate, mut git_crate) = read_content(&list);
             used_crate_registry.append(&mut registry_crate);
