@@ -1,9 +1,11 @@
 use std::{io::Read, process::Command};
 #[test]
 fn test_help() {
-    let output = Command::new("sh")
-        .arg("-c")
-        .arg("cargo run -- trim -h")
+    let output = Command::new("cargo")
+        .arg("run")
+        .arg("--")
+        .arg("trim")
+        .arg("help")
         .output()
         .expect("failed to execute process");
     let output = String::from_utf8(output.stdout).unwrap();
@@ -18,9 +20,12 @@ fn test_help() {
 
 #[test]
 fn test_list_help() {
-    let output = Command::new("sh")
-        .arg("-c")
-        .arg("cargo run -- trim help list")
+    let output = Command::new("cargo")
+        .arg("run")
+        .arg("--")
+        .arg("trim")
+        .arg("help")
+        .arg("list")
         .output()
         .expect("failed to execute process");
     let output = String::from_utf8(output.stdout).unwrap();
@@ -35,9 +40,12 @@ fn test_list_help() {
 
 #[test]
 fn test_remove_help() {
-    let output = Command::new("sh")
-        .arg("-c")
-        .arg("cargo run -- trim help remove")
+    let output = Command::new("cargo")
+        .arg("run")
+        .arg("--")
+        .arg("trim")
+        .arg("help")
+        .arg("remove")
         .output()
         .expect("failed to execute process");
     let output = String::from_utf8(output.stdout).unwrap();
@@ -52,9 +60,12 @@ fn test_remove_help() {
 
 #[test]
 fn test_config_help() {
-    let output = Command::new("sh")
-        .arg("-c")
-        .arg("cargo run -- trim help config")
+    let output = Command::new("cargo")
+        .arg("run")
+        .arg("--")
+        .arg("trim")
+        .arg("help")
+        .arg("config")
         .output()
         .expect("failed to execute process");
     let output = String::from_utf8(output.stdout).unwrap();
@@ -69,9 +80,12 @@ fn test_config_help() {
 
 #[test]
 fn test_git_help() {
-    let output = Command::new("sh")
-        .arg("-c")
-        .arg("cargo run -- trim help git")
+    let output = Command::new("cargo")
+        .arg("run")
+        .arg("--")
+        .arg("trim")
+        .arg("help")
+        .arg("git")
         .output()
         .expect("failed to execute process");
     let output = String::from_utf8(output.stdout).unwrap();
@@ -86,9 +100,12 @@ fn test_git_help() {
 
 #[test]
 fn test_registry_help() {
-    let output = Command::new("sh")
-        .arg("-c")
-        .arg("cargo run -- trim help registry")
+    let output = Command::new("cargo")
+        .arg("run")
+        .arg("--")
+        .arg("trim")
+        .arg("help")
+        .arg("registry")
         .output()
         .expect("failed to execute process");
     let output = String::from_utf8(output.stdout).unwrap();

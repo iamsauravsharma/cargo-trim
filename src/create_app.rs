@@ -48,6 +48,12 @@ pub(super) fn app() -> ArgMatches<'static> {
                         .help("Force clear cache without reading conf file"),
                 )
                 .arg(
+                    Arg::with_name("git compress")
+                        .short("g")
+                        .long("gc")
+                        .help("Git compress to reduce size of .cargo"),
+                )
+                .arg(
                     Arg::with_name("include")
                         .short("i")
                         .long("include")

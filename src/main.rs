@@ -16,6 +16,7 @@ use fs_extra::dir::get_size;
 use std::{
     fs,
     path::{Path, PathBuf},
+    process::Command,
 };
 
 fn main() {
@@ -51,6 +52,9 @@ fn main() {
 
     // Perform action of removing config file with -c flag
     clear_config(&app, &dir_path);
+
+    // Perform git compress to .cargo/index
+    git_compress(&app, &dir_path.index_dir());
 
     // Perform action on list subcommand
     list_subcommand(app, &list_crate);
@@ -136,6 +140,60 @@ fn clear_config(app: &ArgMatches, dir_path: &DirPath) {
     if app.is_present("clear config") {
         fs::remove_file(dir_path.config_dir().as_path()).unwrap();
         println!("Cleared Config file");
+    }
+}
+
+// Git compress git files
+fn git_compress(app: &ArgMatches, index_dir: &PathBuf) {
+    if app.is_present("git compress") {
+        for entry in fs::read_dir(index_dir).unwrap() {
+            let repo_path = entry.unwrap().path();
+            let path = repo_path.to_str().unwrap();
+            if path.contains("github.com") {
+                run_git_compress_commands(&repo_path);
+            }
+        }
+    }
+}
+
+// run combination of commands which git compress a index of registry
+fn run_git_compress_commands(repo_path: &PathBuf) {
+    // Remove history of all checkout which will help in remove dangling commits
+    if let Err(e) = Command::new("git")
+        .arg("reflog")
+        .arg("expire")
+        .arg("--expire=now")
+        .arg("--all")
+        .current_dir(repo_path)
+        .output()
+    {
+        panic!(format!("git reflog failed to execute due to error {}", e));
+    }
+
+    // pack refs of branches/tags etc into one file know as pack-refs file for
+    // effective repo access
+    if let Err(e) = Command::new("git")
+        .arg("pack-refs")
+        .arg("--all")
+        .arg("--prune")
+        .current_dir(repo_path)
+        .output()
+    {
+        panic!(format!(
+            "git pack-refs failed to execute due to error {}",
+            e
+        ));
+    }
+
+    // cleanup unneccessary file and optimize a local repo
+    if let Err(e) = Command::new("git")
+        .arg("gc")
+        .arg("--aggressive")
+        .arg("--prune=now")
+        .current_dir(repo_path)
+        .output()
+    {
+        panic!(format!("git gc failed to execute due to error {}", e));
     }
 }
 

@@ -9,6 +9,7 @@ FLAGS:
     -a, --all             Clean up all .cargo/registry & .cargo/git follow config file data
     -c, --clear           Clear config data
     -f, --force           Force clear cache without reading conf file
+    -g, --gc              Git compress to reduce size of .cargo
     -h, --help            Prints help information
     -o, --old-clean       Clean old cache crates
     -x, --orphan-clean    Clean orphan cache crates
