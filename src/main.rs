@@ -54,7 +54,12 @@ fn main() {
     clear_config(&app, &dir_path);
 
     // Perform git compress to .cargo/index
-    git_compress(&app, &dir_path.index_dir());
+    git_compress(
+        &app,
+        &dir_path.index_dir(),
+        &dir_path.checkout_dir(),
+        &dir_path.db_dir(),
+    );
 
     // Perform action on list subcommand
     list_subcommand(app, &list_crate);
@@ -144,13 +149,33 @@ fn clear_config(app: &ArgMatches, dir_path: &DirPath) {
 }
 
 // Git compress git files
-fn git_compress(app: &ArgMatches, index_dir: &PathBuf) {
+fn git_compress(app: &ArgMatches, index_dir: &PathBuf, checkout_dir: &PathBuf, db_dir: &PathBuf) {
     if app.is_present("git compress") {
-        for entry in fs::read_dir(index_dir).unwrap() {
-            let repo_path = entry.unwrap().path();
-            let path = repo_path.to_str().unwrap();
-            if path.contains("github.com") {
-                run_git_compress_commands(&repo_path);
+        let value = app.value_of("git compress").unwrap();
+        if value == "index" || value == "all" {
+            for entry in fs::read_dir(index_dir).unwrap() {
+                let repo_path = entry.unwrap().path();
+                let path = repo_path.to_str().unwrap();
+                if path.contains("github.com") {
+                    run_git_compress_commands(&repo_path);
+                }
+            }
+        }
+        if value.contains("git") || value == "all" {
+            if value == "git" || value == "git-checkout" {
+                for entry in fs::read_dir(checkout_dir).unwrap() {
+                    let repo_path = entry.unwrap().path();
+                    for rev in fs::read_dir(repo_path).unwrap() {
+                        let rev_path = rev.unwrap().path();
+                        run_git_compress_commands(&rev_path)
+                    }
+                }
+            }
+            if value == "git" || value == "git-db" {
+                for entry in fs::read_dir(db_dir).unwrap() {
+                    let repo_path = entry.unwrap().path();
+                    run_git_compress_commands(&repo_path);
+                }
             }
         }
     }
@@ -159,8 +184,6 @@ fn git_compress(app: &ArgMatches, index_dir: &PathBuf) {
 // run combination of commands which git compress a index of registry
 fn run_git_compress_commands(repo_path: &PathBuf) {
     // Remove history of all checkout which will help in remove dangling commits
-    println!("Running git reflog command:");
-    println!("git reflog expire --expire=now --all");
     if let Err(e) = Command::new("git")
         .arg("reflog")
         .arg("expire")
@@ -171,14 +194,9 @@ fn run_git_compress_commands(repo_path: &PathBuf) {
     {
         panic!(format!("git reflog failed to execute due to error {}", e));
     }
-    println!();
-    println!("Successfully ran git reflog");
 
     // pack refs of branches/tags etc into one file know as pack-refs file for
     // effective repo access
-    println!();
-    println!("Running git pack-refs command:");
-    println!("git pack-refs --all --purne");
     if let Err(e) = Command::new("git")
         .arg("pack-refs")
         .arg("--all")
@@ -191,13 +209,8 @@ fn run_git_compress_commands(repo_path: &PathBuf) {
             e
         ));
     }
-    println!();
-    println!("Successfully ran git pack-refs");
 
     // cleanup unneccessary file and optimize a local repo
-    println!();
-    println!("Running git gc command:");
-    println!("git gc --agressive --purne=now");
     if let Err(e) = Command::new("git")
         .arg("gc")
         .arg("--aggressive")
@@ -207,8 +220,6 @@ fn run_git_compress_commands(repo_path: &PathBuf) {
     {
         panic!(format!("git gc failed to execute due to error {}", e));
     }
-    println!();
-    println!("Successfully ran git gc command");
 }
 
 // Perform different operation for a list subcommand

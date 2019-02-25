@@ -9,7 +9,6 @@ FLAGS:
     -a, --all             Clean up all .cargo/registry & .cargo/git follow config file data
     -c, --clear           Clear config data
     -f, --force           Force clear cache without reading conf file
-    -g, --gc              Git compress to reduce size of .cargo
     -h, --help            Prints help information
     -o, --old-clean       Clean old cache crates
     -x, --orphan-clean    Clean orphan cache crates
@@ -19,6 +18,8 @@ FLAGS:
 OPTIONS:
     -e, --exclude <Crate>...              Exclude listed crates
     -E, --exclude-conf <Crate>...         add listed crates to default conf file exclude list
+    -g, --gc <git compress>               Git compress to reduce size of .cargo [possible values: all, index, git, git-
+                                          checkout, git-db]
     -i, --include <Crate>...              Include listed crates
     -I, --include-conf <Crate>...         add listed crates to default conf file include list
     -r, --remove <Crate>...               Remove listed crates

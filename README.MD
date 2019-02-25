@@ -28,6 +28,7 @@
 
 ### TODO
 - [ ] Proper handling of error
+- [ ] Support git crates old clean
 - [ ] Documentaion of code for better understanding
 - [ ] Publish crate to [crates.io][cratesio_link]
 
@@ -60,6 +61,8 @@ FLAGS:
 OPTIONS:
     -e, --exclude <Crate>...              Exclude listed crates
     -E, --exclude-conf <Crate>...         add listed crates to default conf file exclude list
+    -g, --gc <git compress>               Git compress to reduce size of .cargo [possible values: all, index, git, git-
+                                          checkout, git-db]
     -i, --include <Crate>...              Include listed crates
     -I, --include-conf <Crate>...         add listed crates to default conf file include list
     -r, --remove <Crate>...               Remove listed crates

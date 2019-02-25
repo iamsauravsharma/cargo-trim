@@ -51,7 +51,9 @@ pub(super) fn app() -> ArgMatches<'static> {
                     Arg::with_name("git compress")
                         .short("g")
                         .long("gc")
-                        .help("Git compress to reduce size of .cargo"),
+                        .help("Git compress to reduce size of .cargo")
+                        .takes_value(true)
+                        .possible_values(&["all", "index", "git", "git-checkout", "git-db"]),
                 )
                 .arg(
                     Arg::with_name("include")
