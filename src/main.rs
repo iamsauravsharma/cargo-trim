@@ -237,10 +237,12 @@ fn old_clean(
     registry_crates_location: &RegistryDir,
 ) {
     if old_app || old_registry {
+        let mut cleaned_storage = 0.0;
         let old_registry_crate = list_crate.old_registry();
         for crate_name in &old_registry_crate {
-            registry_crates_location.remove_crate(crate_name);
+            cleaned_storage += registry_crates_location.remove_crate(crate_name);
         }
+        println!("Total cleaned storage {:.3} MB", cleaned_storage);
     }
 }
 
@@ -252,18 +254,20 @@ fn orphan_clean(
     git_crates_location: &GitDir,
 ) {
     if orphan_app || orphan_git || orphan_registry {
+        let mut cleaned_storage = 0.0;
         if orphan_app || orphan_registry {
             let orphan_registry_crate = list_crate.orphan_registry();
             for crate_name in &orphan_registry_crate {
-                registry_crates_location.remove_crate(crate_name);
+                cleaned_storage += registry_crates_location.remove_crate(crate_name);
             }
         }
         if orphan_app || orphan_git {
             let orphan_git_crate = list_crate.orphan_git();
             for crate_name in &orphan_git_crate {
-                git_crates_location.remove_crate(crate_name);
+                cleaned_storage += git_crates_location.remove_crate(crate_name);
             }
         }
+        println!("Total cleaned storage {:.3} MB", cleaned_storage);
     }
 }
 
@@ -408,13 +412,13 @@ fn remove_crate(
         if list_crate.installed_registry().contains(&value.to_string())
             && (remove_crate_app || remove_crate_registry)
         {
-            registry_crates_location.remove_crate(value)
+            registry_crates_location.remove_crate(value);
         }
 
         if list_crate.installed_git().contains(&value.to_string())
             && (remove_crate_app || remove_crate_git)
         {
-            git_crates_location.remove_crate(value)
+            git_crates_location.remove_crate(value);
         }
     }
 }

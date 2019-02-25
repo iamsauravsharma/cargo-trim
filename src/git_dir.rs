@@ -1,3 +1,4 @@
+use fs_extra::dir::get_size;
 use std::{fs, path::Path};
 
 pub struct GitDir {
@@ -15,19 +16,24 @@ impl GitDir {
         }
     }
 
-    pub(super) fn remove_crate(&self, crate_name: &str) {
-        remove_crate(Path::new(&self.checkout_dir), crate_name);
-        remove_crate(Path::new(&self.db_dir), crate_name);
+    pub(super) fn remove_crate(&self, crate_name: &str) -> f64 {
+        let mut total_size_saved: u64 = 0;
+        total_size_saved += remove_crate(Path::new(&self.checkout_dir), crate_name);
+        total_size_saved += remove_crate(Path::new(&self.db_dir), crate_name);
         println!("Removed {:?}", crate_name);
+        (total_size_saved as f64) / (1024f64.powf(2.0))
     }
 }
 
-fn remove_crate(location: &Path, crate_name: &str) {
+fn remove_crate(location: &Path, crate_name: &str) -> u64 {
+    let mut file_size: u64 = 0;
     for entry in fs::read_dir(location).unwrap() {
         let entry = entry.unwrap();
         let path = entry.path();
         if path.to_str().unwrap().contains(crate_name) {
-            fs::remove_dir_all(path).unwrap();
+            file_size += get_size(&path).unwrap();
+            fs::remove_dir_all(&path).unwrap();
         }
     }
+    file_size
 }
