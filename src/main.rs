@@ -159,6 +159,8 @@ fn git_compress(app: &ArgMatches, index_dir: &PathBuf) {
 // run combination of commands which git compress a index of registry
 fn run_git_compress_commands(repo_path: &PathBuf) {
     // Remove history of all checkout which will help in remove dangling commits
+    println!("Running git reflog command:");
+    println!("git reflog expire --expire=now --all");
     if let Err(e) = Command::new("git")
         .arg("reflog")
         .arg("expire")
@@ -169,9 +171,14 @@ fn run_git_compress_commands(repo_path: &PathBuf) {
     {
         panic!(format!("git reflog failed to execute due to error {}", e));
     }
+    println!();
+    println!("Successfully ran git reflog");
 
     // pack refs of branches/tags etc into one file know as pack-refs file for
     // effective repo access
+    println!();
+    println!("Running git pack-refs command:");
+    println!("git pack-refs --all --purne");
     if let Err(e) = Command::new("git")
         .arg("pack-refs")
         .arg("--all")
@@ -184,8 +191,13 @@ fn run_git_compress_commands(repo_path: &PathBuf) {
             e
         ));
     }
+    println!();
+    println!("Successfully ran git pack-refs");
 
     // cleanup unneccessary file and optimize a local repo
+    println!();
+    println!("Running git gc command:");
+    println!("git gc --agressive --purne=now");
     if let Err(e) = Command::new("git")
         .arg("gc")
         .arg("--aggressive")
@@ -195,6 +207,8 @@ fn run_git_compress_commands(repo_path: &PathBuf) {
     {
         panic!(format!("git gc failed to execute due to error {}", e));
     }
+    println!();
+    println!("Successfully ran git gc command");
 }
 
 // Perform different operation for a list subcommand
