@@ -8,8 +8,9 @@ FLAGS:
     -a, --all             Clean up all .cargo/git follow config file data
     -f, --force           Force clear cache without reading conf file
     -h, --help            Prints help information
+    -l, --light           Light cleanup repos by removing git checkout but stores git db for future compilation
     -x, --orphan-clean    Clean orphan cache crates
-    -s, --size            Return size of .cargo/git cache folders
+    -q, --query           Return size of .cargo/git cache folders
     -V, --version         Prints version information
 
 OPTIONS:

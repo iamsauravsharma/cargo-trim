@@ -8,9 +8,11 @@ FLAGS:
     -a, --all             Clean up all .cargo/registry follow config file data
     -f, --force           Force clear cache without reading conf file
     -h, --help            Prints help information
+    -l, --light           Light cleanup repos by removing registry source but stores registry archive for future
+                          compilation
     -o, --old-clean       Clean old cache crates
     -x, --orphan-clean    Clean orphan cache crates
-    -s, --size            Return size of .cargo/registry cache folders
+    -q, --query           Return size of .cargo/registry cache folders
     -V, --version         Prints version information
 
 OPTIONS:

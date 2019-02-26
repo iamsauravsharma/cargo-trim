@@ -74,6 +74,15 @@ pub(super) fn app() -> ArgMatches<'static> {
                         .value_name("Crate"),
                 )
                 .arg(
+                    Arg::with_name("light cleanup")
+                        .short("l")
+                        .long("light")
+                        .help(
+                            "Light cleanup repos by removing git checkout and registry source but \
+                             stores git db and registry archive for future compilation",
+                        ),
+                )
+                .arg(
                     Arg::with_name("old clean")
                         .short("o")
                         .long("old-clean")
@@ -164,6 +173,15 @@ pub(super) fn app() -> ArgMatches<'static> {
                                 .help("Force clear cache without reading conf file"),
                         )
                         .arg(
+                            Arg::with_name("light cleanup")
+                                .short("l")
+                                .long("light")
+                                .help(
+                                    "Light cleanup repos by removing git checkout but stores git \
+                                     db for future compilation",
+                                ),
+                        )
+                        .arg(
                             Arg::with_name("orphan clean")
                                 .short("x")
                                 .long("orphan-clean")
@@ -171,8 +189,8 @@ pub(super) fn app() -> ArgMatches<'static> {
                         )
                         .arg(
                             Arg::with_name("query size")
-                                .short("s")
-                                .long("size")
+                                .short("q")
+                                .long("query")
                                 .help("Return size of .cargo/git cache folders"),
                         )
                         .arg(
@@ -201,6 +219,15 @@ pub(super) fn app() -> ArgMatches<'static> {
                                 .help("Force clear cache without reading conf file"),
                         )
                         .arg(
+                            Arg::with_name("light cleanup")
+                                .short("l")
+                                .long("light")
+                                .help(
+                                    "Light cleanup repos by removing registry source but stores \
+                                     registry archive for future compilation",
+                                ),
+                        )
+                        .arg(
                             Arg::with_name("old clean")
                                 .short("o")
                                 .long("old-clean")
@@ -214,8 +241,8 @@ pub(super) fn app() -> ArgMatches<'static> {
                         )
                         .arg(
                             Arg::with_name("query size")
-                                .short("s")
-                                .long("size")
+                                .short("q")
+                                .long("query")
                                 .help("Return size of .cargo/registry cache folders"),
                         )
                         .arg(

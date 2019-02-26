@@ -61,6 +61,16 @@ fn main() {
         &dir_path.db_dir(),
     );
 
+    // Perform light cleanup
+    let light_cleanup_app = app.is_present("light cleanup");
+    let light_cleanup_git = git_subcommand.is_present("light cleanup");
+    let light_cleanup_registry = registry_subcommand.is_present("light_cleanup");
+    light_cleanup(
+        &dir_path.checkout_dir(),
+        &dir_path.src_dir(),
+        (light_cleanup_app, light_cleanup_git, light_cleanup_registry),
+    );
+
     // Perform action on list subcommand
     list_subcommand(app, &list_crate);
 
@@ -219,6 +229,22 @@ fn run_git_compress_commands(repo_path: &PathBuf) {
         .output()
     {
         panic!(format!("git gc failed to execute due to error {}", e));
+    }
+}
+
+// light cleanup unused directory
+fn light_cleanup(
+    checkout_dir: &PathBuf,
+    src_dir: &PathBuf,
+    (light_cleanup_app, light_cleanup_git, light_cleanup_registry): (bool, bool, bool),
+) {
+    if light_cleanup_app || light_cleanup_git || light_cleanup_registry {
+        if light_cleanup_app || light_cleanup_registry {
+            delete_folder(checkout_dir);
+        }
+        if light_cleanup_app || light_cleanup_git {
+            delete_folder(src_dir);
+        }
     }
 }
 
@@ -385,12 +411,12 @@ fn force_remove(
 ) {
     if force_remove_app || force_remove_git || force_remove_registry {
         if force_remove_app || force_remove_registry {
-            fs::remove_dir_all(dir_path.cache_dir()).unwrap();
-            fs::remove_dir_all(dir_path.src_dir()).unwrap();
+            delete_folder(&dir_path.cache_dir());
+            delete_folder(&dir_path.src_dir());
         }
         if force_remove_app || force_remove_git {
-            fs::remove_dir_all(dir_path.checkout_dir()).unwrap();
-            fs::remove_dir_all(dir_path.db_dir()).unwrap();
+            delete_folder(&dir_path.checkout_dir());
+            delete_folder(&dir_path.db_dir());
         }
     }
 }
@@ -519,14 +545,20 @@ fn wipe_directory(app: &ArgMatches, dir_path: &DirPath) {
     if app.is_present("wipe") {
         let value = app.value_of("wipe").unwrap();
         match value {
-            "git" => fs::remove_dir_all(dir_path.git_dir()).unwrap(),
-            "checkouts" => fs::remove_dir_all(dir_path.checkout_dir()).unwrap(),
-            "db" => fs::remove_dir_all(dir_path.db_dir()).unwrap(),
-            "registry" => fs::remove_dir_all(dir_path.registry_dir()).unwrap(),
-            "cache" => fs::remove_dir_all(dir_path.cache_dir()).unwrap(),
-            "index" => fs::remove_dir_all(dir_path.index_dir()).unwrap(),
-            "src" => fs::remove_dir_all(dir_path.src_dir()).unwrap(),
+            "git" => delete_folder(&dir_path.git_dir()),
+            "checkouts" => delete_folder(&dir_path.checkout_dir()),
+            "db" => delete_folder(&dir_path.db_dir()),
+            "registry" => delete_folder(&dir_path.registry_dir()),
+            "cache" => delete_folder(&dir_path.cache_dir()),
+            "index" => delete_folder(&dir_path.index_dir()),
+            "src" => delete_folder(&dir_path.src_dir()),
             _ => (),
         }
+    }
+}
+
+fn delete_folder(path: &PathBuf) {
+    if path.exists() {
+        fs::remove_dir_all(path).unwrap();
     }
 }
