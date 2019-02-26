@@ -28,7 +28,6 @@
 
 ### TODO
 - [ ] Proper handling of error
-- [ ] Support git crates old clean
 - [ ] Documentaion of code for better understanding
 - [ ] Publish crate to [crates.io][cratesio_link]
 

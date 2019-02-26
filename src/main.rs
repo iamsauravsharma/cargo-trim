@@ -90,10 +90,12 @@ fn main() {
     // Perform action on -o flagmatches which remove all old crates
     let old_app = app.is_present("old clean");
     let old_registry = registry_subcommand.is_present("old clean");
+    let old_git = git_subcommand.is_present("old clean");
     old_clean(
         &list_crate,
-        (old_app, old_registry),
+        (old_app, old_registry, old_git),
         &registry_crates_location,
+        &git_crates_location,
     );
 
     // Orphan clean a crates which is not present in directory stored in directory
@@ -256,6 +258,9 @@ fn list_subcommand(app: &ArgMatches, list_crate: &CrateList) {
             for crates in &list_crate.old_registry() {
                 println!("{}", crates);
             }
+            for crates in &list_crate.old_git() {
+                println!("{}", crates);
+            }
         } else if list_subcommand.is_present("orphan") {
             for crates in &list_crate.orphan_registry() {
                 println!("{}", crates);
@@ -284,14 +289,23 @@ fn list_subcommand(app: &ArgMatches, list_crate: &CrateList) {
 // Clean old crates
 fn old_clean(
     list_crate: &CrateList,
-    (old_app, old_registry): (bool, bool),
+    (old_app, old_registry, old_git): (bool, bool, bool),
     registry_crates_location: &RegistryDir,
+    git_crates_location: &GitDir,
 ) {
-    if old_app || old_registry {
+    if old_app || old_registry || old_git {
         let mut cleaned_storage = 0.0;
-        let old_registry_crate = list_crate.old_registry();
-        for crate_name in &old_registry_crate {
-            cleaned_storage += registry_crates_location.remove_crate(crate_name);
+        if old_app || old_registry {
+            let old_registry_crate = list_crate.old_registry();
+            for crate_name in &old_registry_crate {
+                cleaned_storage += registry_crates_location.remove_crate(crate_name);
+            }
+        }
+        if old_app || old_git {
+            let old_git_crate = list_crate.old_git();
+            for crate_name in &old_git_crate {
+                cleaned_storage += git_crates_location.remove_crate(crate_name);
+            }
         }
         println!("Total cleaned storage {:.3} MB", cleaned_storage);
     }

@@ -182,6 +182,12 @@ pub(super) fn app() -> ArgMatches<'static> {
                                 ),
                         )
                         .arg(
+                            Arg::with_name("old clean")
+                                .short("o")
+                                .long("old-clean")
+                                .help("Clean old cache crates"),
+                        )
+                        .arg(
                             Arg::with_name("orphan clean")
                                 .short("x")
                                 .long("orphan-clean")
