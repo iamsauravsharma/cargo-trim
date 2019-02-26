@@ -1,4 +1,7 @@
-use std::{fs, path::PathBuf};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 pub(crate) struct DirPath {
     config_dir: PathBuf,
@@ -21,8 +24,7 @@ impl DirPath {
             fs::File::create(config_dir.to_str().unwrap()).unwrap();
         }
 
-        let mut home_dir = dirs::home_dir().unwrap();
-        home_dir.push(".cargo");
+        let home_dir = Path::new(env!("CARGO_HOME")).to_path_buf();
         let mut git_dir = home_dir.clone();
         git_dir.push("git");
 

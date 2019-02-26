@@ -1,16 +1,16 @@
-use clap::{crate_name, crate_version, App, AppSettings, Arg, ArgMatches, SubCommand};
+use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 
 // Create all list of subcommand options flag using clap
 pub(super) fn app() -> ArgMatches<'static> {
-    App::new(crate_name!())
+    App::new(env!("CARGO_PKG_NAME"))
         .bin_name("cargo")
-        .version(concat!("v", crate_version!()))
+        .version(env!("CARGO_PKG_VERSION"))
         .setting(AppSettings::GlobalVersion)
         .setting(AppSettings::SubcommandRequired)
         .subcommand(
             SubCommand::with_name("trim")
-                .author("Saurav Sharma <appdroiddeveloper@gmail.com>")
-                .about("Clean cache from $HOME/.cargo")
+                .author(env!("CARGO_PKG_AUTHORS"))
+                .about(env!("CARGO_PKG_DESCRIPTION"))
                 .arg(
                     Arg::with_name("all")
                         .short("a")

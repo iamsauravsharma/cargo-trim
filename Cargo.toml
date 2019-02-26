@@ -3,7 +3,7 @@ name = "cargo-trim"
 version = "0.1.0"
 authors = ["Saurav Sharma <appdroiddeveloper@gmail.com>"]
 edition = "2018"
-description="Binary application to cleanup .cargo/registry cache"
+description="Binary application to cleanup $CARGO_HOME cache"
 license="MIT"
 
 [dependencies]

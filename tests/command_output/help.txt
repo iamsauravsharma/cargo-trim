@@ -1,6 +1,6 @@
-cargo-trim v0.1.0
+cargo-trim 0.1.0
 Saurav Sharma <appdroiddeveloper@gmail.com>
-Clean cache from $HOME/.cargo
+Binary application to cleanup $CARGO_HOME cache
 
 USAGE:
     cargo trim [FLAGS] [OPTIONS] [SUBCOMMAND]
