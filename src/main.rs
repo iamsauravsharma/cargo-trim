@@ -80,7 +80,6 @@ fn main() {
     let query_size_registry = registry_subcommand.is_present("query size");
     query_size(
         &dir_path,
-        &list_crate,
         (query_size_app, query_size_git, query_size_registry),
     );
 
@@ -145,7 +144,7 @@ fn main() {
 }
 
 // Return a size of directory if present otherwise return 0.0 as a size in MB
-fn match_size(path: PathBuf) -> f64 {
+fn folder_size(path: PathBuf) -> f64 {
     match get_size(path) {
         Ok(size) => (size as f64) / (1024f64.powf(2.0)),
         Err(_) => 0.0,
@@ -339,55 +338,53 @@ fn orphan_clean(
 // query size of directory
 fn query_size(
     dir_path: &DirPath,
-    list_crate: &CrateList,
     (query_size_app, query_size_git, query_size_registry): (bool, bool, bool),
 ) {
     if query_size_app || query_size_git || query_size_registry {
-        let size_git = match_size(dir_path.git_dir());
-        let size_checkout = match_size(dir_path.checkout_dir());
-        let size_db = match_size(dir_path.db_dir());
-        let size_registry = match_size(dir_path.registry_dir());
-        let size_cache = match_size(dir_path.cache_dir());
-        let size_index = match_size(dir_path.index_dir());
-        let size_src = match_size(dir_path.src_dir());
+        let size_bin = folder_size(dir_path.bin_dir());
+        let size_git = folder_size(dir_path.git_dir());
+        let size_checkout = folder_size(dir_path.checkout_dir());
+        let size_db = folder_size(dir_path.db_dir());
+        let size_registry = folder_size(dir_path.registry_dir());
+        let size_cache = folder_size(dir_path.cache_dir());
+        let size_index = folder_size(dir_path.index_dir());
+        let size_src = folder_size(dir_path.src_dir());
+        if query_size_app {
+            println!(
+                "{:50} {:10.2} MB",
+                "Total size of .cargo/bin crates:", size_bin
+            );
+        }
         if query_size_app || query_size_git {
             println!(
-                "{:50} {:10.3} MB",
-                format!(
-                    "Total Size of .cargo/git {} crates:",
-                    list_crate.installed_git().len()
-                ),
-                size_git
+                "{:50} {:10.2} MB",
+                "Total size of .cargo/git crates:", size_git
             );
             println!(
-                "{:50} {:10.3} MB",
-                "   |-- Size of .cargo/git/checkout folder", size_checkout
+                "{:50} {:10.2} MB",
+                "   |__ Size of .cargo/git/checkout folder", size_checkout
             );
             println!(
-                "{:50} {:10.3} MB",
-                "   |-- Size of .cargo/git/db folder", size_db
+                "{:50} {:10.2} MB",
+                "   |__ Size of .cargo/git/db folder", size_db
             );
         }
         if query_size_app || query_size_registry {
             println!(
-                "{:50} {:10.3} MB",
-                format!(
-                    "Total Size of .cargo/registry {} crates:",
-                    list_crate.installed_registry().len()
-                ),
-                size_registry
+                "{:50} {:10.2} MB",
+                "Total size of .cargo/registry crates:", size_registry
             );
             println!(
-                "{:50} {:10.3} MB",
-                "   |-- Size of .cargo/registry/cache folder", size_cache
+                "{:50} {:10.2} MB",
+                "   |__ Size of .cargo/registry/cache folder", size_cache
             );
             println!(
-                "{:50} {:10.3} MB",
-                "   |-- Size of .cargo/registry/index folder", size_index
+                "{:50} {:10.2} MB",
+                "   |__ Size of .cargo/registry/index folder", size_index
             );
             println!(
-                "{:50} {:10.3} MB",
-                "   |-- Size of .cargo/registry/src folder", size_src
+                "{:50} {:10.2} MB",
+                "   |__ Size of .cargo/registry/src folder", size_src
             );
         }
     }

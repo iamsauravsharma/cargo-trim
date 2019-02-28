@@ -4,6 +4,7 @@ use std::{
 };
 
 pub(crate) struct DirPath {
+    bin_dir: PathBuf,
     config_dir: PathBuf,
     git_dir: PathBuf,
     checkout_dir: PathBuf,
@@ -25,6 +26,10 @@ impl DirPath {
         }
 
         let home_dir = Path::new(env!("CARGO_HOME")).to_path_buf();
+
+        let mut bin_dir = home_dir.clone();
+        bin_dir.push("bin");
+
         let mut git_dir = home_dir.clone();
         git_dir.push("git");
 
@@ -44,6 +49,7 @@ impl DirPath {
         index_dir.push("index");
 
         Self {
+            bin_dir,
             config_dir,
             git_dir,
             checkout_dir,
@@ -53,6 +59,10 @@ impl DirPath {
             index_dir,
             src_dir,
         }
+    }
+
+    pub(crate) fn bin_dir(&self) -> PathBuf {
+        self.bin_dir.to_owned()
     }
 
     pub(crate) fn config_dir(&self) -> PathBuf {
