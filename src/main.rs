@@ -293,20 +293,18 @@ fn old_clean(
     git_crates_location: &GitDir,
 ) {
     if old_app || old_registry || old_git {
-        let mut cleaned_storage = 0.0;
         if old_app || old_registry {
             let old_registry_crate = list_crate.old_registry();
             for crate_name in &old_registry_crate {
-                cleaned_storage += registry_crates_location.remove_crate(crate_name);
+                registry_crates_location.remove_crate(crate_name);
             }
         }
         if old_app || old_git {
             let old_git_crate = list_crate.old_git();
             for crate_name in &old_git_crate {
-                cleaned_storage += git_crates_location.remove_crate(crate_name);
+                git_crates_location.remove_crate(crate_name);
             }
         }
-        println!("Total cleaned storage {:.3} MB", cleaned_storage);
     }
 }
 
@@ -318,20 +316,18 @@ fn orphan_clean(
     git_crates_location: &GitDir,
 ) {
     if orphan_app || orphan_git || orphan_registry {
-        let mut cleaned_storage = 0.0;
         if orphan_app || orphan_registry {
             let orphan_registry_crate = list_crate.orphan_registry();
             for crate_name in &orphan_registry_crate {
-                cleaned_storage += registry_crates_location.remove_crate(crate_name);
+                registry_crates_location.remove_crate(crate_name);
             }
         }
         if orphan_app || orphan_git {
             let orphan_git_crate = list_crate.orphan_git();
             for crate_name in &orphan_git_crate {
-                cleaned_storage += git_crates_location.remove_crate(crate_name);
+                git_crates_location.remove_crate(crate_name);
             }
         }
-        println!("Total cleaned storage {:.3} MB", cleaned_storage);
     }
 }
 

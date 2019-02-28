@@ -1,4 +1,3 @@
-use fs_extra::dir::get_size;
 use std::{fs, path::Path};
 
 pub struct GitDir {
@@ -16,20 +15,17 @@ impl GitDir {
         }
     }
 
-    pub(super) fn remove_crate(&self, crate_name: &str) -> f64 {
-        let mut total_size_saved: u64 = 0;
+    pub(super) fn remove_crate(&self, crate_name: &str) {
         if crate_name.contains("-HEAD") {
-            total_size_saved += remove_crate(Path::new(&self.db_dir), crate_name);
+            remove_crate(Path::new(&self.db_dir), crate_name);
         } else {
-            total_size_saved += remove_crate(Path::new(&self.checkout_dir), crate_name);
+            remove_crate(Path::new(&self.checkout_dir), crate_name);
         }
         println!("Removed {:?}", crate_name);
-        (total_size_saved as f64) / (1024f64.powf(2.0))
     }
 }
 
-fn remove_crate(location: &Path, crate_name: &str) -> u64 {
-    let mut file_size: u64 = 0;
+fn remove_crate(location: &Path, crate_name: &str) {
     for entry in fs::read_dir(location).unwrap() {
         let entry = entry.unwrap();
         let path = entry.path();
@@ -43,15 +39,12 @@ fn remove_crate(location: &Path, crate_name: &str) -> u64 {
                     let path = entry.path();
                     let file_name = path.file_name().unwrap().to_str().unwrap();
                     if file_name == rev_sha {
-                        file_size += get_size(&path).unwrap();
                         fs::remove_dir_all(&path).unwrap();
                     }
                 }
             } else {
-                file_size += get_size(&path).unwrap();
                 fs::remove_dir_all(&path).unwrap();
             }
         }
     }
-    file_size
 }

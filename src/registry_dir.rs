@@ -1,4 +1,3 @@
-use fs_extra::dir::get_size;
 use std::{fs, path::Path};
 
 // Stores .cargo/registry cache & src information
@@ -16,12 +15,10 @@ impl RegistryDir {
     }
 
     // Remove crate from src & cache directory
-    pub(super) fn remove_crate(&self, crate_name: &str) -> f64 {
-        let mut total_size_saved: u64 = 0;
-        total_size_saved += remove_crate(Path::new(&self.cache_dir), crate_name);
-        total_size_saved += remove_crate(Path::new(&self.src_dir), crate_name);
+    pub(super) fn remove_crate(&self, crate_name: &str) {
+        remove_crate(Path::new(&self.cache_dir), crate_name);
+        remove_crate(Path::new(&self.src_dir), crate_name);
         println!("Removed {:?}", crate_name);
-        (total_size_saved as f64) / (1024f64.powf(2.0))
     }
 
     // Get out src_dir path
@@ -48,20 +45,16 @@ fn open_github_folder(path: &Path) -> Option<String> {
 }
 
 // Remove crates which name is provided to delete
-fn remove_crate(path: &Path, value: &str) -> u64 {
-    let mut file_size: u64 = 0;
+fn remove_crate(path: &Path, value: &str) {
     for entry in fs::read_dir(path).unwrap() {
         let entry = entry.unwrap();
         let path = entry.path();
         if path.to_str().unwrap().contains(value) {
             if path.is_file() {
-                file_size += get_size(&path).unwrap();
                 fs::remove_file(&path).unwrap();
             } else if path.is_dir() {
-                file_size += get_size(&path).unwrap();
                 fs::remove_dir_all(&path).unwrap();
             }
         }
     }
-    file_size
 }
