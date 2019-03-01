@@ -1,4 +1,5 @@
-use crate::config_file::ConfigFile;
+use crate::{config_file::ConfigFile, crate_detail::CrateDetail};
+use fs_extra::dir::get_size;
 use std::{
     fs,
     io::prelude::*,
@@ -24,9 +25,11 @@ impl CrateList {
         checkout_dir: &Path,
         db_dir: &Path,
         config_file: &ConfigFile,
+        crate_detail: &mut CrateDetail,
     ) -> Self {
-        let installed_crate_registry = get_installed_crate_registry(src_dir, cache_dir);
-        let installed_crate_git = get_installed_crate_git(checkout_dir, db_dir);
+        let installed_crate_registry =
+            get_installed_crate_registry(src_dir, cache_dir, crate_detail);
+        let installed_crate_git = get_installed_crate_git(checkout_dir, db_dir, crate_detail);
 
         let mut old_crate_registry = Vec::new();
         let mut version_removed_crate = remove_version(&installed_crate_registry);
@@ -199,7 +202,7 @@ fn read_content(list: &[PathBuf], db_dir: &Path) -> (Vec<String>, Vec<String>) {
                 let name = split.next().unwrap();
                 let version = split.next().unwrap();
                 let source = split.next().unwrap();
-                if source.contains("(registry+") {
+                if source.contains("registry+") {
                     let full_name = format!("{}-{}", name, version);
                     present_crate_registry.push(full_name);
                 }
@@ -262,14 +265,20 @@ fn remove_version(installed_crate_registry: &[String]) -> Vec<String> {
     removed_version
 }
 
-fn get_installed_crate_registry(src_dir: &Path, cache_dir: &Path) -> Vec<String> {
+fn get_installed_crate_registry(
+    src_dir: &Path,
+    cache_dir: &Path,
+    crate_detail: &mut CrateDetail,
+) -> Vec<String> {
     let mut installed_crate_registry = Vec::new();
     if src_dir.exists() {
         for entry in fs::read_dir(src_dir).unwrap() {
             let entry = entry.unwrap().path();
             let path = entry.as_path();
+            let crate_size = get_size(&path).unwrap();
             let file_name = path.file_name().unwrap();
             let crate_name = file_name.to_str().unwrap().to_string();
+            crate_detail.add_crate_source(crate_name.to_owned(), crate_size);
             installed_crate_registry.push(crate_name)
         }
     }
@@ -278,8 +287,10 @@ fn get_installed_crate_registry(src_dir: &Path, cache_dir: &Path) -> Vec<String>
             let entry = entry.unwrap().path();
             let path = entry.as_path();
             let file_name = path.file_name().unwrap();
+            let crate_size = get_size(&path).unwrap();
             let crate_name = file_name.to_str().unwrap().to_string();
             let splitted_name = crate_name.rsplitn(2, '.').collect::<Vec<&str>>();
+            crate_detail.add_crate_archive(splitted_name[1].to_owned(), crate_size);
             installed_crate_registry.push(splitted_name[1].to_owned());
         }
     }
@@ -288,21 +299,27 @@ fn get_installed_crate_registry(src_dir: &Path, cache_dir: &Path) -> Vec<String>
     installed_crate_registry
 }
 
-fn get_installed_crate_git(checkout_dir: &Path, db_dir: &Path) -> Vec<String> {
+fn get_installed_crate_git(
+    checkout_dir: &Path,
+    db_dir: &Path,
+    crate_detail: &mut CrateDetail,
+) -> Vec<String> {
     let mut installed_crate_git = Vec::new();
     if checkout_dir.exists() {
         for entry in fs::read_dir(checkout_dir).unwrap() {
             let entry = entry.unwrap().path();
             let path = entry.as_path();
             let file_path = path.file_name().unwrap();
-            for git_sha in fs::read_dir(path).unwrap() {
-                let git_sha = git_sha.unwrap().path();
-                let git_sha = git_sha.as_path();
-                let git_sha = git_sha.file_name().unwrap();
-                let git_sha = git_sha.to_str().unwrap().to_string();
+            for git_sha_entry in fs::read_dir(path).unwrap() {
+                let git_sha_entry = git_sha_entry.unwrap().path();
+                let git_sha_path = git_sha_entry.as_path();
+                let crate_size = get_size(git_sha_path).unwrap();
+                let git_sha_file_name = git_sha_path.file_name().unwrap();
+                let git_sha = git_sha_file_name.to_str().unwrap().to_string();
                 let file_name = file_path.to_str().unwrap().to_string();
                 let splitted_name = file_name.rsplitn(2, '-').collect::<Vec<&str>>();
                 let full_name = format!("{}-{}", splitted_name[1], git_sha);
+                crate_detail.add_crate_archive(full_name.to_owned(), crate_size);
                 installed_crate_git.push(full_name)
             }
         }
@@ -311,9 +328,11 @@ fn get_installed_crate_git(checkout_dir: &Path, db_dir: &Path) -> Vec<String> {
         for entry in fs::read_dir(db_dir).unwrap() {
             let entry = entry.unwrap().path();
             let path = entry.as_path();
+            let crate_size = get_size(path).unwrap();
             let file_name = path.file_name().unwrap();
             let file_name = file_name.to_str().unwrap().to_string();
             let full_name = format!("{}-HEAD", file_name);
+            crate_detail.add_crate_archive(full_name.to_owned(), crate_size);
             installed_crate_git.push(full_name);
         }
     }

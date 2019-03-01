@@ -34,7 +34,9 @@ fn remove_crate(location: &Path, crate_name: &str) {
         let crate_name = name[1];
         let rev_sha = name[0];
         if path.to_str().unwrap().contains(crate_name) {
-            if !rev_sha.contains("HEAD") {
+            if rev_sha.contains("HEAD") {
+                fs::remove_dir_all(&path).unwrap();
+            } else {
                 for rev in fs::read_dir(path).unwrap() {
                     let entry = rev.unwrap();
                     let path = entry.path();
@@ -43,8 +45,6 @@ fn remove_crate(location: &Path, crate_name: &str) {
                         fs::remove_dir_all(&path).unwrap();
                     }
                 }
-            } else {
-                fs::remove_dir_all(&path).unwrap();
             }
         }
     }
