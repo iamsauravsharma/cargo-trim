@@ -12,6 +12,7 @@ use crate::{
     registry_dir::RegistryDir,
 };
 use clap::ArgMatches;
+use colored::*;
 use fs_extra::dir::get_size;
 use std::{
     fs,
@@ -254,35 +255,92 @@ fn list_subcommand(app: &ArgMatches, list_crate: &CrateList) {
     if app.is_present("list") {
         let list_subcommand = app.subcommand_matches("list").unwrap();
         if list_subcommand.is_present("old") {
+            show_title("REGISTRY OLD CRATE:");
+
             for crates in &list_crate.old_registry() {
-                println!("{}", crates);
+                println!("{:^40}", crates);
             }
+
+            show_total_count(list_crate.old_registry());
+            show_title("GIT OLD CRATE:");
+
             for crates in &list_crate.old_git() {
-                println!("{}", crates);
+                println!("{:^40}", crates);
             }
+
+            show_total_count(list_crate.old_git());
         } else if list_subcommand.is_present("orphan") {
+            show_title("REGISTRY ORPHAN CRATE");
+
             for crates in &list_crate.orphan_registry() {
-                println!("{}", crates);
+                println!("{:^40}", crates);
             }
+
+            show_total_count(list_crate.orphan_registry());
+            show_title("GIT ORPHAN CRATE");
+
             for crates in &list_crate.orphan_git() {
-                println!("{}", crates);
+                println!("{:^40}", crates);
             }
+
+            show_total_count(list_crate.orphan_git());
         } else if list_subcommand.is_present("used") {
+            show_title("REGISTRY USED CRATE");
+
             for crates in &list_crate.used_registry() {
-                println!("{}", crates);
+                println!("{:^40}", crates);
             }
+
+            show_total_count(list_crate.used_registry());
+            show_title("GIT USED CRATE");
+
             for crates in &list_crate.used_git() {
-                println!("{}", crates);
+                println!("{:^40}", crates);
             }
+
+            show_total_count(list_crate.used_git());
         } else {
+            show_title("REGISTRY INSTALLED CRATE");
+
             for crates in &list_crate.installed_registry() {
-                println!("{}", crates);
+                println!("{:^40}", crates);
             }
+
+            show_total_count(list_crate.installed_registry());
+            show_title("GIT INSTALLED CRATE");
+
             for crates in &list_crate.installed_git() {
-                println!("{}", crates);
+                println!("{:^40}", crates);
             }
+
+            show_total_count(list_crate.installed_git());
         }
     }
+}
+
+fn show_title(title: &str) {
+    print_dash("green");
+    println!("{:^40}", title.bold());
+    print_dash("green");
+}
+
+fn show_total_count(data: Vec<String>) {
+    if data.is_empty() {
+        println!("{:^40}", "NONE".red());
+    }
+    print_dash("green");
+    let printing_statement = format!("Total no of crates:- {}", data.len()).bright_blue();
+    println!("{:^40}", printing_statement);
+    print_dash("green");
+}
+
+fn print_dash(color: &str) {
+    println!(
+        "{}",
+        "----------------------------------------"
+            .color(color)
+            .bold()
+    );
 }
 
 // Clean old crates

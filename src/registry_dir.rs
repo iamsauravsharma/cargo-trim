@@ -1,3 +1,4 @@
+use colored::*;
 use std::{fs, path::Path};
 
 // Stores .cargo/registry cache & src information
@@ -18,7 +19,7 @@ impl RegistryDir {
     pub(super) fn remove_crate(&self, crate_name: &str) {
         remove_crate(Path::new(&self.cache_dir), crate_name);
         remove_crate(Path::new(&self.src_dir), crate_name);
-        println!("Removed {:?}", crate_name);
+        println!("{} {:?}", "Removed".red(), crate_name);
     }
 
     // Get out src_dir path

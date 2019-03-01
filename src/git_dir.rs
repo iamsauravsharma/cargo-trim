@@ -1,3 +1,4 @@
+use colored::*;
 use std::{fs, path::Path};
 
 pub struct GitDir {
@@ -21,7 +22,7 @@ impl GitDir {
         } else {
             remove_crate(Path::new(&self.checkout_dir), crate_name);
         }
-        println!("Removed {:?}", crate_name);
+        println!("{} {:?}", "removed".red(), crate_name);
     }
 }
 
