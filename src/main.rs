@@ -47,6 +47,7 @@ fn main() {
 
     // List out crate list
     let list_crate = list_crate::CrateList::create_list(
+        dir_path.bin_dir().as_path(),
         Path::new(registry_crates_location.cache()),
         Path::new(registry_crates_location.src()),
         dir_path.checkout_dir().as_path(),
@@ -79,13 +80,15 @@ fn main() {
     // Perform action on list subcommand
     list_subcommand(app, &list_crate, &crate_detail);
 
-    // Perform action for -s flag
+    // Perform action for -q flag
     let query_size_app = app.is_present("query size");
     let query_size_git = git_subcommand.is_present("query size");
     let query_size_registry = registry_subcommand.is_present("query size");
     query_size(
         &dir_path,
         (query_size_app, query_size_git, query_size_registry),
+        &list_crate,
+        &crate_detail,
     );
 
     // Query about config file information on -s flag
@@ -268,7 +271,7 @@ fn list_subcommand(app: &ArgMatches, list_crate: &CrateList, crate_detail: &Crat
 
             total_size = 0.0;
             for crates in &list_crate.old_registry() {
-                let size = crate_detail.find_size_all(crates);
+                let size = crate_detail.find_size_registry_all(crates);
                 total_size += size;
                 println!("|{:^40}|{:^10.3}|", crates, size);
             }
@@ -278,7 +281,7 @@ fn list_subcommand(app: &ArgMatches, list_crate: &CrateList, crate_detail: &Crat
 
             total_size = 0.0;
             for crates in &list_crate.old_git() {
-                let size = crate_detail.find_size_all(crates);
+                let size = crate_detail.find_size_git_all(crates);
                 total_size += size;
                 println!("|{:^40}|{:^10.3}|", crates, size);
             }
@@ -289,7 +292,7 @@ fn list_subcommand(app: &ArgMatches, list_crate: &CrateList, crate_detail: &Crat
 
             total_size = 0.0;
             for crates in &list_crate.orphan_registry() {
-                let size = crate_detail.find_size_all(crates);
+                let size = crate_detail.find_size_registry_all(crates);
                 total_size += size;
                 println!("|{:^40}|{:^10.3}|", crates, size);
             }
@@ -299,7 +302,7 @@ fn list_subcommand(app: &ArgMatches, list_crate: &CrateList, crate_detail: &Crat
 
             total_size = 0.0;
             for crates in &list_crate.orphan_git() {
-                let size = crate_detail.find_size_all(crates);
+                let size = crate_detail.find_size_git_all(crates);
                 total_size += size;
                 println!("|{:^40}|{:^10.3}|", crates, size);
             }
@@ -310,7 +313,7 @@ fn list_subcommand(app: &ArgMatches, list_crate: &CrateList, crate_detail: &Crat
 
             total_size = 0.0;
             for crates in &list_crate.used_registry() {
-                let size = crate_detail.find_size_all(crates);
+                let size = crate_detail.find_size_registry_all(crates);
                 total_size += size;
                 println!("|{:^40}|{:^10.3}|", crates, size);
             }
@@ -320,7 +323,7 @@ fn list_subcommand(app: &ArgMatches, list_crate: &CrateList, crate_detail: &Crat
 
             total_size = 0.0;
             for crates in &list_crate.used_git() {
-                let size = crate_detail.find_size_all(crates);
+                let size = crate_detail.find_size_git_all(crates);
                 total_size += size;
                 println!("|{:^40}|{:^10.3}|", crates, size);
             }
@@ -331,7 +334,7 @@ fn list_subcommand(app: &ArgMatches, list_crate: &CrateList, crate_detail: &Crat
 
             total_size = 0.0;
             for crates in &list_crate.installed_registry() {
-                let size = crate_detail.find_size_all(crates);
+                let size = crate_detail.find_size_registry_all(crates);
                 total_size += size;
                 println!("|{:^40}|{:^10.3}|", crates, size);
             }
@@ -341,7 +344,7 @@ fn list_subcommand(app: &ArgMatches, list_crate: &CrateList, crate_detail: &Crat
 
             total_size = 0.0;
             for crates in &list_crate.installed_git() {
-                let size = crate_detail.find_size_all(crates);
+                let size = crate_detail.find_size_git_all(crates);
                 total_size += size;
                 println!("|{:^40}|{:^10.3}|", crates, size);
             }
@@ -391,14 +394,14 @@ fn old_clean(
             let old_registry_crate = list_crate.old_registry();
             for crate_name in &old_registry_crate {
                 registry_crates_location.remove_crate(crate_name);
-                size_cleaned += crate_detail.find_size_all(crate_name);
+                size_cleaned += crate_detail.find_size_registry_all(crate_name);
             }
         }
         if old_app || old_git {
             let old_git_crate = list_crate.old_git();
             for crate_name in &old_git_crate {
                 git_crates_location.remove_crate(crate_name);
-                size_cleaned += crate_detail.find_size_all(crate_name);
+                size_cleaned += crate_detail.find_size_git_all(crate_name);
             }
         }
         println!(
@@ -422,7 +425,7 @@ fn orphan_clean(
             let orphan_registry_crate = list_crate.orphan_registry();
             for crate_name in &orphan_registry_crate {
                 registry_crates_location.remove_crate(crate_name);
-                size_cleaned += crate_detail.find_size_all(crate_name);
+                size_cleaned += crate_detail.find_size_registry_all(crate_name);
                 println!("{} {:?}", "Removed".red(), crate_name);
             }
         }
@@ -430,7 +433,7 @@ fn orphan_clean(
             let orphan_git_crate = list_crate.orphan_git();
             for crate_name in &orphan_git_crate {
                 git_crates_location.remove_crate(crate_name);
-                size_cleaned += crate_detail.find_size_all(crate_name);
+                size_cleaned += crate_detail.find_size_git_all(crate_name);
             }
         }
         println!(
@@ -444,6 +447,8 @@ fn orphan_clean(
 fn query_size(
     dir_path: &DirPath,
     (query_size_app, query_size_git, query_size_registry): (bool, bool, bool),
+    crate_list: &CrateList,
+    crate_detail: &CrateDetail,
 ) {
     if query_size_app || query_size_git || query_size_registry {
         let size_bin = folder_size(dir_path.bin_dir());
@@ -457,31 +462,55 @@ fn query_size(
         if query_size_app {
             println!(
                 "{:50} {:10.2} MB",
-                "Total size of .cargo/bin crates:", size_bin
+                format!(
+                    "Total size of {} .cargo/bin binary:",
+                    crate_list.installed_bin().len()
+                ),
+                size_bin
             );
         }
         if query_size_app || query_size_git {
             println!(
                 "{:50} {:10.2} MB",
-                "Total size of .cargo/git crates:", size_git
+                format!(
+                    "Total size of {} .cargo/git crates:",
+                    crate_list.installed_git().len()
+                ),
+                size_git
             );
             println!(
                 "{:50} {:10.2} MB",
-                "   |__ Size of .cargo/git/checkout folder", size_checkout
+                format!(
+                    "   |__ Size of {} .cargo/git/checkout folder",
+                    crate_detail.git_crates_archive().len()
+                ),
+                size_checkout
             );
             println!(
                 "{:50} {:10.2} MB",
-                "   |__ Size of .cargo/git/db folder", size_db
+                format!(
+                    "   |__ Size of {} .cargo/git/db folder",
+                    crate_detail.git_crates_source().len()
+                ),
+                size_db
             );
         }
         if query_size_app || query_size_registry {
             println!(
                 "{:50} {:10.2} MB",
-                "Total size of .cargo/registry crates:", size_registry
+                format!(
+                    "Total size of {} .cargo/registry crates:",
+                    crate_list.installed_registry().len()
+                ),
+                size_registry
             );
             println!(
                 "{:50} {:10.2} MB",
-                "   |__ Size of .cargo/registry/cache folder", size_cache
+                format!(
+                    "   |__ Size of {} .cargo/registry/cache folder",
+                    crate_detail.registry_crates_archive().len()
+                ),
+                size_cache
             );
             println!(
                 "{:50} {:10.2} MB",
@@ -489,7 +518,11 @@ fn query_size(
             );
             println!(
                 "{:50} {:10.2} MB",
-                "   |__ Size of .cargo/registry/src folder", size_src
+                format!(
+                    "   |__ Size of {} .cargo/git/src folder",
+                    crate_detail.registry_crates_source().len()
+                ),
+                size_src
             );
         }
     }
@@ -534,8 +567,8 @@ fn force_remove(
             delete_folder(&dir_path.checkout_dir());
             delete_folder(&dir_path.db_dir());
         }
+        println!("{}", "Successfully removed all crates".red());
     }
-    println!("{}", "Successfully removed all crates".red());
 }
 
 // remove all crates by following config file information
@@ -605,14 +638,14 @@ fn remove_crate(
             && (remove_crate_app || remove_crate_registry)
         {
             registry_crates_location.remove_crate(value);
-            size_cleaned += crate_detail.find_size_all(value);
+            size_cleaned += crate_detail.find_size_registry_all(value);
         }
 
         if list_crate.installed_git().contains(&value.to_string())
             && (remove_crate_app || remove_crate_git)
         {
             git_crates_location.remove_crate(value);
-            size_cleaned += crate_detail.find_size_all(value);
+            size_cleaned += crate_detail.find_size_git_all(value);
         }
         println!(
             "{}",
@@ -650,11 +683,11 @@ fn remove_registry_all(
     let read_exclude = config_file.exclude();
     if cmd_include.contains(crate_name) || read_include.contains(crate_name) {
         registry_crates_location.remove_crate(crate_name);
-        sized_cleaned += crate_detail.find_size_all(crate_name);
+        sized_cleaned += crate_detail.find_size_registry_all(crate_name);
     }
     if !cmd_exclude.contains(crate_name) && !read_exclude.contains(crate_name) {
         registry_crates_location.remove_crate(crate_name);
-        sized_cleaned += crate_detail.find_size_all(crate_name);
+        sized_cleaned += crate_detail.find_size_registry_all(crate_name);
     }
     sized_cleaned
 }
@@ -688,11 +721,11 @@ fn remove_git_all(
     let read_exclude = config_file.exclude();
     if cmd_include.contains(crate_name) || read_include.contains(crate_name) {
         git_crates_location.remove_crate(crate_name);
-        size_cleaned += crate_detail.find_size_all(crate_name);
+        size_cleaned += crate_detail.find_size_git_all(crate_name);
     }
     if !cmd_exclude.contains(crate_name) && !read_exclude.contains(crate_name) {
         git_crates_location.remove_crate(crate_name);
-        size_cleaned += crate_detail.find_size_all(crate_name);
+        size_cleaned += crate_detail.find_size_git_all(crate_name);
     }
     size_cleaned
 }

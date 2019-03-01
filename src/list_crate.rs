@@ -7,6 +7,7 @@ use std::{
 };
 
 pub(super) struct CrateList {
+    installed_bin: Vec<String>,
     installed_crate_registry: Vec<String>,
     installed_crate_git: Vec<String>,
     old_crate_registry: Vec<String>,
@@ -20,6 +21,7 @@ pub(super) struct CrateList {
 impl CrateList {
     // create list of all types of crate present in directory
     pub(super) fn create_list(
+        bin_dir: &Path,
         cache_dir: &Path,
         src_dir: &Path,
         checkout_dir: &Path,
@@ -27,6 +29,7 @@ impl CrateList {
         config_file: &ConfigFile,
         crate_detail: &mut CrateDetail,
     ) -> Self {
+        let installed_bin = get_installed_bin(bin_dir, crate_detail);
         let installed_crate_registry =
             get_installed_crate_registry(src_dir, cache_dir, crate_detail);
         let installed_crate_git = get_installed_crate_git(checkout_dir, db_dir, crate_detail);
@@ -106,6 +109,7 @@ impl CrateList {
             }
         }
         Self {
+            installed_bin,
             installed_crate_registry,
             installed_crate_git,
             old_crate_registry,
@@ -115,6 +119,10 @@ impl CrateList {
             orphan_crate_registry,
             orphan_crate_git,
         }
+    }
+
+    pub(super) fn installed_bin(&self) -> Vec<String> {
+        self.installed_bin.to_owned()
     }
 
     pub(super) fn installed_registry(&self) -> Vec<String> {
@@ -265,6 +273,23 @@ fn remove_version(installed_crate_registry: &[String]) -> Vec<String> {
     removed_version
 }
 
+fn get_installed_bin(bin_dir: &Path, crate_detail: &mut CrateDetail) -> Vec<String> {
+    let mut installed_bin = Vec::new();
+    if bin_dir.exists() {
+        for entry in fs::read_dir(bin_dir).unwrap() {
+            let entry = entry.unwrap().path();
+            let path = entry.as_path();
+            let bin_size = get_size(&path).unwrap();
+            let file_name = path.file_name().unwrap();
+            let bin_name = file_name.to_str().unwrap().to_string();
+            crate_detail.add_bin(bin_name.to_owned(), bin_size);
+            installed_bin.push(bin_name)
+        }
+    }
+    installed_bin.sort();
+    installed_bin
+}
+
 fn get_installed_crate_registry(
     src_dir: &Path,
     cache_dir: &Path,
@@ -278,7 +303,7 @@ fn get_installed_crate_registry(
             let crate_size = get_size(&path).unwrap();
             let file_name = path.file_name().unwrap();
             let crate_name = file_name.to_str().unwrap().to_string();
-            crate_detail.add_crate_source(crate_name.to_owned(), crate_size);
+            crate_detail.add_registry_crate_source(crate_name.to_owned(), crate_size);
             installed_crate_registry.push(crate_name)
         }
     }
@@ -290,7 +315,7 @@ fn get_installed_crate_registry(
             let crate_size = get_size(&path).unwrap();
             let crate_name = file_name.to_str().unwrap().to_string();
             let splitted_name = crate_name.rsplitn(2, '.').collect::<Vec<&str>>();
-            crate_detail.add_crate_archive(splitted_name[1].to_owned(), crate_size);
+            crate_detail.add_registry_crate_archive(splitted_name[1].to_owned(), crate_size);
             installed_crate_registry.push(splitted_name[1].to_owned());
         }
     }
@@ -319,7 +344,7 @@ fn get_installed_crate_git(
                 let file_name = file_path.to_str().unwrap().to_string();
                 let splitted_name = file_name.rsplitn(2, '-').collect::<Vec<&str>>();
                 let full_name = format!("{}-{}", splitted_name[1], git_sha);
-                crate_detail.add_crate_archive(full_name.to_owned(), crate_size);
+                crate_detail.add_git_crate_archive(full_name.to_owned(), crate_size);
                 installed_crate_git.push(full_name)
             }
         }
@@ -332,7 +357,7 @@ fn get_installed_crate_git(
             let file_name = path.file_name().unwrap();
             let file_name = file_name.to_str().unwrap().to_string();
             let full_name = format!("{}-HEAD", file_name);
-            crate_detail.add_crate_archive(full_name.to_owned(), crate_size);
+            crate_detail.add_git_crate_source(full_name.to_owned(), crate_size);
             installed_crate_git.push(full_name);
         }
     }
