@@ -119,6 +119,14 @@ pub(super) fn app() -> ArgMatches<'static> {
                         .value_name("Crate"),
                 )
                 .arg(
+                    Arg::with_name("top crates")
+                        .short("t")
+                        .long("top")
+                        .help("Show certain number of top crates which have highest size")
+                        .takes_value(true)
+                        .value_name("number"),
+                )
+                .arg(
                     Arg::with_name("wipe")
                         .short("w")
                         .long("wipe")
@@ -207,6 +215,16 @@ pub(super) fn app() -> ArgMatches<'static> {
                                 .multiple(true)
                                 .takes_value(true)
                                 .value_name("Crate"),
+                        )
+                        .arg(
+                            Arg::with_name("top crates")
+                                .short("t")
+                                .long("top")
+                                .help(
+                                    "Show certain number of top git crates which have highest size",
+                                )
+                                .takes_value(true)
+                                .value_name("number"),
                         ),
                 )
                 .subcommand(
@@ -259,6 +277,17 @@ pub(super) fn app() -> ArgMatches<'static> {
                                 .multiple(true)
                                 .takes_value(true)
                                 .value_name("Crate"),
+                        )
+                        .arg(
+                            Arg::with_name("top crates")
+                                .short("t")
+                                .long("top")
+                                .help(
+                                    "Show certain number of top registry crates which have \
+                                     highest size",
+                                )
+                                .takes_value(true)
+                                .value_name("number"),
                         ),
                 )
                 .subcommand(

@@ -40,9 +40,9 @@ Initially you should have cargo installed
 ### Command output
 ```cargo trim -h``` will produce out following output
 ```
-cargo-trim v0.1.0
+cargo-trim 0.1.0
 Saurav Sharma <appdroiddeveloper@gmail.com>
-Clean cache from $HOME/.cargo
+Binary application to cleanup $CARGO_HOME cache
 
 USAGE:
     cargo trim [FLAGS] [OPTIONS] [SUBCOMMAND]
@@ -68,6 +68,7 @@ OPTIONS:
     -I, --include-conf <Crate>...         add listed crates to default conf file include list
     -r, --remove <Crate>...               Remove listed crates
     -s, --set-directory <Directory>...    Set directory of Rust project
+    -t, --top <number>                    Show certain number of top crates which have highest size
     -w, --wipe <Folder>                   Wipe folder [possible values: git, checkouts, db, registry, cache, index, src]
 
 SUBCOMMANDS:

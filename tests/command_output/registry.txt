@@ -17,3 +17,4 @@ FLAGS:
 
 OPTIONS:
     -r, --remove <Crate>...    Remove listed crates
+    -t, --top <number>         Show certain number of top registry crates which have highest size

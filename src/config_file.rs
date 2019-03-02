@@ -80,7 +80,7 @@ pub(super) fn modify_config_file(
         }
     }
 
-    let serialized = serde_json::to_string(&deserialized).unwrap();
+    let serialized = serde_json::to_string_pretty(&deserialized).unwrap();
     buffer.clear();
     buffer.push_str(&serialized);
     fs::write(config_dir, buffer).unwrap();

@@ -16,6 +16,7 @@ use clap::ArgMatches;
 use colored::*;
 use fs_extra::dir::get_size;
 use std::{
+    collections::HashMap,
     fs,
     path::{Path, PathBuf},
     process::Command,
@@ -150,6 +151,9 @@ fn main() {
         (all_app, all_git, all_registry),
         &crate_detail,
     );
+
+    // Show top crates
+    top_crates(&app, &git_subcommand, &registry_subcommand, &crate_detail);
 
     // Wipe certain folder all together
     wipe_directory(&app, &dir_path);
@@ -728,6 +732,71 @@ fn remove_git_all(
         size_cleaned += crate_detail.find_size_git_all(crate_name);
     }
     size_cleaned
+}
+
+fn top_crates(
+    app: &ArgMatches,
+    git_subcommand: &ArgMatches,
+    registry_subcommand: &ArgMatches,
+    crate_detail: &CrateDetail,
+) {
+    let top_app = app.is_present("top crates");
+    let top_git = git_subcommand.is_present("top crates");
+    let top_registry = registry_subcommand.is_present("top crates");
+    if top_app || top_git || top_registry {
+        let value = app.value_of("top crates").unwrap_or_else(|| {
+            git_subcommand
+                .value_of("top crates")
+                .unwrap_or_else(|| registry_subcommand.value_of("top crates").unwrap())
+        });
+
+        let number = value.parse::<usize>().unwrap();
+        if top_app {
+            show_top_number_crates(crate_detail, "bin", number);
+        }
+        if top_app || top_git {
+            show_top_number_crates(crate_detail, "git_archive", number);
+            show_top_number_crates(crate_detail, "git_source", number);
+        }
+        if top_app || top_registry {
+            show_top_number_crates(crate_detail, "registry_archive", number);
+            show_top_number_crates(crate_detail, "registry_source", number);
+        }
+    }
+}
+
+fn show_top_number_crates(crate_detail: &CrateDetail, crate_type: &str, number: usize) {
+    let size_detail = match crate_type {
+        "bin" => crate_detail.bin(),
+        "git_archive" => crate_detail.git_crates_archive(),
+        "git_source" => crate_detail.git_crates_source(),
+        "registry_archive" => crate_detail.registry_crates_archive(),
+        "registry_source" => crate_detail.registry_crates_source(),
+        _ => HashMap::new(),
+    };
+    let mut vector = size_detail.iter().collect::<Vec<_>>();
+    vector.sort_by(|a, b| (b.1).cmp(a.1));
+    let title = format!("Top {} {}", number, crate_type);
+    show_title(title.as_str());
+    if vector.is_empty() {
+        println!("|{:^40}|{:^10}|", "NONE".red(), "0.000".red());
+    } else if vector.len() < number {
+        for i in 0..vector.len() {
+            print_index_value_crate(&vector, i);
+        }
+    } else {
+        for i in 0..number {
+            print_index_value_crate(&vector, i);
+        }
+    }
+    print_dash("green");
+}
+
+fn print_index_value_crate(vector: &[(&String, &u64)], i: usize) {
+    let crate_name = vector[i].0;
+    let size = vector[i].1;
+    let size = (*size as f64) / 1024_f64.powf(2.0);
+    println!("|{:^40}|{:^10.3}|", crate_name, size);
 }
 
 // Wipe certain directory

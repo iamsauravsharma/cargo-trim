@@ -19,6 +19,10 @@ impl CrateDetail {
         }
     }
 
+    pub(crate) fn bin(&self) -> HashMap<String, u64> {
+        self.bin.to_owned()
+    }
+
     pub(crate) fn git_crates_source(&self) -> HashMap<String, u64> {
         self.git_crates_source.to_owned()
     }
