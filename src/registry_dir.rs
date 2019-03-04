@@ -10,8 +10,8 @@ pub(crate) struct RegistryDir {
 impl RegistryDir {
     // Create new RegistryDir
     pub(crate) fn new(cache_dir: &Path, src_dir: &Path) -> Self {
-        let cache_dir = open_github_folder(cache_dir).unwrap();
-        let src_dir = open_github_folder(src_dir).unwrap();
+        let cache_dir = open_github_folder(cache_dir);
+        let src_dir = open_github_folder(src_dir);
         Self { cache_dir, src_dir }
     }
 
@@ -34,15 +34,10 @@ impl RegistryDir {
 }
 
 // Use to open github folder present inside src and cache folder
-fn open_github_folder(path: &Path) -> Option<String> {
-    for entry in fs::read_dir(path).unwrap() {
-        let path = entry.unwrap().path();
-        let path = path.to_str().unwrap();
-        if path.contains("github.com") {
-            return Some(path.to_string());
-        }
-    }
-    None
+fn open_github_folder(path: &Path) -> String {
+    let mut path_buf = path.to_path_buf();
+    path_buf.push("github.com-1ecc6299db9ec823");
+    path_buf.to_str().unwrap().to_string()
 }
 
 // Remove crates which name is provided to delete

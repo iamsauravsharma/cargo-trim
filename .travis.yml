@@ -37,3 +37,9 @@ script:
   - cargo build --all
   - cargo doc --no-deps --all
   - cargo test --all
+
+after_script:
+  - cargo install --path .
+  - bash scripts/install_crate.sh
+  - cargo trim -s $TRAVIS_BUILD_DIR/..
+  - bash scripts/cargo_trim_command_test.sh

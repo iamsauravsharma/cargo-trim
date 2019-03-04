@@ -181,7 +181,7 @@ fn clear_config(app: &ArgMatches, dir_path: &DirPath) {
 fn git_compress(app: &ArgMatches, index_dir: &PathBuf, checkout_dir: &PathBuf, db_dir: &PathBuf) {
     if app.is_present("git compress") {
         let value = app.value_of("git compress").unwrap();
-        if value == "index" || value == "all" {
+        if (value == "index" || value == "all") && index_dir.exists() {
             for entry in fs::read_dir(index_dir).unwrap() {
                 let repo_path = entry.unwrap().path();
                 let path = repo_path.to_str().unwrap();
@@ -191,7 +191,7 @@ fn git_compress(app: &ArgMatches, index_dir: &PathBuf, checkout_dir: &PathBuf, d
             }
         }
         if value.contains("git") || value == "all" {
-            if value == "git" || value == "git-checkout" {
+            if (value == "git" || value == "git-checkout") && checkout_dir.exists() {
                 for entry in fs::read_dir(checkout_dir).unwrap() {
                     let repo_path = entry.unwrap().path();
                     for rev in fs::read_dir(repo_path).unwrap() {
@@ -200,7 +200,7 @@ fn git_compress(app: &ArgMatches, index_dir: &PathBuf, checkout_dir: &PathBuf, d
                     }
                 }
             }
-            if value == "git" || value == "git-db" {
+            if (value == "git" || value == "git-db") && db_dir.exists() {
                 for entry in fs::read_dir(db_dir).unwrap() {
                     let repo_path = entry.unwrap().path();
                     run_git_compress_commands(&repo_path);
