@@ -3,7 +3,7 @@ use std::{fs, io::Read, path::PathBuf};
 
 // Stores config file information
 #[derive(Serialize, Deserialize)]
-pub struct ConfigFile {
+pub(crate) struct ConfigFile {
     directory: Vec<String>,
     include: Vec<String>,
     exclude: Vec<String>,
@@ -11,7 +11,7 @@ pub struct ConfigFile {
 
 impl ConfigFile {
     // Create new config file
-    pub(super) fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             directory: Vec::new(),
             include: Vec::new(),
@@ -19,21 +19,24 @@ impl ConfigFile {
         }
     }
 
-    pub(super) fn directory(&self) -> Vec<String> {
+    // return vector of directory value in config file
+    pub(crate) fn directory(&self) -> Vec<String> {
         self.directory.to_owned()
     }
 
-    pub(super) fn include(&self) -> Vec<String> {
+    // return vector of include value in config file
+    pub(crate) fn include(&self) -> Vec<String> {
         self.include.to_owned()
     }
 
-    pub(super) fn exclude(&self) -> Vec<String> {
+    // return vector of exclude value in config file
+    pub(crate) fn exclude(&self) -> Vec<String> {
         self.exclude.to_owned()
     }
 }
 
 // Function to modify config file or read config file
-pub(super) fn modify_config_file(
+pub(crate) fn modify_config_file(
     file: &mut fs::File,
     app: &clap::ArgMatches,
     config_dir: &PathBuf,
@@ -47,6 +50,7 @@ pub(super) fn modify_config_file(
     }
     let mut deserialized: ConfigFile = serde_json::from_str(&buffer).unwrap();
 
+    // Add new value in config file
     for &name in &["set directory", "exclude-conf", "include-conf"] {
         if app.is_present(name) {
             let value = app.value_of(name).unwrap();
@@ -62,6 +66,7 @@ pub(super) fn modify_config_file(
         }
     }
 
+    // remove value from config file
     if app.is_present("remove") {
         let subcommand = app.subcommand_matches("remove").unwrap();
         for &name in &["directory", "exclude", "include"] {
@@ -87,6 +92,7 @@ pub(super) fn modify_config_file(
     deserialized
 }
 
+// helper function to help in removing certain value from a config file
 fn remove_item_crate(data: &mut Vec<String>, value: &str) {
     data.retain(|data| data != value);
 }

@@ -1,4 +1,6 @@
 use std::{io::Read, process::Command};
+
+// test check trim subcommand help
 #[test]
 fn test_help() {
     let output = Command::new("cargo")
@@ -18,6 +20,7 @@ fn test_help() {
     );
 }
 
+// test check list subcommand help
 #[test]
 fn test_list_help() {
     let output = Command::new("cargo")
@@ -38,6 +41,7 @@ fn test_list_help() {
     );
 }
 
+// test check remove subcommand help
 #[test]
 fn test_remove_help() {
     let output = Command::new("cargo")
@@ -58,6 +62,7 @@ fn test_remove_help() {
     );
 }
 
+// test check config subcommand help
 #[test]
 fn test_config_help() {
     let output = Command::new("cargo")
@@ -78,6 +83,7 @@ fn test_config_help() {
     );
 }
 
+// test check git subcommand help
 #[test]
 fn test_git_help() {
     let output = Command::new("cargo")
@@ -98,6 +104,7 @@ fn test_git_help() {
     );
 }
 
+// test check registry subcommand help
 #[test]
 fn test_registry_help() {
     let output = Command::new("cargo")

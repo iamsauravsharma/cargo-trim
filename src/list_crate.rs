@@ -6,7 +6,8 @@ use std::{
     path::{Path, PathBuf},
 };
 
-pub(super) struct CrateList {
+// struct to store all crate list detail with its type
+pub(crate) struct CrateList {
     installed_bin: Vec<String>,
     installed_crate_registry: Vec<String>,
     installed_crate_git: Vec<String>,
@@ -20,7 +21,7 @@ pub(super) struct CrateList {
 
 impl CrateList {
     // create list of all types of crate present in directory
-    pub(super) fn create_list(
+    pub(crate) fn create_list(
         bin_dir: &Path,
         cache_dir: &Path,
         src_dir: &Path,
@@ -29,11 +30,13 @@ impl CrateList {
         config_file: &ConfigFile,
         crate_detail: &mut CrateDetail,
     ) -> Self {
+        // list out installed crates
         let installed_bin = get_installed_bin(bin_dir, crate_detail);
         let installed_crate_registry =
             get_installed_crate_registry(src_dir, cache_dir, crate_detail);
         let installed_crate_git = get_installed_crate_git(checkout_dir, db_dir, crate_detail);
 
+        // list old registry crate
         let mut old_crate_registry = Vec::new();
         let mut version_removed_crate = remove_version(&installed_crate_registry);
         version_removed_crate.sort();
@@ -45,6 +48,7 @@ impl CrateList {
         }
         old_crate_registry.sort();
 
+        // list old git crate
         let mut old_crate_git = Vec::new();
         for crate_name in &installed_crate_git {
             if !crate_name.contains("-HEAD") {
@@ -77,6 +81,7 @@ impl CrateList {
         }
         old_crate_git.sort();
 
+        // list all used crates in rust program
         let mut used_crate_registry = Vec::new();
         let mut used_crate_git = Vec::new();
         for path in &config_file.directory() {
@@ -86,6 +91,7 @@ impl CrateList {
             used_crate_git.append(&mut git_crate);
         }
 
+        // list orphan crates
         let mut orphan_crate_registry = Vec::new();
         let mut orphan_crate_git = Vec::new();
         for crates in &installed_crate_registry {
@@ -121,39 +127,48 @@ impl CrateList {
         }
     }
 
-    pub(super) fn installed_bin(&self) -> Vec<String> {
+    // provide list of installed bin
+    pub(crate) fn installed_bin(&self) -> Vec<String> {
         self.installed_bin.to_owned()
     }
 
-    pub(super) fn installed_registry(&self) -> Vec<String> {
+    // provide list of installed registry
+    pub(crate) fn installed_registry(&self) -> Vec<String> {
         self.installed_crate_registry.to_owned()
     }
 
-    pub(super) fn old_registry(&self) -> Vec<String> {
+    // provide list of old registry
+    pub(crate) fn old_registry(&self) -> Vec<String> {
         self.old_crate_registry.to_owned()
     }
 
-    pub(super) fn used_registry(&self) -> Vec<String> {
+    // provide list of used registry
+    pub(crate) fn used_registry(&self) -> Vec<String> {
         self.used_crate_registry.to_owned()
     }
 
-    pub(super) fn orphan_registry(&self) -> Vec<String> {
+    // provide list o orphan registry
+    pub(crate) fn orphan_registry(&self) -> Vec<String> {
         self.orphan_crate_registry.to_owned()
     }
 
-    pub(super) fn installed_git(&self) -> Vec<String> {
+    // provide list of installed git
+    pub(crate) fn installed_git(&self) -> Vec<String> {
         self.installed_crate_git.to_owned()
     }
 
-    pub(super) fn old_git(&self) -> Vec<String> {
+    // provide list of old git
+    pub(crate) fn old_git(&self) -> Vec<String> {
         self.old_crate_git.to_owned()
     }
 
-    pub(super) fn used_git(&self) -> Vec<String> {
+    // provide list of used git
+    pub(crate) fn used_git(&self) -> Vec<String> {
         self.used_crate_git.to_owned()
     }
 
-    pub(super) fn orphan_git(&self) -> Vec<String> {
+    // provide list of orphan git
+    pub(crate) fn orphan_git(&self) -> Vec<String> {
         self.orphan_crate_git.to_owned()
     }
 }
@@ -273,6 +288,7 @@ fn remove_version(installed_crate_registry: &[String]) -> Vec<String> {
     removed_version
 }
 
+// list out installed bin
 fn get_installed_bin(bin_dir: &Path, crate_detail: &mut CrateDetail) -> Vec<String> {
     let mut installed_bin = Vec::new();
     if bin_dir.exists() {
@@ -290,6 +306,7 @@ fn get_installed_bin(bin_dir: &Path, crate_detail: &mut CrateDetail) -> Vec<Stri
     installed_bin
 }
 
+// list out installed registry crates
 fn get_installed_crate_registry(
     src_dir: &Path,
     cache_dir: &Path,
@@ -324,6 +341,7 @@ fn get_installed_crate_registry(
     installed_crate_registry
 }
 
+// list out installed git crates
 fn get_installed_crate_git(
     checkout_dir: &Path,
     db_dir: &Path,

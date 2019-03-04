@@ -23,6 +23,7 @@ use std::{
 };
 
 fn main() {
+    // set all dir path
     let dir_path = DirPath::set_dir_path();
     let mut file = fs::File::open(dir_path.config_dir().to_str().unwrap()).unwrap();
     let app = create_app::app();
@@ -44,6 +45,7 @@ fn main() {
         registry_dir::RegistryDir::new(&dir_path.cache_dir(), &dir_path.src_dir());
     let git_crates_location = git_dir::GitDir::new(&dir_path.checkout_dir(), &dir_path.db_dir());
 
+    // create new CrateDetail struct
     let mut crate_detail = CrateDetail::new();
 
     // List out crate list
@@ -358,12 +360,14 @@ fn list_subcommand(app: &ArgMatches, list_crate: &CrateList, crate_detail: &Crat
     }
 }
 
+// show title
 fn show_title(title: &str) {
     print_dash("green");
     println!("|{:^40}|{:^10}|", title.bold(), "SIZE(MB)");
     print_dash("green");
 }
 
+// show total count using data and size
 fn show_total_count(data: &[String], size: f64) {
     if data.is_empty() {
         println!("|{:^40}|{:^10}|", "NONE".red(), "0.000".red());
@@ -375,6 +379,7 @@ fn show_total_count(data: &[String], size: f64) {
     print_dash("green");
 }
 
+// print dash
 fn print_dash(color: &str) {
     println!(
         "{}",
@@ -734,6 +739,7 @@ fn remove_git_all(
     size_cleaned
 }
 
+// show out top n crates
 fn top_crates(
     app: &ArgMatches,
     git_subcommand: &ArgMatches,
@@ -765,6 +771,7 @@ fn top_crates(
     }
 }
 
+// top_crates() help to list out top n crates
 fn show_top_number_crates(crate_detail: &CrateDetail, crate_type: &str, number: usize) {
     let size_detail = match crate_type {
         "bin" => crate_detail.bin(),
@@ -792,6 +799,7 @@ fn show_top_number_crates(crate_detail: &CrateDetail, crate_type: &str, number: 
     print_dash("green");
 }
 
+// print crate name
 fn print_index_value_crate(vector: &[(&String, &u64)], i: usize) {
     let crate_name = vector[i].0;
     let size = vector[i].1;
@@ -816,6 +824,7 @@ fn wipe_directory(app: &ArgMatches, dir_path: &DirPath) {
     }
 }
 
+// delete folder with folder path provided
 fn delete_folder(path: &PathBuf) {
     if path.exists() {
         fs::remove_dir_all(path).unwrap();
