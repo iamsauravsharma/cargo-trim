@@ -40,10 +40,12 @@ impl CrateList {
         let mut old_crate_registry = Vec::new();
         let mut version_removed_crate = remove_version(&installed_crate_registry);
         version_removed_crate.sort();
-        for i in 0..(version_removed_crate.len() - 1) {
-            if version_removed_crate[i] == version_removed_crate[i + 1] {
-                let old_crate_name = installed_crate_registry[i].to_string();
-                old_crate_registry.push(old_crate_name);
+        if !version_removed_crate.is_empty() {
+            for i in 0..(version_removed_crate.len() - 1) {
+                if version_removed_crate[i] == version_removed_crate[i + 1] {
+                    let old_crate_name = installed_crate_registry[i].to_string();
+                    old_crate_registry.push(old_crate_name);
+                }
             }
         }
         old_crate_registry.sort();

@@ -616,11 +616,7 @@ fn remove_all(
         }
         println!(
             "{}",
-            format!(
-                "Total size of orphan crates removed :- {:.3}",
-                total_size_cleaned
-            )
-            .bright_blue()
+            format!("Total size of crates removed :- {:.3}", total_size_cleaned).bright_blue()
         );
     }
 }
