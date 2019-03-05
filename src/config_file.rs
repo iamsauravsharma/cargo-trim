@@ -20,18 +20,18 @@ impl ConfigFile {
     }
 
     // return vector of directory value in config file
-    pub(crate) fn directory(&self) -> Vec<String> {
-        self.directory.to_owned()
+    pub(crate) fn directory(&self) -> &Vec<String> {
+        &self.directory
     }
 
     // return vector of include value in config file
-    pub(crate) fn include(&self) -> Vec<String> {
-        self.include.to_owned()
+    pub(crate) fn include(&self) -> &Vec<String> {
+        &self.include
     }
 
     // return vector of exclude value in config file
-    pub(crate) fn exclude(&self) -> Vec<String> {
-        self.exclude.to_owned()
+    pub(crate) fn exclude(&self) -> &Vec<String> {
+        &self.exclude
     }
 }
 

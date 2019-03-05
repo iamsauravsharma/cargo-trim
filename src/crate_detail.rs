@@ -22,28 +22,28 @@ impl CrateDetail {
     }
 
     // return bin crates size informations
-    pub(crate) fn bin(&self) -> HashMap<String, u64> {
-        self.bin.to_owned()
+    pub(crate) fn bin(&self) -> &HashMap<String, u64> {
+        &self.bin
     }
 
     // return git crates source size information
-    pub(crate) fn git_crates_source(&self) -> HashMap<String, u64> {
-        self.git_crates_source.to_owned()
+    pub(crate) fn git_crates_source(&self) -> &HashMap<String, u64> {
+        &self.git_crates_source
     }
 
     // return registry crates source size information
-    pub(crate) fn registry_crates_source(&self) -> HashMap<String, u64> {
-        self.registry_crates_source.to_owned()
+    pub(crate) fn registry_crates_source(&self) -> &HashMap<String, u64> {
+        &self.registry_crates_source
     }
 
     // return git crates archive size information
-    pub(crate) fn git_crates_archive(&self) -> HashMap<String, u64> {
-        self.git_crates_archive.to_owned()
+    pub(crate) fn git_crates_archive(&self) -> &HashMap<String, u64> {
+        &self.git_crates_archive
     }
 
     // return registry crates archive size information
-    pub(crate) fn registry_crates_archive(&self) -> HashMap<String, u64> {
-        self.registry_crates_archive.to_owned()
+    pub(crate) fn registry_crates_archive(&self) -> &HashMap<String, u64> {
+        &self.registry_crates_archive
     }
 
     // add bin information to CrateDetail

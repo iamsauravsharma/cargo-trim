@@ -70,47 +70,47 @@ impl DirPath {
     }
 
     // return path of bin dir
-    pub(crate) fn bin_dir(&self) -> PathBuf {
-        self.bin_dir.to_owned()
+    pub(crate) fn bin_dir(&self) -> &PathBuf {
+        &self.bin_dir
     }
 
     // return path of config dir
-    pub(crate) fn config_dir(&self) -> PathBuf {
-        self.config_dir.to_owned()
+    pub(crate) fn config_dir(&self) -> &PathBuf {
+        &self.config_dir
     }
 
     // return path of git dir
-    pub(crate) fn git_dir(&self) -> PathBuf {
-        self.git_dir.to_owned()
+    pub(crate) fn git_dir(&self) -> &PathBuf {
+        &self.git_dir
     }
 
     // return path of checkout dir
-    pub(crate) fn checkout_dir(&self) -> PathBuf {
-        self.checkout_dir.to_owned()
+    pub(crate) fn checkout_dir(&self) -> &PathBuf {
+        &self.checkout_dir
     }
 
     // return path of db dir
-    pub(crate) fn db_dir(&self) -> PathBuf {
-        self.db_dir.to_owned()
+    pub(crate) fn db_dir(&self) -> &PathBuf {
+        &self.db_dir
     }
 
     // return path of registry dir
-    pub(crate) fn registry_dir(&self) -> PathBuf {
-        self.registry_dir.to_owned()
+    pub(crate) fn registry_dir(&self) -> &PathBuf {
+        &self.registry_dir
     }
 
     // return path of cache dir
-    pub(crate) fn cache_dir(&self) -> PathBuf {
-        self.cache_dir.to_owned()
+    pub(crate) fn cache_dir(&self) -> &PathBuf {
+        &self.cache_dir
     }
 
     // return path of index dir
-    pub(crate) fn index_dir(&self) -> PathBuf {
-        self.index_dir.to_owned()
+    pub(crate) fn index_dir(&self) -> &PathBuf {
+        &self.index_dir
     }
 
     // return path of src dir
-    pub(crate) fn src_dir(&self) -> PathBuf {
-        self.src_dir.to_owned()
+    pub(crate) fn src_dir(&self) -> &PathBuf {
+        &self.src_dir
     }
 }

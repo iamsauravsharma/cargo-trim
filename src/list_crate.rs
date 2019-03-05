@@ -86,7 +86,7 @@ impl CrateList {
         // list all used crates in rust program
         let mut used_crate_registry = Vec::new();
         let mut used_crate_git = Vec::new();
-        for path in &config_file.directory() {
+        for path in config_file.directory() {
             let list = list_cargo_lock(&Path::new(path));
             let (mut registry_crate, mut git_crate) = read_content(&list, db_dir);
             used_crate_registry.append(&mut registry_crate);
@@ -130,48 +130,48 @@ impl CrateList {
     }
 
     // provide list of installed bin
-    pub(crate) fn installed_bin(&self) -> Vec<String> {
-        self.installed_bin.to_owned()
+    pub(crate) fn installed_bin(&self) -> &Vec<String> {
+        &self.installed_bin
     }
 
     // provide list of installed registry
-    pub(crate) fn installed_registry(&self) -> Vec<String> {
-        self.installed_crate_registry.to_owned()
+    pub(crate) fn installed_registry(&self) -> &Vec<String> {
+        &self.installed_crate_registry
     }
 
     // provide list of old registry
-    pub(crate) fn old_registry(&self) -> Vec<String> {
-        self.old_crate_registry.to_owned()
+    pub(crate) fn old_registry(&self) -> &Vec<String> {
+        &self.old_crate_registry
     }
 
     // provide list of used registry
-    pub(crate) fn used_registry(&self) -> Vec<String> {
-        self.used_crate_registry.to_owned()
+    pub(crate) fn used_registry(&self) -> &Vec<String> {
+        &self.used_crate_registry
     }
 
     // provide list o orphan registry
-    pub(crate) fn orphan_registry(&self) -> Vec<String> {
-        self.orphan_crate_registry.to_owned()
+    pub(crate) fn orphan_registry(&self) -> &Vec<String> {
+        &self.orphan_crate_registry
     }
 
     // provide list of installed git
-    pub(crate) fn installed_git(&self) -> Vec<String> {
-        self.installed_crate_git.to_owned()
+    pub(crate) fn installed_git(&self) -> &Vec<String> {
+        &self.installed_crate_git
     }
 
     // provide list of old git
-    pub(crate) fn old_git(&self) -> Vec<String> {
-        self.old_crate_git.to_owned()
+    pub(crate) fn old_git(&self) -> &Vec<String> {
+        &self.old_crate_git
     }
 
     // provide list of used git
-    pub(crate) fn used_git(&self) -> Vec<String> {
-        self.used_crate_git.to_owned()
+    pub(crate) fn used_git(&self) -> &Vec<String> {
+        &self.used_crate_git
     }
 
     // provide list of orphan git
-    pub(crate) fn orphan_git(&self) -> Vec<String> {
-        self.orphan_crate_git.to_owned()
+    pub(crate) fn orphan_git(&self) -> &Vec<String> {
+        &self.orphan_crate_git
     }
 }
 
