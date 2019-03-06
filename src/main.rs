@@ -157,6 +157,9 @@ fn main() {
     // Show top crates
     top_crates(&app, &git_subcommand, &registry_subcommand, &crate_detail);
 
+    let crago_toml_location = list_crate.cargo_toml_location().location_path();
+    update_cargo_toml(&app, crago_toml_location);
+
     // Wipe certain folder all together
     wipe_directory(&app, &dir_path);
 }
@@ -810,6 +813,27 @@ fn print_index_value_crate(vector: &[(&String, &u64)], i: usize) {
     let size = vector[i].1;
     let size = (*size as f64) / 1024_f64.powf(2.0);
     println!("|{:^40}|{:^10.3}|", crate_name, size);
+}
+
+// Update cargo lock before doing some actions
+fn update_cargo_toml(app: &ArgMatches, cargo_toml_location: &[PathBuf]) {
+    if app.is_present("update") {
+        for location in cargo_toml_location {
+            let mut cargo_lock = location.clone();
+            cargo_lock.push("Cargo.lock");
+            // helps so we may not need to generate lock file again for workspace project
+            if cargo_lock.exists() {
+                if let Err(e) = Command::new("cargo")
+                    .arg("update")
+                    .current_dir(location)
+                    .output()
+                {
+                    panic!(format!("Failed to update Cargo.lock {}", e));
+                }
+            }
+        }
+        println!("{}", "Successfully update all Cargo.lock".bright_blue())
+    }
 }
 
 // Wipe certain directory

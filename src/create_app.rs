@@ -127,6 +127,12 @@ pub(super) fn app() -> ArgMatches<'static> {
                         .value_name("number"),
                 )
                 .arg(
+                    Arg::with_name("update")
+                        .short("u")
+                        .long("update")
+                        .help("Update Cargo.lock file present inside config directory folder path"),
+                )
+                .arg(
                     Arg::with_name("wipe")
                         .short("w")
                         .long("wipe")

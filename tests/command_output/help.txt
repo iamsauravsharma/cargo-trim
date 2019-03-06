@@ -15,6 +15,7 @@ FLAGS:
     -o, --old-clean       Clean old cache crates
     -x, --orphan-clean    Clean orphan cache crates
     -q, --query           Return size of .cargo/cache folders
+    -u, --update          Update Cargo.lock file present inside config directory folder path
     -V, --version         Prints version information
 
 OPTIONS:
