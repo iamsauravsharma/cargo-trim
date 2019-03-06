@@ -415,7 +415,7 @@ fn old_clean(
         }
         println!(
             "{}",
-            format!("Total size of old crates removed :- {:.3}", size_cleaned).bright_blue()
+            format!("Total size of old crates removed :- {:.3} MB", size_cleaned).bright_blue()
         );
     }
 }
@@ -447,7 +447,11 @@ fn orphan_clean(
         }
         println!(
             "{}",
-            format!("Total size of orphan crates removed :- {:.3}", size_cleaned).bright_blue()
+            format!(
+                "Total size of orphan crates removed :- {:.3} MB",
+                size_cleaned
+            )
+            .bright_blue()
         );
     }
 }
@@ -616,7 +620,11 @@ fn remove_all(
         }
         println!(
             "{}",
-            format!("Total size of crates removed :- {:.3}", total_size_cleaned).bright_blue()
+            format!(
+                "Total size of crates removed :- {:.3} MB",
+                total_size_cleaned
+            )
+            .bright_blue()
         );
     }
 }
@@ -654,7 +662,7 @@ fn remove_crate(
         }
         println!(
             "{}",
-            format!("Total size removed :- {:.3}", size_cleaned).bright_blue()
+            format!("Total size removed :- {:.3} MB", size_cleaned).bright_blue()
         );
     }
 }

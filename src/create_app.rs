@@ -146,6 +146,7 @@ pub(super) fn app() -> ArgMatches<'static> {
                 .subcommand(
                     SubCommand::with_name("config")
                         .about("Query config file data")
+                        .alias("c")
                         .arg(
                             Arg::with_name("directory")
                                 .short("d")
@@ -168,6 +169,7 @@ pub(super) fn app() -> ArgMatches<'static> {
                 .subcommand(
                     SubCommand::with_name("git")
                         .about("Perform operation only to git related cache file")
+                        .alias("g")
                         .arg(
                             Arg::with_name("all")
                                 .short("a")
@@ -230,6 +232,7 @@ pub(super) fn app() -> ArgMatches<'static> {
                 .subcommand(
                     SubCommand::with_name("registry")
                         .about("Perform operation only to registry related cache file")
+                        .aliases(&["reg", "rg"])
                         .arg(
                             Arg::with_name("all")
                                 .short("a")
@@ -293,6 +296,7 @@ pub(super) fn app() -> ArgMatches<'static> {
                 .subcommand(
                     SubCommand::with_name("list")
                         .about("List out crates")
+                        .alias("l")
                         .arg(
                             Arg::with_name("all")
                                 .short("a")
@@ -321,6 +325,7 @@ pub(super) fn app() -> ArgMatches<'static> {
                 .subcommand(
                     SubCommand::with_name("remove")
                         .about("Remove values from config file")
+                        .aliases(&["rem", "rm"])
                         .arg(
                             Arg::with_name("directory")
                                 .short("d")
