@@ -50,6 +50,16 @@ pub(crate) fn modify_config_file(
     }
     let mut deserialized: ConfigFile = serde_json::from_str(&buffer).unwrap();
 
+    // add working directory to config
+    if app.is_present("init") {
+        deserialized.directory.push(
+            std::env::current_dir()
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .to_string(),
+        )
+    }
     // Add new value in config file
     for &name in &["set directory", "exclude-conf", "include-conf"] {
         if app.is_present(name) {
@@ -64,6 +74,14 @@ pub(crate) fn modify_config_file(
                 deserialized.include.push(value.to_string());
             }
         }
+    }
+
+    // clear working directory from config file
+    if app.is_present("clear") {
+        remove_item_crate(
+            &mut deserialized.directory,
+            std::env::current_dir().unwrap().to_str().unwrap(),
+        )
     }
 
     // remove value from config file

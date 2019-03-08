@@ -27,8 +27,6 @@
 (WIP) Binary application for cleaning __\$HOME/.cargo/registry__  & __\$HOME/.cargo/git__ folder
 
 ### TODO
-- [ ] Proper handling of error
-- [ ] Documentaion of code for better understanding
 - [ ] Publish crate to [crates.io][cratesio_link]
 
 ### Install
@@ -57,6 +55,7 @@ FLAGS:
     -o, --old-clean       Clean old cache crates
     -x, --orphan-clean    Clean orphan cache crates
     -q, --query           Return size of .cargo/cache folders
+    -u, --update          Update Cargo.lock file present inside config directory folder path
     -V, --version         Prints version information
 
 OPTIONS:
@@ -72,9 +71,11 @@ OPTIONS:
     -w, --wipe <Folder>                   Wipe folder [possible values: git, checkouts, db, registry, cache, index, src]
 
 SUBCOMMANDS:
+    clear       Clear current working directory from cargo cache config
     config      Query config file data
     git         Perform operation only to git related cache file
     help        Prints this message or the help of the given subcommand(s)
+    init        Initialize current working directory as cargo trim directory
     list        List out crates
     registry    Perform operation only to registry related cache file
     remove      Remove values from config file

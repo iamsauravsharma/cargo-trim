@@ -226,15 +226,17 @@ fn clear_version_value(a: &str) -> String {
 // config file
 fn list_cargo_toml(path: &Path) -> CargoTomlLocation {
     let mut list = CargoTomlLocation::new();
-    for entry in std::fs::read_dir(path).unwrap() {
-        let data_path_buf = entry.unwrap().path();
-        let data = data_path_buf.as_path();
-        if data.is_dir() {
-            let kids_list = list_cargo_toml(data);
-            list.append(kids_list);
-        }
-        if data.is_file() && data.ends_with("Cargo.toml") {
-            list.add_path(path.to_path_buf());
+    if path.exists() {
+        for entry in std::fs::read_dir(path).unwrap() {
+            let data_path_buf = entry.unwrap().path();
+            let data = data_path_buf.as_path();
+            if data.is_dir() {
+                let kids_list = list_cargo_toml(data);
+                list.append(kids_list);
+            }
+            if data.is_file() && data.ends_with("Cargo.toml") {
+                list.add_path(path.to_path_buf());
+            }
         }
     }
     list

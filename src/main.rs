@@ -438,7 +438,6 @@ fn orphan_clean(
             for crate_name in orphan_registry_crate {
                 registry_crates_location.remove_crate(crate_name);
                 size_cleaned += crate_detail.find_size_registry_all(crate_name);
-                println!("{} {:?}", "Removed".red(), crate_name);
             }
         }
         if orphan_app || orphan_git {

@@ -150,6 +150,16 @@ pub(super) fn app() -> ArgMatches<'static> {
                         .value_name("Folder"),
                 )
                 .subcommand(
+                    SubCommand::with_name("init")
+                        .about("Initialize current working directory as cargo trim directory")
+                        .alias("in"),
+                )
+                .subcommand(
+                    SubCommand::with_name("clear")
+                        .about("Clear current working directory from cargo cache config")
+                        .alias("clr"),
+                )
+                .subcommand(
                     SubCommand::with_name("config")
                         .about("Query config file data")
                         .alias("c")
