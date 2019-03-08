@@ -8,9 +8,9 @@
 
 **Project Info:**
 
-| License | LoC |
-| :---: | :---: |
-| [![License: MIT][license_badge]][license_link] | [![LoC][loc_badge]][loc_link] |
+| License | LoC | Crates Version |
+| :---: | :---: | :---: |
+| [![License: MIT][license_badge]][license_link] | [![LoC][loc_badge]][loc_link] | [![Crate][cratesio_badge]][cratesio_link] |
 
 **Rust version support:**
 
@@ -24,19 +24,27 @@
 | :---: | :---: | :---: |
 | [![Linux support][linux_supported_badge]][git_link] | [![OSX support][osx_supported_badge]][git_link] | [![Windows support][windows_supported_badge]][git_link] |
 
-(WIP) Binary application for cleaning __\$HOME/.cargo/registry__  & __\$HOME/.cargo/git__ folder
-
-### TODO
-- [ ] Publish crate to [crates.io][cratesio_link]
+Binary application for cleaning __\$CARGO_HOME/registry__  & __\$CARGO_HOME/git__ folder support orphan cleaning and old cleaning
+Default \$CARGO_HOME is set as \$HOME/.cargo
 
 ### Install
-Initially you should have cargo installed
+Initially you should have rustc and cargo installed for a detail information of how to install rust-lang visit https://rust-lang.org
+
+For installation of cargo-trim:-
+You can install from crates.io registry
+```
+    cargo install cargo-trim
+```
+__OR__
+
+For bleeding edge latest development version:
 ```
     cargo install --git https://github.com/iamsauravsharma/cargo-trim
 ```
 
 ### Command output
-```cargo trim -h``` will produce out following output
+All cargo-trim can be run using ```cargo trim <command>```
+```cargo trim -h``` will produce out following output which list out all of available output for cargo-trim
 ```
 cargo-trim 0.1.0
 Saurav Sharma <appdroiddeveloper@gmail.com>
@@ -81,6 +89,9 @@ SUBCOMMANDS:
     remove      Remove values from config file
 ```
 
+### Config file location
+cargo-trim store its config file to config directory of OS and name file as cago_trim_config.json and stores all information on these file
+
 [git_link]: https://github.com/iamsauravsharma/cargo-trim
 
 [build_badge]: https://img.shields.io/travis/com/iamsauravsharma/cargo-trim.svg?logo=travis
@@ -95,7 +106,8 @@ SUBCOMMANDS:
 [loc_badge]: https://tokei.rs/b1/github/iamsauravsharma/cargo-trim
 [loc_link]: https://github.com/iamsauravsharma/cargo-trim
 
-[cratesio_link]: https://crates.io
+[cratesio_badge]: https://img.shields.io/crates/v/cargo-trim.svg
+[cratesio_link]: https://crates.io/crates/cargo-trim
 
 [stable_supported_badge]: https://img.shields.io/badge/stable-supported-brightgreen.svg?logo=rust
 [beta_supported_badge]: https://img.shields.io/badge/beta-supported-brightgreen.svg?logo=rust

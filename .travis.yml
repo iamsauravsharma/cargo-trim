@@ -37,3 +37,10 @@ script:
   - cargo build --all
   - cargo doc --no-deps --all
   - cargo test --all
+
+deploy:
+  provider: cargo
+  token: $CARGO_TOKEN
+  on:
+    tags: true
+    condition: $TRAVIS_OS_NAME = linux && $TRAVIS_RUST_VERSION = stable
