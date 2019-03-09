@@ -1,5 +1,5 @@
 cargo-trim-registry 0.1.0
-Perform operation only to registry related cache file
+Perform operation only to registry related cache file [alias: "reg"]
 
 USAGE:
     cargo trim registry [FLAGS] [OPTIONS]

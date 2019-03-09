@@ -19,7 +19,3 @@ serde_json = "1.0.39"
 serde_derive = "1.0.89"
 fs_extra = "1.1.0"
 colored = "1.7.0"
-
-[badges]
-travis-ci = { repository = "iamsauravsharma/cargo-trim"}
-codecov = { repository = "iamsauravsharma/cargo-trim"}

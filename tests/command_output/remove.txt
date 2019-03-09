@@ -1,5 +1,5 @@
 cargo-trim-remove 0.1.0
-Remove values from config file
+Remove values from config file [alias: "rm"]
 
 USAGE:
     cargo trim remove [OPTIONS]

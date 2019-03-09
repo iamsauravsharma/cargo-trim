@@ -92,7 +92,7 @@ pub(super) fn app() -> ArgMatches<'static> {
                     Arg::with_name("orphan clean")
                         .short("x")
                         .long("orphan-clean")
-                        .help("Clean orphan cache crates"),
+                        .help("Clean orphan cache crates need directory through config to work"),
                 )
                 .arg(
                     Arg::with_name("set directory")
@@ -151,17 +151,23 @@ pub(super) fn app() -> ArgMatches<'static> {
                 )
                 .subcommand(
                     SubCommand::with_name("init")
-                        .about("Initialize current working directory as cargo trim directory")
+                        .about(
+                            "Initialize current working directory as cargo trim directory [alias: \
+                             \"in\"]",
+                        )
                         .alias("in"),
                 )
                 .subcommand(
                     SubCommand::with_name("clear")
-                        .about("Clear current working directory from cargo cache config")
+                        .about(
+                            "Clear current working directory from cargo cache config [alias: \
+                             \"clr\"]",
+                        )
                         .alias("clr"),
                 )
                 .subcommand(
                     SubCommand::with_name("config")
-                        .about("Query config file data")
+                        .about("Query config file data [alias: \"c\"]")
                         .alias("c")
                         .arg(
                             Arg::with_name("directory")
@@ -184,7 +190,7 @@ pub(super) fn app() -> ArgMatches<'static> {
                 )
                 .subcommand(
                     SubCommand::with_name("git")
-                        .about("Perform operation only to git related cache file")
+                        .about("Perform operation only to git related cache file [alias: \"g\"]")
                         .alias("g")
                         .arg(
                             Arg::with_name("all")
@@ -247,8 +253,11 @@ pub(super) fn app() -> ArgMatches<'static> {
                 )
                 .subcommand(
                     SubCommand::with_name("registry")
-                        .about("Perform operation only to registry related cache file")
-                        .aliases(&["reg", "rg"])
+                        .about(
+                            "Perform operation only to registry related cache file [alias: \
+                             \"reg\"]",
+                        )
+                        .alias("reg")
                         .arg(
                             Arg::with_name("all")
                                 .short("a")
@@ -311,7 +320,7 @@ pub(super) fn app() -> ArgMatches<'static> {
                 )
                 .subcommand(
                     SubCommand::with_name("list")
-                        .about("List out crates")
+                        .about("List out crates [alias: \"l\"]")
                         .alias("l")
                         .arg(
                             Arg::with_name("all")
@@ -340,8 +349,8 @@ pub(super) fn app() -> ArgMatches<'static> {
                 )
                 .subcommand(
                     SubCommand::with_name("remove")
-                        .about("Remove values from config file")
-                        .aliases(&["rem", "rm"])
+                        .about("Remove values from config file [alias: \"rm\"]")
+                        .alias("rm")
                         .arg(
                             Arg::with_name("directory")
                                 .short("d")
