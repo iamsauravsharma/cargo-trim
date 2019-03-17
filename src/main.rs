@@ -496,7 +496,7 @@ fn query_size(
             println!(
                 "{:50} {:10.2} MB",
                 format!(
-                    "   |__ Size of {} .cargo/git/checkout folder",
+                    "   ├ Size of {} .cargo/git/checkout folder",
                     crate_detail.git_crates_archive().len()
                 ),
                 size_checkout
@@ -504,7 +504,7 @@ fn query_size(
             println!(
                 "{:50} {:10.2} MB",
                 format!(
-                    "   |__ Size of {} .cargo/git/db folder",
+                    "   └ Size of {} .cargo/git/db folder",
                     crate_detail.git_crates_source().len()
                 ),
                 size_db
@@ -522,19 +522,19 @@ fn query_size(
             println!(
                 "{:50} {:10.2} MB",
                 format!(
-                    "   |__ Size of {} .cargo/registry/cache folder",
+                    "   ├ Size of {} .cargo/registry/cache folder",
                     crate_detail.registry_crates_archive().len()
                 ),
                 size_cache
             );
             println!(
                 "{:50} {:10.2} MB",
-                "   |__ Size of .cargo/registry/index folder", size_index
+                "   ├ Size of .cargo/registry/index folder", size_index
             );
             println!(
                 "{:50} {:10.2} MB",
                 format!(
-                    "   |__ Size of {} .cargo/git/src folder",
+                    "   └ Size of {} .cargo/git/src folder",
                     crate_detail.registry_crates_source().len()
                 ),
                 size_src
