@@ -46,7 +46,7 @@ For bleeding edge latest development version:
 All cargo-trim can be run using ```cargo trim <command>```
 ```cargo trim -h``` will produce out following output which list out all of available output for cargo-trim
 ```
-cargo-trim 0.1.0
+cargo-trim 0.1.1
 Saurav Sharma <appdroiddeveloper@gmail.com>
 Binary application to cleanup $CARGO_HOME cache
 
