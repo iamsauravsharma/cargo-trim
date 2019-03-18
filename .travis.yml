@@ -15,6 +15,11 @@ os:
   - osx
   - windows
 
+matrix:
+  allow_failures:
+    - os: windows
+  fast_finish: true
+
 install:
   - rustup component add rustfmt && RUSTFMT="yes" || RUSTFMT="no"
   - rustup component add clippy && CLIPPY="yes" || CLIPPY="no"
