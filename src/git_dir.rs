@@ -1,3 +1,5 @@
+use crate::{ConfigFile, CrateDetail};
+use clap::ArgMatches;
 use colored::*;
 use std::{fs, path::Path};
 
@@ -26,6 +28,54 @@ impl GitDir {
             remove_crate(Path::new(&self.checkout_dir), crate_name);
         }
         println!("{} {:?}", "removed".red(), crate_name);
+    }
+
+    // Remove list of crates
+    pub(crate) fn remove_crate_list(&self, crate_detail: &CrateDetail, list: &[String]) -> f64 {
+        let mut size_cleaned = 0.0;
+        for crate_name in list {
+            self.remove_crate(crate_name);
+            size_cleaned += crate_detail.find(crate_name, "GIT")
+        }
+        size_cleaned
+    }
+
+    // Remove all crate from git folder
+    pub(crate) fn remove_all(
+        &self,
+        config_file: &ConfigFile,
+        app: &ArgMatches,
+        crate_name: &str,
+        crate_detail: &CrateDetail,
+    ) -> f64 {
+        let mut cmd_include = Vec::new();
+        let mut cmd_exclude = Vec::new();
+        let crate_name = &crate_name.to_string();
+        let mut size_cleaned = 0.0;
+
+        // Provide one time include crate list for other flag
+        if app.is_present("include") {
+            let value = app.value_of("include").unwrap().to_string();
+            cmd_include.push(value);
+        }
+
+        // Provide one time exclude crate list for other flag
+        if app.is_present("exclude") {
+            let value = app.value_of("include").unwrap().to_string();
+            cmd_exclude.push(value);
+        }
+
+        let read_include = config_file.include();
+        let read_exclude = config_file.exclude();
+        if cmd_include.contains(crate_name) || read_include.contains(crate_name) {
+            self.remove_crate(crate_name);
+            size_cleaned += crate_detail.find_size_git_all(crate_name);
+        }
+        if !cmd_exclude.contains(crate_name) && !read_exclude.contains(crate_name) {
+            self.remove_crate(crate_name);
+            size_cleaned += crate_detail.find_size_git_all(crate_name);
+        }
+        size_cleaned
     }
 }
 

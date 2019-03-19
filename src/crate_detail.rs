@@ -116,4 +116,15 @@ impl CrateDetail {
     pub(crate) fn find_size_registry_all(&self, crate_name: &str) -> f64 {
         self.find_size_registry_archive(crate_name) + self.find_size_registry_source(crate_name)
     }
+
+    // find crate size if location/title is given
+    pub(crate) fn find(&self, crate_name: &str, location: &str) -> f64 {
+        if location.contains("REGISTRY") {
+            self.find_size_registry_all(crate_name)
+        } else if location.contains("GIT") {
+            self.find_size_git_all(crate_name)
+        } else {
+            0.0
+        }
+    }
 }
