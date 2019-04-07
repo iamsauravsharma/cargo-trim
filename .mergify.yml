@@ -1,0 +1,19 @@
+pull_request_rules:
+  - name: automatic merge renovate PR
+    conditions:
+      - "#approved-reviews-by>=1"
+      - "#changes-requested-reviews-by=0"
+      - author=renovate[bot]
+      - status-success=[DCO,Travis CI - Branch,Travis CI - Pull Request]
+    actions:
+      delete_head_branch: {}
+      merge:
+       strict: true
+  - name: merge iamsaurav PR
+    conditions:
+      - author=iamsauravsharma
+      - status-success=[DCO,Travis CI - Branch,Travis CI - Pull Request]
+    actions:
+      delete_head_branch: {}
+      merge:
+       strict: true
