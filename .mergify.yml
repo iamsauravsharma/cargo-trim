@@ -1,10 +1,8 @@
 pull_request_rules:
   - name: automatic merge renovate PR
     conditions:
-      - "#approved-reviews-by>=1"
-      - "#changes-requested-reviews-by=0"
       - author=renovate[bot]
-      - status-success=DCO
+      - label=dependencies
       - status-success=Travis CI - Branch
       - status-success=Travis CI - Pull Request
     actions:
@@ -15,9 +13,22 @@ pull_request_rules:
     conditions:
       - author=iamsauravsharma
       - status-success=DCO
+      - label!=work in progress
       - status-success=Travis CI - Branch
       - status-success=Travis CI - Pull Request
     actions:
       delete_head_branch: {}
+      merge:
+       strict: smart
+  - name: merge reviewed check pass commit
+    conditions:
+      - "#approved-reviews-by>=1"
+      - "#changes-requested-reviews-by=0"
+      - approved-reviews-by=iamsauravsharma
+      - label!=work in progress
+      - status-success=DCO
+      - status-success=Travis CI - Branch
+      - status-success=Travis CI - Pull Request
+    actions:
       merge:
        strict: smart
