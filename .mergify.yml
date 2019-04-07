@@ -8,12 +8,12 @@ pull_request_rules:
     actions:
       delete_head_branch: {}
       merge:
-       strict: true
+       strict: smart
   - name: merge iamsaurav PR
     conditions:
       - author=iamsauravsharma
-      - status-success=[DCO,Travis CI - Branch,Travis CI - Pull Request]
+      - status-success=["DCO","Travis CI - Branch","Travis CI - Pull Request"]
     actions:
       delete_head_branch: {}
       merge:
-       strict: true
+       strict: smart
