@@ -4,7 +4,9 @@ pull_request_rules:
       - "#approved-reviews-by>=1"
       - "#changes-requested-reviews-by=0"
       - author=renovate[bot]
-      - status-success=[DCO,Travis CI - Branch,Travis CI - Pull Request]
+      - status-success=DCO
+      - status-success=Travis CI - Branch
+      - status-success=Travis CI - Pull Request
     actions:
       delete_head_branch: {}
       merge:
@@ -12,7 +14,9 @@ pull_request_rules:
   - name: merge iamsaurav PR
     conditions:
       - author=iamsauravsharma
-      - status-success=["DCO","Travis CI - Branch","Travis CI - Pull Request"]
+      - status-success=DCO
+      - status-success=Travis CI - Branch
+      - status-success=Travis CI - Pull Request
     actions:
       delete_head_branch: {}
       merge:
