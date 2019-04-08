@@ -210,6 +210,7 @@ fn git_compress(app: &ArgMatches, index_dir: &PathBuf, checkout_dir: &PathBuf, d
                 }
             }
         }
+        println!("{}", "Git compress task completed".bright_blue());
     }
 }
 
