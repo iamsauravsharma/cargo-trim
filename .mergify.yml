@@ -1,5 +1,5 @@
 pull_request_rules:
-  - name: automatic merge renovate PR
+  - name: automatic merge renovate bot PR
     conditions:
       - author=renovate[bot]
       - label=dependencies
@@ -9,7 +9,7 @@ pull_request_rules:
       delete_head_branch: {}
       merge:
        strict: smart
-  - name: merge iamsaurav PR
+  - name: merge iamsauravsharma PR
     conditions:
       - author=iamsauravsharma
       - status-success=DCO
