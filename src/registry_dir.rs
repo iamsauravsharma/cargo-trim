@@ -65,7 +65,7 @@ impl RegistryDir {
 
         // Provide one time exclude crate list for other flag
         if app.is_present("exclude") {
-            let value = app.value_of("include").unwrap().to_string();
+            let value = app.value_of("exclude").unwrap().to_string();
             cmd_exclude.push(value);
         }
 
