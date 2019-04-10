@@ -2,6 +2,189 @@ use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 
 // Create all list of subcommand options flag using clap
 pub(super) fn app() -> ArgMatches<'static> {
+    let all = Arg::with_name("all").short("a").long("all");
+    let all_trim = all
+        .clone()
+        .help("Clean up all .cargo/registry & .cargo/git follow config file data");
+    let all_git = all
+        .clone()
+        .help("Clean up all .cargo/git follow config file data");
+    let all_registry = all
+        .clone()
+        .help("Clean up all .cargo/registry follow config file data");
+    let all_list = all.clone().help("list out all installed crate");
+
+    let clear_config = Arg::with_name("clear config")
+        .short("c")
+        .long("clear")
+        .help("Clear config data");
+
+    let directory = Arg::with_name("directory").short("d").long("directory");
+    let directory_config = directory.clone().help("Query about directory data");
+    let directory_remove = directory
+        .clone()
+        .help("directory name to be removed")
+        .takes_value(true)
+        .value_name("Folder");
+
+    let exclude = Arg::with_name("exclude").short("e").long("exclude");
+    let exclude_trim = exclude
+        .clone()
+        .help("Exclude listed crates")
+        .multiple(true)
+        .takes_value(true)
+        .value_name("Crate");
+    let exclude_config = exclude.clone().help("Query about exclude data");
+    let exclude_remove = exclude
+        .clone()
+        .help("Remove crate from exclude")
+        .takes_value(true)
+        .value_name("Crate");
+
+    let exclude_conf = Arg::with_name("exclude-conf")
+        .short("E")
+        .long("exclude-conf")
+        .help("add listed crates to default conf file exclude list")
+        .multiple(true)
+        .takes_value(true)
+        .value_name("Crate");
+
+    let force_remove = Arg::with_name("force remove")
+        .short("f")
+        .long("force")
+        .help("Force clear cache without reading conf file");
+
+    let git_compress = Arg::with_name("git compress")
+        .short("g")
+        .long("gc")
+        .help("Git compress to reduce size of .cargo")
+        .takes_value(true)
+        .possible_values(&["all", "index", "git", "git-checkout", "git-db"]);
+
+    let include = Arg::with_name("include").short("i").long("include");
+    let include_trim = include
+        .clone()
+        .help("Include listed crates")
+        .multiple(true)
+        .takes_value(true)
+        .value_name("Crate");
+    let include_config = include.clone().help("Query about include data");
+    let include_remove = include
+        .clone()
+        .help("Remove crate from include")
+        .takes_value(true)
+        .value_name("Crate");
+
+    let include_conf = Arg::with_name("include-conf")
+        .short("I")
+        .long("include-conf")
+        .help("add listed crates to default conf file include list")
+        .multiple(true)
+        .takes_value(true)
+        .value_name("Crate");
+
+    let light_cleanup = Arg::with_name("light cleanup").short("l").long("light");
+    let light_cleanup_trim = light_cleanup.clone().help(
+        "Light cleanup repos by removing git checkout and registry source but stores git db and \
+         registry archive for future compilation",
+    );
+
+    let light_cleanup_git = light_cleanup.clone().help(
+        "Light cleanup repos by removing git checkout but stores git db for future compilation",
+    );
+    let light_cleanup_registry = light_cleanup.clone().help(
+        "Light cleanup repos by removing registry source but stores registry archive for future \
+         compilation",
+    );
+
+    let old = Arg::with_name("old")
+        .short("o")
+        .long("old")
+        .help("list out old crates");
+
+    let old_clean = Arg::with_name("old clean")
+        .short("o")
+        .long("old-clean")
+        .help("Clean old cache crates");
+
+    let orphan = Arg::with_name("orphan")
+        .short("x")
+        .long("orphan")
+        .help("list out orphan crates");
+
+    let orphan_clean = Arg::with_name("orphan clean")
+        .short("x")
+        .long("orphan-clean")
+        .help("Clean orphan cache crates");
+
+    let query_size = Arg::with_name("query size").short("q").long("query");
+    let query_size_trim = query_size
+        .clone()
+        .help("Return size of .cargo/cache folders");
+    let query_size_git = query_size
+        .clone()
+        .help("Return size of .cargo/git cache folders");
+    let query_size_registry = query_size
+        .clone()
+        .help("Return size of .cargo/registry cache folders");
+
+    let remove_crate = Arg::with_name("remove-crate")
+        .short("r")
+        .long("remove")
+        .help("Remove listed crates")
+        .multiple(true)
+        .takes_value(true)
+        .value_name("Crate");
+
+    let set_directory = Arg::with_name("set directory")
+        .short("s")
+        .multiple(true)
+        .long("set-directory")
+        .value_name("Directory")
+        .help("Set directory of Rust project")
+        .takes_value(true);
+
+    let top_crate = Arg::with_name("top crates")
+        .short("t")
+        .long("top")
+        .takes_value(true)
+        .value_name("number");
+    let top_crate_trim = top_crate
+        .clone()
+        .help("Show certain number of top crates which have highest size");
+    let top_crate_git = top_crate
+        .clone()
+        .help("Show certain number of top git crates which have highest size");
+    let top_crates_registry = top_crate
+        .clone()
+        .help("Show certain number of top registry crates which have highest size");
+
+    let update = Arg::with_name("update")
+        .short("u")
+        .long("update")
+        .help("Update Cargo.lock file present inside config directory folder path");
+
+    let used = Arg::with_name("used")
+        .short("u")
+        .long("use")
+        .help("list out used crates");
+
+    let wipe = Arg::with_name("wipe")
+        .short("w")
+        .long("wipe")
+        .help("Wipe folder")
+        .possible_values(&[
+            "git",
+            "checkouts",
+            "db",
+            "registry",
+            "cache",
+            "index",
+            "src",
+        ])
+        .takes_value(true)
+        .value_name("Folder");
+
     App::new(env!("CARGO_PKG_NAME"))
         .bin_name("cargo")
         .version(env!("CARGO_PKG_VERSION"))
@@ -11,144 +194,25 @@ pub(super) fn app() -> ArgMatches<'static> {
             SubCommand::with_name("trim")
                 .author(env!("CARGO_PKG_AUTHORS"))
                 .about(env!("CARGO_PKG_DESCRIPTION"))
-                .arg(
-                    Arg::with_name("all")
-                        .short("a")
-                        .long("all")
-                        .help("Clean up all .cargo/registry & .cargo/git follow config file data"),
-                )
-                .arg(
-                    Arg::with_name("clear config")
-                        .short("c")
-                        .long("clear")
-                        .help("Clear config data"),
-                )
-                .arg(
-                    Arg::with_name("exclude")
-                        .short("e")
-                        .long("exclude")
-                        .help("Exclude listed crates")
-                        .multiple(true)
-                        .takes_value(true)
-                        .value_name("Crate"),
-                )
-                .arg(
-                    Arg::with_name("exclude-conf")
-                        .short("E")
-                        .long("exclude-conf")
-                        .help("add listed crates to default conf file exclude list")
-                        .multiple(true)
-                        .takes_value(true)
-                        .value_name("Crate"),
-                )
-                .arg(
-                    Arg::with_name("force remove")
-                        .short("f")
-                        .long("force")
-                        .help("Force clear cache without reading conf file"),
-                )
-                .arg(
-                    Arg::with_name("git compress")
-                        .short("g")
-                        .long("gc")
-                        .help("Git compress to reduce size of .cargo")
-                        .takes_value(true)
-                        .possible_values(&["all", "index", "git", "git-checkout", "git-db"]),
-                )
-                .arg(
-                    Arg::with_name("include")
-                        .short("i")
-                        .long("include")
-                        .help("Include listed crates")
-                        .multiple(true)
-                        .takes_value(true)
-                        .value_name("Crate"),
-                )
-                .arg(
-                    Arg::with_name("include-conf")
-                        .short("I")
-                        .long("include-conf")
-                        .help("add listed crates to default conf file include list")
-                        .multiple(true)
-                        .takes_value(true)
-                        .value_name("Crate"),
-                )
-                .arg(
-                    Arg::with_name("light cleanup")
-                        .short("l")
-                        .long("light")
-                        .help(
-                            "Light cleanup repos by removing git checkout and registry source but \
-                             stores git db and registry archive for future compilation",
-                        ),
-                )
-                .arg(
-                    Arg::with_name("old clean")
-                        .short("o")
-                        .long("old-clean")
-                        .help("Clean old cache crates"),
-                )
-                .arg(
-                    Arg::with_name("orphan clean")
-                        .short("x")
-                        .long("orphan-clean")
-                        .help("Clean orphan cache crates need directory through config to work"),
-                )
-                .arg(
-                    Arg::with_name("set directory")
-                        .short("s")
-                        .multiple(true)
-                        .long("set-directory")
-                        .value_name("Directory")
-                        .help("Set directory of Rust project")
-                        .takes_value(true),
-                )
-                .arg(
-                    Arg::with_name("query size")
-                        .short("q")
-                        .long("query")
-                        .help("Return size of .cargo/cache folders"),
-                )
-                .arg(
-                    Arg::with_name("remove-crate")
-                        .short("r")
-                        .long("remove")
-                        .help("Remove listed crates")
-                        .multiple(true)
-                        .takes_value(true)
-                        .value_name("Crate"),
-                )
-                .arg(
-                    Arg::with_name("top crates")
-                        .short("t")
-                        .long("top")
-                        .help("Show certain number of top crates which have highest size")
-                        .takes_value(true)
-                        .value_name("number"),
-                )
-                .arg(
-                    Arg::with_name("update")
-                        .short("u")
-                        .long("update")
-                        .help("Update Cargo.lock file present inside config directory folder path"),
-                )
-                .arg(
-                    Arg::with_name("wipe")
-                        .short("w")
-                        .long("wipe")
-                        .help("Wipe folder")
-                        .possible_values(&[
-                            "git",
-                            "checkouts",
-                            "db",
-                            "registry",
-                            "cache",
-                            "index",
-                            "src",
-                        ])
-                        .takes_value(true)
-                        .value_name("Folder"),
-                )
+                .args(&[
+                    all_trim,
+                    clear_config,
+                    exclude_trim,
+                    exclude_conf,
+                    force_remove.clone(),
+                    git_compress,
+                    include_trim,
+                    include_conf,
+                    light_cleanup_trim,
+                    old_clean.clone(),
+                    orphan_clean.clone(),
+                    query_size_trim,
+                    remove_crate.clone(),
+                    set_directory,
+                    top_crate_trim,
+                    update,
+                    wipe,
+                ])
                 .subcommand(
                     SubCommand::with_name("init")
                         .about(
@@ -169,87 +233,22 @@ pub(super) fn app() -> ArgMatches<'static> {
                     SubCommand::with_name("config")
                         .about("Query config file data [alias: \"c\"]")
                         .alias("c")
-                        .arg(
-                            Arg::with_name("directory")
-                                .short("d")
-                                .long("directory")
-                                .help("Query about directory data"),
-                        )
-                        .arg(
-                            Arg::with_name("include")
-                                .short("i")
-                                .long("include")
-                                .help("Query about include data"),
-                        )
-                        .arg(
-                            Arg::with_name("exclude")
-                                .short("e")
-                                .long("exclude")
-                                .help("Query about exclude data"),
-                        ),
+                        .args(&[directory_config, exclude_config, include_config]),
                 )
                 .subcommand(
                     SubCommand::with_name("git")
                         .about("Perform operation only to git related cache file [alias: \"g\"]")
                         .alias("g")
-                        .arg(
-                            Arg::with_name("all")
-                                .short("a")
-                                .long("all")
-                                .help("Clean up all .cargo/git follow config file data"),
-                        )
-                        .arg(
-                            Arg::with_name("force remove")
-                                .short("f")
-                                .long("force")
-                                .help("Force clear cache without reading conf file"),
-                        )
-                        .arg(
-                            Arg::with_name("light cleanup")
-                                .short("l")
-                                .long("light")
-                                .help(
-                                    "Light cleanup repos by removing git checkout but stores git \
-                                     db for future compilation",
-                                ),
-                        )
-                        .arg(
-                            Arg::with_name("old clean")
-                                .short("o")
-                                .long("old-clean")
-                                .help("Clean old cache crates"),
-                        )
-                        .arg(
-                            Arg::with_name("orphan clean")
-                                .short("x")
-                                .long("orphan-clean")
-                                .help("Clean orphan cache crates"),
-                        )
-                        .arg(
-                            Arg::with_name("query size")
-                                .short("q")
-                                .long("query")
-                                .help("Return size of .cargo/git cache folders"),
-                        )
-                        .arg(
-                            Arg::with_name("remove-crate")
-                                .short("r")
-                                .long("remove")
-                                .help("Remove listed crates")
-                                .multiple(true)
-                                .takes_value(true)
-                                .value_name("Crate"),
-                        )
-                        .arg(
-                            Arg::with_name("top crates")
-                                .short("t")
-                                .long("top")
-                                .help(
-                                    "Show certain number of top git crates which have highest size",
-                                )
-                                .takes_value(true)
-                                .value_name("number"),
-                        ),
+                        .args(&[
+                            all_git,
+                            force_remove.clone(),
+                            light_cleanup_git,
+                            old_clean.clone(),
+                            orphan_clean.clone(),
+                            query_size_git,
+                            remove_crate.clone(),
+                            top_crate_git,
+                        ]),
                 )
                 .subcommand(
                     SubCommand::with_name("registry")
@@ -258,123 +257,28 @@ pub(super) fn app() -> ArgMatches<'static> {
                              \"reg\"]",
                         )
                         .alias("reg")
-                        .arg(
-                            Arg::with_name("all")
-                                .short("a")
-                                .long("all")
-                                .help("Clean up all .cargo/registry follow config file data"),
-                        )
-                        .arg(
-                            Arg::with_name("force remove")
-                                .short("f")
-                                .long("force")
-                                .help("Force clear cache without reading conf file"),
-                        )
-                        .arg(
-                            Arg::with_name("light cleanup")
-                                .short("l")
-                                .long("light")
-                                .help(
-                                    "Light cleanup repos by removing registry source but stores \
-                                     registry archive for future compilation",
-                                ),
-                        )
-                        .arg(
-                            Arg::with_name("old clean")
-                                .short("o")
-                                .long("old-clean")
-                                .help("Clean old cache crates"),
-                        )
-                        .arg(
-                            Arg::with_name("orphan clean")
-                                .short("x")
-                                .long("orphan-clean")
-                                .help("Clean orphan cache crates"),
-                        )
-                        .arg(
-                            Arg::with_name("query size")
-                                .short("q")
-                                .long("query")
-                                .help("Return size of .cargo/registry cache folders"),
-                        )
-                        .arg(
-                            Arg::with_name("remove-crate")
-                                .short("r")
-                                .long("remove")
-                                .help("Remove listed crates")
-                                .multiple(true)
-                                .takes_value(true)
-                                .value_name("Crate"),
-                        )
-                        .arg(
-                            Arg::with_name("top crates")
-                                .short("t")
-                                .long("top")
-                                .help(
-                                    "Show certain number of top registry crates which have \
-                                     highest size",
-                                )
-                                .takes_value(true)
-                                .value_name("number"),
-                        ),
+                        .args(&[
+                            all_registry,
+                            force_remove.clone(),
+                            light_cleanup_registry,
+                            old_clean.clone(),
+                            orphan_clean.clone(),
+                            query_size_registry,
+                            remove_crate.clone(),
+                            top_crates_registry,
+                        ]),
                 )
                 .subcommand(
                     SubCommand::with_name("list")
                         .about("List out crates [alias: \"l\"]")
                         .alias("l")
-                        .arg(
-                            Arg::with_name("all")
-                                .short("a")
-                                .long("all")
-                                .help("list out all installed crate"),
-                        )
-                        .arg(
-                            Arg::with_name("orphan")
-                                .short("x")
-                                .long("orphan")
-                                .help("list out orphan crates"),
-                        )
-                        .arg(
-                            Arg::with_name("old")
-                                .short("o")
-                                .long("old")
-                                .help("List out old crates"),
-                        )
-                        .arg(
-                            Arg::with_name("used")
-                                .short("u")
-                                .long("use")
-                                .help("List out used crates"),
-                        ),
+                        .args(&[all_list, old, orphan, used]),
                 )
                 .subcommand(
                     SubCommand::with_name("remove")
                         .about("Remove values from config file [alias: \"rm\"]")
                         .alias("rm")
-                        .arg(
-                            Arg::with_name("directory")
-                                .short("d")
-                                .long("directory")
-                                .help("directory name to be removed")
-                                .takes_value(true)
-                                .value_name("Folder"),
-                        )
-                        .arg(
-                            Arg::with_name("include")
-                                .short("i")
-                                .long("include")
-                                .help("Remove crate from include")
-                                .takes_value(true)
-                                .value_name("Crate"),
-                        )
-                        .arg(
-                            Arg::with_name("exclude")
-                                .short("e")
-                                .long("exclude")
-                                .help("Remove crate from exclude")
-                                .takes_value(true)
-                                .value_name("Crate"),
-                        ),
+                        .args(&[directory_remove, exclude_remove, include_remove]),
                 ),
         )
         .get_matches()

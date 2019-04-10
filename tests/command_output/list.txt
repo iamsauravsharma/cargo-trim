@@ -1,4 +1,4 @@
-cargo-trim-list 0.1.1
+cargo-trim-list 0.1.2
 List out crates [alias: "l"]
 
 USAGE:
@@ -7,7 +7,7 @@ USAGE:
 FLAGS:
     -a, --all        list out all installed crate
     -h, --help       Prints help information
-    -o, --old        List out old crates
+    -o, --old        list out old crates
     -x, --orphan     list out orphan crates
-    -u, --use        List out used crates
+    -u, --use        list out used crates
     -V, --version    Prints version information

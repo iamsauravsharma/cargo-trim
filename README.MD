@@ -46,7 +46,7 @@ For bleeding edge latest development version:
 All cargo-trim can be run using ```cargo trim <command>```
 ```cargo trim -h``` will produce out following output which list out all of available output for cargo-trim
 ```
-cargo-trim 0.1.1
+cargo-trim 0.1.2
 Saurav Sharma <appdroiddeveloper@gmail.com>
 Binary application to cleanup $CARGO_HOME cache
 
@@ -61,7 +61,7 @@ FLAGS:
     -l, --light           Light cleanup repos by removing git checkout and registry source but stores git db and
                           registry archive for future compilation
     -o, --old-clean       Clean old cache crates
-    -x, --orphan-clean    Clean orphan cache crates need directory through config to work
+    -x, --orphan-clean    Clean orphan cache crates
     -q, --query           Return size of .cargo/cache folders
     -u, --update          Update Cargo.lock file present inside config directory folder path
     -V, --version         Prints version information
