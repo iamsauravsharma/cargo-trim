@@ -28,32 +28,32 @@ impl DirPath {
             fs::File::create(config_dir.to_str().unwrap()).unwrap();
         }
 
-        let home_dir = Path::new(env!("CARGO_HOME")).to_path_buf();
+        let home_dir = Path::new(env!("CARGO_HOME"));
 
         // set bin directory path
-        let mut bin_dir = home_dir.clone();
+        let mut bin_dir = home_dir.to_path_buf();
         bin_dir.push("bin");
 
         // set git directory path
-        let mut git_dir = home_dir.clone();
+        let mut git_dir = home_dir.to_path_buf();
         git_dir.push("git");
 
         // set git dir sub folder path
-        let mut checkout_dir = git_dir.clone();
+        let mut checkout_dir = git_dir.to_path_buf();
         checkout_dir.push("checkouts");
-        let mut db_dir = git_dir.clone();
+        let mut db_dir = git_dir.to_path_buf();
         db_dir.push("db");
 
         // set registry dir path
-        let mut registry_dir = home_dir.clone();
+        let mut registry_dir = home_dir.to_path_buf();
         registry_dir.push("registry");
 
         // set registry dir sub folder path
-        let mut cache_dir = registry_dir.clone();
+        let mut cache_dir = registry_dir.to_path_buf();
         cache_dir.push("cache");
-        let mut src_dir = registry_dir.clone();
+        let mut src_dir = registry_dir.to_path_buf();
         src_dir.push("src");
-        let mut index_dir = registry_dir.clone();
+        let mut index_dir = registry_dir.to_path_buf();
         index_dir.push("index");
 
         Self {
