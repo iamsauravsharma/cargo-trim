@@ -1,6 +1,5 @@
 {
   "extends": [
-    "@iamsauravsharma",
-    ":disableRenovate"
+    "@iamsauravsharma"
   ]
 }
