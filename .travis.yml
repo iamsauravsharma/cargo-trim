@@ -40,8 +40,8 @@ script:
       cargo clippy --all -- -D warnings;
     fi
   - cargo build --all
-  - cargo doc --no-deps --all
-  - cargo test --all
+  - cargo doc --no-deps --all --all-features
+  - cargo test --all --all-features
 
 deploy:
   provider: cargo

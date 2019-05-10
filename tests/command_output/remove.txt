@@ -1,4 +1,4 @@
-cargo-trim-remove 0.1.2
+cargo-trim-remove 0.2.0
 Remove values from config file [alias: "rm"]
 
 USAGE:

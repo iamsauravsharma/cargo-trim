@@ -1,6 +1,6 @@
 [package]
 name = "cargo-trim"
-version = "0.1.2"
+version = "0.2.0"
 authors = ["Saurav Sharma <appdroiddeveloper@gmail.com>"]
 homepage = "https://github.com/iamsauravsharma/cargo-trim"
 repository = "https://github.com/iamsauravsharma/cargo-trim"
@@ -18,4 +18,9 @@ serde = "1.0.91"
 serde_json = "1.0.39"
 serde_derive = "1.0.91"
 fs_extra = "1.1.0"
-colored = "1.8.0"
+colored = {version="1.8.0",optional=true}
+
+[features]
+default = ["colored-output"]
+colored-output = ["colored"]
+non-colored-output = []

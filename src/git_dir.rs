@@ -1,5 +1,6 @@
 use crate::{ConfigFile, CrateDetail};
 use clap::ArgMatches;
+#[cfg(feature = "colored-output")]
 use colored::*;
 use std::{fs, path::Path};
 
@@ -27,7 +28,10 @@ impl GitDir {
         } else {
             remove_crate(Path::new(&self.checkout_dir), crate_name);
         }
-        println!("{} {:?}", "removed".red(), crate_name);
+        #[cfg(feature = "colored-output")]
+        println!("{} {:?}", "Removed".red(), crate_name);
+        #[cfg(feature = "non-colored-output")]
+        println!("Removed {:?}", crate_name);
     }
 
     // Remove list of crates
