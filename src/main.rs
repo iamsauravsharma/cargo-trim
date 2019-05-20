@@ -190,6 +190,10 @@ fn git_compress(app: &ArgMatches, index_dir: &PathBuf, checkout_dir: &PathBuf, d
                 let repo_path = entry.unwrap().path();
                 let path = repo_path.to_str().unwrap();
                 if path.contains("github.com") {
+                    #[cfg(feature = "colored-output")]
+                    println!("{}", "Compressing registry index".bright_blue());
+                    #[cfg(feature = "non-colored-output")]
+                    println!("Compressing registry index");
                     run_git_compress_commands(&repo_path);
                 }
             }
@@ -200,6 +204,10 @@ fn git_compress(app: &ArgMatches, index_dir: &PathBuf, checkout_dir: &PathBuf, d
                     let repo_path = entry.unwrap().path();
                     for rev in fs::read_dir(repo_path).unwrap() {
                         let rev_path = rev.unwrap().path();
+                        #[cfg(feature = "colored-output")]
+                        println!("{}", "Compressing git checkout".bright_blue());
+                        #[cfg(feature = "non-colored-output")]
+                        println!("Compressing git checkout");
                         run_git_compress_commands(&rev_path)
                     }
                 }
@@ -207,6 +215,10 @@ fn git_compress(app: &ArgMatches, index_dir: &PathBuf, checkout_dir: &PathBuf, d
             if (value == "git" || value == "git-db") && db_dir.exists() {
                 for entry in fs::read_dir(db_dir).unwrap() {
                     let repo_path = entry.unwrap().path();
+                    #[cfg(feature = "colored-output")]
+                    println!("{}", "Compressing git db".bright_blue());
+                    #[cfg(feature = "non-colored-output")]
+                    println!("Compressing git db");
                     run_git_compress_commands(&repo_path);
                 }
             }
@@ -230,6 +242,8 @@ fn run_git_compress_commands(repo_path: &PathBuf) {
         .output()
     {
         panic!(format!("git reflog failed to execute due to error {}", e));
+    } else {
+        println!("{:70}.......Step 1/3", "  ├ Completed git reflog");
     }
 
     // pack refs of branches/tags etc into one file know as pack-refs file for
@@ -245,6 +259,11 @@ fn run_git_compress_commands(repo_path: &PathBuf) {
             "git pack-refs failed to execute due to error {}",
             e
         ));
+    } else {
+        println!(
+            "{:70}.......Step 2/3",
+            "  ├ Packed packed and refs successfully"
+        );
     }
 
     // cleanup unneccessary file and optimize a local repo
@@ -256,6 +275,11 @@ fn run_git_compress_commands(repo_path: &PathBuf) {
         .output()
     {
         panic!(format!("git gc failed to execute due to error {}", e));
+    } else {
+        println!(
+            "{:70}.......Step 3/3",
+            "  └ Cleaned up unneccessary files and optimize a files"
+        );
     }
 }
 
