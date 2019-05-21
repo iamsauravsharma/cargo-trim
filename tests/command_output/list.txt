@@ -1,4 +1,4 @@
-cargo-trim-list 0.2.0
+cargo-trim-list 0.2.1
 List out crates [alias: "l"]
 
 USAGE:

@@ -373,14 +373,17 @@ fn show_total_count(data: &[String], size: f64) {
     }
     print_dash();
     #[cfg(feature = "colored-output")]
-    let printing_statement = format!("Total no of crates:- {}", data.len()).bright_blue();
+    println!(
+        "|{:^40}|{:^10}|",
+        format!("Total no of crates:- {}", data.len()).bright_blue(),
+        format!("{:.3}", size).bright_blue()
+    );
     #[cfg(feature = "non-colored-output")]
-    let printing_statement = format!("Total no of crates:- {}", data.len());
-    #[cfg(feature = "colored-output")]
-    let printing_size = format!("{:.3}", size).bright_blue();
-    #[cfg(feature = "non-colored-output")]
-    let printing_size = format!("{:.3}", size);
-    println!("|{:^40}|{:^10}|", printing_statement, printing_size);
+    println!(
+        "|{:^40}|{:^10}|",
+        format!("Total no of crates:- {}", data.len()),
+        format!("{:.3}", size)
+    );
     print_dash();
 }
 
