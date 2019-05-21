@@ -120,6 +120,10 @@ impl CrateList {
             used_crate_registry.append(&mut registry_crate);
             used_crate_git.append(&mut git_crate);
         }
+        used_crate_registry.sort();
+        used_crate_registry.dedup();
+        used_crate_git.sort();
+        used_crate_registry.dedup();
 
         // list orphan crates
         let mut orphan_crate_registry = Vec::new();

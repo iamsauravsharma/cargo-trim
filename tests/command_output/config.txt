@@ -1,4 +1,4 @@
-cargo-trim-config 0.2.1
+cargo-trim-config 0.2.2
 Query config file data [alias: "c"]
 
 USAGE:
