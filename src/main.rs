@@ -262,7 +262,7 @@ fn run_git_compress_commands(repo_path: &PathBuf) {
     } else {
         println!(
             "{:70}.......Step 2/3",
-            "  ├ Packed packed and refs successfully"
+            "  ├ Packed refs and tags successfully"
         );
     }
 
