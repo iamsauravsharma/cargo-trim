@@ -49,7 +49,7 @@ By default cargo-trim print out colored output if you want to use a non colored 
 
 ### Command output
 All cargo-trim can be run using ```cargo trim <command>```
-```cargo trim -h``` will produce out following output which list out all of available output for cargo-trim
+```cargo trim --help``` will produce out following output which list out all of available output for cargo-trim
 ```
 cargo-trim 0.2.2
 Saurav Sharma <appdroiddeveloper@gmail.com>
@@ -72,11 +72,11 @@ FLAGS:
     -V, --version         Prints version information
 
 OPTIONS:
-    -e, --exclude <Crate>...              Exclude listed crates
+    -e, --exclude <Crate>...              Exclude listed crates while using --all flag
     -E, --exclude-conf <Crate>...         add listed crates to default conf file exclude list
     -g, --gc <git compress>               Git compress to reduce size of .cargo [possible values: all, index, git, git-
                                           checkout, git-db]
-    -i, --include <Crate>...              Include listed crates
+    -i, --include <Crate>...              Include listed crates while using --all flag
     -I, --include-conf <Crate>...         add listed crates to default conf file include list
     -r, --remove <Crate>...               Remove listed crates
     -s, --set-directory <Directory>...    Set directory of Rust project

@@ -61,13 +61,26 @@ impl RegistryDir {
         let crate_name = &crate_name.to_string();
         let mut sized_cleaned = 0.0;
 
-        // Provide one time include crate list for other flag
+        if app.is_present("registry") {
+            let registry_subcommand = app.subcommand_matches("registry").unwrap();
+            if registry_subcommand.is_present("include") {
+                let value = registry_subcommand.value_of("include").unwrap().to_string();
+                cmd_include.push(value);
+            }
+
+            if registry_subcommand.is_present("exclude") {
+                let value = registry_subcommand.value_of("exclude").unwrap().to_string();
+                cmd_exclude.push(value);
+            }
+        }
+
+        // Provide one time include crate list for all flag
         if app.is_present("include") {
             let value = app.value_of("include").unwrap().to_string();
             cmd_include.push(value);
         }
 
-        // Provide one time exclude crate list for other flag
+        // Provide one time exclude crate list for all flag
         if app.is_present("exclude") {
             let value = app.value_of("exclude").unwrap().to_string();
             cmd_exclude.push(value);

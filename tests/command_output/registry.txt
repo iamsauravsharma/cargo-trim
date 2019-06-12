@@ -16,5 +16,7 @@ FLAGS:
     -V, --version         Prints version information
 
 OPTIONS:
-    -r, --remove <Crate>...    Remove listed crates
-    -t, --top <number>         Show certain number of top registry crates which have highest size
+    -e, --exclude <Crate>...    Exclude listed crates while using --all flag
+    -i, --include <Crate>...    Include listed crates while using --all flag
+    -r, --remove <Crate>...     Remove listed crates
+    -t, --top <number>          Show certain number of top registry crates which have highest size
