@@ -35,9 +35,8 @@ pub(super) fn app() -> ArgMatches<'static> {
         .takes_value(true)
         .value_name("Crate");
 
-    let exclude_conf = Arg::with_name("exclude-conf")
-        .short("E")
-        .long("exclude-conf")
+    let exclude_conf = exclude
+        .clone()
         .help("add listed crates to default conf file exclude list")
         .multiple(true)
         .takes_value(true)
@@ -63,9 +62,8 @@ pub(super) fn app() -> ArgMatches<'static> {
         .takes_value(true)
         .value_name("Crate");
 
-    let include_conf = Arg::with_name("include-conf")
-        .short("I")
-        .long("include-conf")
+    let include_conf = include
+        .clone()
         .help("add listed crates to default conf file include list")
         .multiple(true)
         .takes_value(true)

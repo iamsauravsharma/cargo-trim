@@ -72,10 +72,10 @@ FLAGS:
     -V, --version         Prints version information
 
 OPTIONS:
-    -E, --exclude-conf <Crate>...         add listed crates to default conf file exclude list
+    -e, --exclude <Crate>...              add listed crates to default conf file exclude list
     -g, --gc <git compress>               Git compress to reduce size of .cargo [possible values: all, index, git, git-
                                           checkout, git-db]
-    -I, --include-conf <Crate>...         add listed crates to default conf file include list
+    -i, --include <Crate>...              add listed crates to default conf file include list
     -r, --remove <Crate>...               Remove listed crates
     -s, --set-directory <Directory>...    Set directory of Rust project
     -t, --top <number>                    Show certain number of top crates which have highest size

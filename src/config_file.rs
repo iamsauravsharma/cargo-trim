@@ -61,16 +61,16 @@ pub(crate) fn modify_config_file(
         )
     }
     // Add new value in config file
-    for &name in &["set directory", "exclude-conf", "include-conf"] {
+    for &name in &["set directory", "exclude", "include"] {
         if app.is_present(name) {
             let value = app.value_of(name).unwrap();
             if name == "set directory" {
                 deserialized.directory.push(value.to_string());
             }
-            if name == "exclude-conf" {
+            if name == "exclude" {
                 deserialized.exclude.push(value.to_string());
             }
-            if name == "include-conf" {
+            if name == "include" {
                 deserialized.include.push(value.to_string());
             }
         }
