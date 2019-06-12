@@ -1,5 +1,4 @@
 use crate::{ConfigFile, CrateDetail};
-use clap::ArgMatches;
 #[cfg(feature = "colored-output")]
 use colored::*;
 use std::{fs, path::Path};
@@ -48,47 +47,19 @@ impl GitDir {
     pub(crate) fn remove_all(
         &self,
         config_file: &ConfigFile,
-        app: &ArgMatches,
         crate_name: &str,
         crate_detail: &CrateDetail,
     ) -> f64 {
-        let mut cmd_include = Vec::new();
-        let mut cmd_exclude = Vec::new();
         let crate_name = &crate_name.to_string();
         let mut size_cleaned = 0.0;
 
-        if app.is_present("registry") {
-            let git_subcommand = app.subcommand_matches("git").unwrap();
-            if git_subcommand.is_present("include") {
-                let value = git_subcommand.value_of("include").unwrap().to_string();
-                cmd_include.push(value);
-            }
-
-            if git_subcommand.is_present("exclude") {
-                let value = git_subcommand.value_of("exclude").unwrap().to_string();
-                cmd_exclude.push(value);
-            }
-        }
-
-        // Provide one time include crate list for all flag
-        if app.is_present("include") {
-            let value = app.value_of("include").unwrap().to_string();
-            cmd_include.push(value);
-        }
-
-        // Provide one time exclude crate list for all flag
-        if app.is_present("exclude") {
-            let value = app.value_of("exclude").unwrap().to_string();
-            cmd_exclude.push(value);
-        }
-
         let read_include = config_file.include();
         let read_exclude = config_file.exclude();
-        if cmd_include.contains(crate_name) || read_include.contains(crate_name) {
+        if read_include.contains(crate_name) {
             self.remove_crate(crate_name);
             size_cleaned += crate_detail.find_size_git_all(crate_name);
         }
-        if !cmd_exclude.contains(crate_name) && !read_exclude.contains(crate_name) {
+        if !read_exclude.contains(crate_name) {
             self.remove_crate(crate_name);
             size_cleaned += crate_detail.find_size_git_all(crate_name);
         }

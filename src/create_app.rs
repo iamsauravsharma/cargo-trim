@@ -28,13 +28,6 @@ pub(super) fn app() -> ArgMatches<'static> {
         .value_name("Folder");
 
     let exclude = Arg::with_name("exclude").short("e").long("exclude");
-    let exclude_trim = exclude
-        .clone()
-        .help("Exclude listed crates while using --all flag")
-        .multiple(true)
-        .takes_value(true)
-        .requires("all")
-        .value_name("Crate");
     let exclude_config = exclude.clone().help("Query about exclude data");
     let exclude_remove = exclude
         .clone()
@@ -63,13 +56,6 @@ pub(super) fn app() -> ArgMatches<'static> {
         .possible_values(&["all", "index", "git", "git-checkout", "git-db"]);
 
     let include = Arg::with_name("include").short("i").long("include");
-    let include_trim = include
-        .clone()
-        .help("Include listed crates while using --all flag")
-        .multiple(true)
-        .takes_value(true)
-        .requires("all")
-        .value_name("Crate");
     let include_config = include.clone().help("Query about include data");
     let include_remove = include
         .clone()
@@ -199,11 +185,9 @@ pub(super) fn app() -> ArgMatches<'static> {
                 .args(&[
                     all_trim,
                     clear_config,
-                    exclude_trim.clone(),
                     exclude_conf,
                     force_remove.clone(),
                     git_compress,
-                    include_trim.clone(),
                     include_conf,
                     light_cleanup_trim,
                     old_clean.clone(),
@@ -243,9 +227,7 @@ pub(super) fn app() -> ArgMatches<'static> {
                         .alias("g")
                         .args(&[
                             all_git,
-                            exclude_trim.clone(),
                             force_remove.clone(),
-                            include_trim.clone(),
                             light_cleanup_git,
                             old_clean.clone(),
                             orphan_clean.clone(),
@@ -263,9 +245,7 @@ pub(super) fn app() -> ArgMatches<'static> {
                         .alias("reg")
                         .args(&[
                             all_registry,
-                            exclude_trim.clone(),
                             force_remove.clone(),
-                            include_trim.clone(),
                             light_cleanup_registry,
                             old_clean.clone(),
                             orphan_clean.clone(),

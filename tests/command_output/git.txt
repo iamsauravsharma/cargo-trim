@@ -15,7 +15,5 @@ FLAGS:
     -V, --version         Prints version information
 
 OPTIONS:
-    -e, --exclude <Crate>...    Exclude listed crates while using --all flag
-    -i, --include <Crate>...    Include listed crates while using --all flag
-    -r, --remove <Crate>...     Remove listed crates
-    -t, --top <number>          Show certain number of top git crates which have highest size
+    -r, --remove <Crate>...    Remove listed crates
+    -t, --top <number>         Show certain number of top git crates which have highest size

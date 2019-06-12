@@ -148,7 +148,6 @@ fn main() {
     remove_all(
         &list_crate,
         &config_file,
-        app,
         &registry_crates_location,
         &git_crates_location,
         (all_app, all_git, all_registry),
@@ -597,7 +596,6 @@ fn force_remove(
 fn remove_all(
     list_crate: &CrateList,
     config_file: &ConfigFile,
-    app: &ArgMatches,
     registry_crates_location: &RegistryDir,
     git_crates_location: &GitDir,
     (all_app, all_git, all_registry): (bool, bool, bool),
@@ -607,18 +605,14 @@ fn remove_all(
         let mut total_size_cleaned = 0.0;
         if all_app || all_registry {
             for crate_name in list_crate.installed_registry() {
-                total_size_cleaned += registry_crates_location.remove_all(
-                    &config_file,
-                    app,
-                    crate_name,
-                    crate_detail,
-                );
+                total_size_cleaned +=
+                    registry_crates_location.remove_all(&config_file, crate_name, crate_detail);
             }
         }
         if all_app || all_git {
             for crate_name in list_crate.installed_git() {
                 total_size_cleaned +=
-                    git_crates_location.remove_all(&config_file, app, crate_name, crate_detail);
+                    git_crates_location.remove_all(&config_file, crate_name, crate_detail);
             }
         }
         #[cfg(feature = "colored-output")]
