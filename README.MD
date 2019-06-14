@@ -93,7 +93,8 @@ SUBCOMMANDS:
 ```
 
 ### Config file location
-cargo-trim store its config file to config directory of OS and name file as cago_trim_config.json and stores all information on these file
+cargo-trim store its config file to config directory of OS and name config file as cago_trim_config.json.
+In file cargo-trim stores out information about directory of rust projects and exclude and include crates list.
 
 [git_link]: https://github.com/iamsauravsharma/cargo-trim
 

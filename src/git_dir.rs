@@ -52,14 +52,20 @@ impl GitDir {
     ) -> f64 {
         let crate_name = &crate_name.to_string();
         let mut size_cleaned = 0.0;
-
         let read_include = config_file.include();
         let read_exclude = config_file.exclude();
-        if read_include.contains(crate_name) {
+        let crate_split = crate_name.rsplitn(2, '-');
+        let mut simple_name = String::new();
+        for (i, val) in crate_split.enumerate() {
+            if i == 1 {
+                simple_name = val.to_string()
+            }
+        }
+        if read_include.contains(crate_name) || read_include.contains(&simple_name) {
             self.remove_crate(crate_name);
             size_cleaned += crate_detail.find_size_git_all(crate_name);
         }
-        if !read_exclude.contains(crate_name) {
+        if !read_exclude.contains(crate_name) && !read_exclude.contains(&simple_name) {
             self.remove_crate(crate_name);
             size_cleaned += crate_detail.find_size_git_all(crate_name);
         }
