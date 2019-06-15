@@ -51,7 +51,7 @@ By default cargo-trim print out colored output if you want to use a non colored 
 All cargo-trim can be run using ```cargo trim <command>```
 ```cargo trim --help``` will produce out following output which list out all of available output for cargo-trim
 ```
-cargo-trim 0.2.2
+cargo-trim 0.3.0
 Saurav Sharma <appdroiddeveloper@gmail.com>
 Binary application to cleanup $CARGO_HOME cache
 
