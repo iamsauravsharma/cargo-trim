@@ -1,4 +1,4 @@
-use crate::{ConfigFile, CrateDetail};
+use crate::{list_crate, ConfigFile, CrateDetail};
 #[cfg(feature = "colored-output")]
 use colored::*;
 use std::{fs, path::Path};
@@ -66,11 +66,22 @@ impl RegistryDir {
                 simple_name = val.to_string()
             }
         }
-        if read_include.contains(crate_name) || read_include.contains(&simple_name) {
+        let env_include = list_crate::env_list("TRIM_INCLUDE");
+        let env_exclude = list_crate::env_list("TRIM_EXCLUDE");
+
+        if read_include.contains(crate_name)
+            || read_include.contains(&simple_name)
+            || env_include.contains(crate_name)
+            || env_include.contains(&simple_name)
+        {
             self.remove_crate(crate_name);
             sized_cleaned += crate_detail.find_size_registry_all(crate_name);
         }
-        if !read_exclude.contains(crate_name) && !read_exclude.contains(&simple_name) {
+        if !read_exclude.contains(crate_name)
+            && !read_exclude.contains(&simple_name)
+            && !env_exclude.contains(crate_name)
+            && !env_exclude.contains(&simple_name)
+        {
             self.remove_crate(crate_name);
             sized_cleaned += crate_detail.find_size_registry_all(crate_name);
         }

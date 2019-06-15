@@ -37,7 +37,10 @@ pub(super) fn app() -> ArgMatches<'static> {
 
     let exclude_conf = exclude
         .clone()
-        .help("add listed crates to default conf file exclude list")
+        .help(
+            "add listed crates to default conf file exclude list [use TRIM_EXCLUDE environment \
+             variable for creating exclude list without editing conf file]",
+        )
         .multiple(true)
         .takes_value(true)
         .value_name("Crate");
@@ -64,7 +67,10 @@ pub(super) fn app() -> ArgMatches<'static> {
 
     let include_conf = include
         .clone()
-        .help("add listed crates to default conf file include list")
+        .help(
+            "add listed crates to default conf file include list [use TRIM_INCLUDE environment \
+             variable for creating include list without editing conf file]",
+        )
         .multiple(true)
         .takes_value(true)
         .value_name("Crate");
@@ -127,7 +133,10 @@ pub(super) fn app() -> ArgMatches<'static> {
         .multiple(true)
         .long("set-directory")
         .value_name("Directory")
-        .help("Set directory of Rust project")
+        .help(
+            "Set directory of Rust project [use TRIM_DIRECTORY environment variable for creating \
+             directory list without editing conf file]",
+        )
         .takes_value(true);
 
     let top_crate = Arg::with_name("top crates")

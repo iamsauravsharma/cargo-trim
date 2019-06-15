@@ -1,7 +1,7 @@
 use crate::{config_file::ConfigFile, crate_detail::CrateDetail};
 use fs_extra::dir::get_size;
 use std::{
-    fs,
+    env, fs,
     io::prelude::*,
     path::{Path, PathBuf},
     process::Command,
@@ -112,7 +112,12 @@ impl CrateList {
         let mut used_crate_registry = Vec::new();
         let mut used_crate_git = Vec::new();
         let mut cargo_toml_location = CargoTomlLocation::new();
-        for path in config_file.directory() {
+        let mut env_directory = env_list("TRIM_DIRECTORY");
+        let mut config_directory = config_file.directory().to_owned();
+        env_directory.append(&mut config_directory);
+        env_directory.sort();
+        env_directory.dedup();
+        for path in &env_directory {
             let list_cargo_toml = list_cargo_toml(&Path::new(path));
             let (mut registry_crate, mut git_crate) =
                 read_content(&list_cargo_toml.location_path(), db_dir);
@@ -440,4 +445,16 @@ fn get_installed_crate_git(
     installed_crate_git.sort();
     installed_crate_git.dedup();
     installed_crate_git
+}
+
+// list out a env variables list in vector form
+pub(crate) fn env_list(variable: &str) -> Vec<String> {
+    let list = env::var(variable);
+    let mut vec_list = Vec::new();
+    if let Ok(name_list) = list {
+        for name in name_list.split_whitespace() {
+            vec_list.push(name.to_string());
+        }
+    }
+    vec_list
 }
