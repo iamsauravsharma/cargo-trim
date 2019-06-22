@@ -1,3 +1,8 @@
+#![warn(unreachable_pub, anonymous_parameters, bare_trait_objects)]
+#![deny(unsafe_code)]
+#![deny(clippy::all, clippy::pedantic)]
+#![allow(clippy::cast_precision_loss, clippy::too_many_lines)]
+
 mod config_file;
 mod crate_detail;
 mod create_app;
@@ -242,7 +247,7 @@ fn run_git_compress_commands(repo_path: &PathBuf) {
     {
         panic!(format!("git reflog failed to execute due to error {}", e));
     } else {
-        println!("{:70}.......Step 1/3", "  ├ Completed git reflog");
+        println!("{:70}.......Step 1/3", "  \u{251c} Completed git reflog");
     }
 
     // pack refs of branches/tags etc into one file know as pack-refs file for
@@ -261,7 +266,7 @@ fn run_git_compress_commands(repo_path: &PathBuf) {
     } else {
         println!(
             "{:70}.......Step 2/3",
-            "  ├ Packed refs and tags successfully"
+            "  \u{251c} Packed refs and tags successfully"
         );
     }
 
@@ -277,7 +282,7 @@ fn run_git_compress_commands(repo_path: &PathBuf) {
     } else {
         println!(
             "{:70}.......Step 3/3",
-            "  └ Cleaned up unneccessary files and optimize a files"
+            "  \u{2514} Cleaned up unneccessary files and optimize a files"
         );
     }
 }
@@ -498,7 +503,7 @@ fn query_size(
             println!(
                 "{:50} {:10.2} MB",
                 format!(
-                    "   ├ Size of {} .cargo/git/checkout folder",
+                    "   \u{251c} Size of {} .cargo/git/checkout folder",
                     crate_detail.git_crates_archive().len()
                 ),
                 folder_size(dir_path.checkout_dir())
@@ -506,7 +511,7 @@ fn query_size(
             println!(
                 "{:50} {:10.2} MB",
                 format!(
-                    "   └ Size of {} .cargo/git/db folder",
+                    "   \u{2514} Size of {} .cargo/git/db folder",
                     crate_detail.git_crates_source().len()
                 ),
                 folder_size(dir_path.db_dir())
@@ -524,20 +529,20 @@ fn query_size(
             println!(
                 "{:50} {:10.2} MB",
                 format!(
-                    "   ├ Size of {} .cargo/registry/cache folder",
+                    "   \u{251c} Size of {} .cargo/registry/cache folder",
                     crate_detail.registry_crates_archive().len()
                 ),
                 folder_size(dir_path.cache_dir())
             );
             println!(
                 "{:50} {:10.2} MB",
-                "   ├ Size of .cargo/registry/index folder",
+                "   \u{251c} Size of .cargo/registry/index folder",
                 folder_size(dir_path.index_dir())
             );
             println!(
                 "{:50} {:10.2} MB",
                 format!(
-                    "   └ Size of {} .cargo/git/src folder",
+                    "   \u{2514} Size of {} .cargo/git/src folder",
                     crate_detail.registry_crates_source().len()
                 ),
                 folder_size(dir_path.src_dir())

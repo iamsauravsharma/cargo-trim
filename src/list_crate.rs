@@ -21,7 +21,7 @@ impl CargoTomlLocation {
         self.path.push(path);
     }
 
-    pub(crate) fn append(&mut self, mut lock_location: CargoTomlLocation) {
+    pub(crate) fn append(&mut self, mut lock_location: Self) {
         self.path.append(&mut lock_location.path);
     }
 
