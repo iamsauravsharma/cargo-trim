@@ -42,9 +42,9 @@ For bleeding edge latest development version:
     cargo install --git https://github.com/iamsauravsharma/cargo-trim
 ```
 
-By default cargo-trim print out colored output if you want to use a non colored output you can enable out non-colored-output using feature flag
+By default cargo-trim print out colored output if you want to use a non colored output you can enable out non-colored-output using feature flag but you need to disable out a default features of colored-output
 ```
-    cargo install cargo-trim --features non-colored-output
+    cargo install cargo-trim --features non-colored-output --no-default-features
 ```
 
 ### Command output

@@ -480,25 +480,31 @@ fn query_size(
     crate_list: &CrateList,
     crate_detail: &CrateDetail,
 ) {
+    let mut final_size = 0.0;
     if query_size_app || query_size_git || query_size_registry {
         if query_size_app {
+            let bin_dir_size = folder_size(dir_path.bin_dir());
+            final_size += bin_dir_size;
             println!(
                 "{:50} {:10.2} MB",
                 format!(
                     "Total size of {} .cargo/bin binary:",
                     crate_list.installed_bin().len()
                 ),
-                folder_size(dir_path.bin_dir())
+                bin_dir_size
             );
+            print_dash();
         }
         if query_size_app || query_size_git {
+            let git_dir_size = folder_size(dir_path.git_dir());
+            final_size += git_dir_size;
             println!(
                 "{:50} {:10.2} MB",
                 format!(
                     "Total size of {} .cargo/git crates:",
                     crate_list.installed_git().len()
                 ),
-                folder_size(dir_path.git_dir())
+                git_dir_size
             );
             println!(
                 "{:50} {:10.2} MB",
@@ -516,15 +522,18 @@ fn query_size(
                 ),
                 folder_size(dir_path.db_dir())
             );
+            print_dash();
         }
         if query_size_app || query_size_registry {
+            let registry_dir_size = folder_size(dir_path.registry_dir());
+            final_size += registry_dir_size;
             println!(
                 "{:50} {:10.2} MB",
                 format!(
                     "Total size of {} .cargo/registry crates:",
                     crate_list.installed_registry().len()
                 ),
-                folder_size(dir_path.registry_dir())
+                registry_dir_size
             );
             println!(
                 "{:50} {:10.2} MB",
@@ -547,7 +556,16 @@ fn query_size(
                 ),
                 folder_size(dir_path.src_dir())
             );
+            print_dash();
         }
+        println!(
+            "{:50} {:10.2} MB",
+            format!(
+                "Total size occupied by {}",
+                std::env::var("CARGO_HOME").unwrap()
+            ),
+            final_size
+        );
     }
 }
 
