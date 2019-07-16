@@ -18,9 +18,7 @@ serde = "1.0.94"
 serde_json = "1.0.40"
 serde_derive = "1.0.94"
 fs_extra = "1.1.0"
-colored = {version="1.8.0",optional=true}
+colored = "1.8.0"
 
 [features]
-default = ["colored-output"]
-colored-output = ["colored"]
-non-colored-output = []
+no-color = ["colored/no-color"]

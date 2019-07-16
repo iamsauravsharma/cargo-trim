@@ -18,7 +18,6 @@ use crate::{
     list_crate::CrateList, registry_dir::RegistryDir,
 };
 use clap::ArgMatches;
-#[cfg(feature = "colored-output")]
 use colored::*;
 use fs_extra::dir::get_size;
 use std::{
@@ -194,10 +193,7 @@ fn git_compress(app: &ArgMatches, index_dir: &PathBuf, checkout_dir: &PathBuf, d
                 let repo_path = entry.unwrap().path();
                 let path = repo_path.to_str().unwrap();
                 if path.contains("github.com") {
-                    #[cfg(feature = "colored-output")]
                     println!("{}", "Compressing registry index".bright_blue());
-                    #[cfg(feature = "non-colored-output")]
-                    println!("Compressing registry index");
                     run_git_compress_commands(&repo_path);
                 }
             }
@@ -208,10 +204,7 @@ fn git_compress(app: &ArgMatches, index_dir: &PathBuf, checkout_dir: &PathBuf, d
                     let repo_path = entry.unwrap().path();
                     for rev in fs::read_dir(repo_path).unwrap() {
                         let rev_path = rev.unwrap().path();
-                        #[cfg(feature = "colored-output")]
                         println!("{}", "Compressing git checkout".bright_blue());
-                        #[cfg(feature = "non-colored-output")]
-                        println!("Compressing git checkout");
                         run_git_compress_commands(&rev_path)
                     }
                 }
@@ -219,18 +212,12 @@ fn git_compress(app: &ArgMatches, index_dir: &PathBuf, checkout_dir: &PathBuf, d
             if (value == "git" || value == "git-db") && db_dir.exists() {
                 for entry in fs::read_dir(db_dir).unwrap() {
                     let repo_path = entry.unwrap().path();
-                    #[cfg(feature = "colored-output")]
                     println!("{}", "Compressing git db".bright_blue());
-                    #[cfg(feature = "non-colored-output")]
-                    println!("Compressing git db");
                     run_git_compress_commands(&repo_path);
                 }
             }
         }
-        #[cfg(feature = "colored-output")]
         println!("{}", "Git compress task completed".bright_blue());
-        #[cfg(feature = "non-colored-output")]
-        println!("Git compress task completed");
     }
 }
 
@@ -360,48 +347,32 @@ fn list_crate_type(crate_detail: &CrateDetail, crate_type: &[String], title: &st
 // show title
 fn show_title(title: &str) {
     print_dash();
-    #[cfg(feature = "colored-output")]
     println!("|{:^40}|{:^10}|", title.bold(), "SIZE(MB)");
-    #[cfg(feature = "non-colored-output")]
-    println!("|{:^40}|{:^10}|", title, "SIZE(MB)");
     print_dash();
 }
 
 // show total count using data and size
 fn show_total_count(data: &[String], size: f64) {
     if data.is_empty() {
-        #[cfg(feature = "colored-output")]
         println!("|{:^40}|{:^10}|", "NONE".red(), "0.000".red());
-        #[cfg(feature = "non-colored-output")]
-        println!("|{:^40}|{:^10}|", "NONE", "0.000");
     }
     print_dash();
-    #[cfg(feature = "colored-output")]
     println!(
         "|{:^40}|{:^10}|",
         format!("Total no of crates:- {}", data.len()).bright_blue(),
         format!("{:.3}", size).bright_blue()
-    );
-    #[cfg(feature = "non-colored-output")]
-    println!(
-        "|{:^40}|{:^10}|",
-        format!("Total no of crates:- {}", data.len()),
-        format!("{:.3}", size)
     );
     print_dash();
 }
 
 // print dash
 fn print_dash() {
-    #[cfg(feature = "colored-output")]
     println!(
         "{}",
         "-----------------------------------------------------"
             .green()
             .bold()
     );
-    #[cfg(feature = "non-colored-output")]
-    println!("-----------------------------------------------------");
 }
 
 // Clean old crates
@@ -422,15 +393,9 @@ fn old_clean(
             size_cleaned +=
                 git_crates_location.remove_crate_list(&crate_detail, list_crate.old_git());
         }
-        #[cfg(feature = "colored-output")]
         println!(
             "{}",
             format!("Total size of old crates removed :- {:.3} MB", size_cleaned).bright_blue()
-        );
-        #[cfg(feature = "non-colored-output")]
-        println!(
-            "{}",
-            format!("Total size of old crates removed :- {:.3} MB", size_cleaned)
         );
     }
 }
@@ -453,7 +418,6 @@ fn orphan_clean(
             size_cleaned +=
                 git_crates_location.remove_crate_list(&crate_detail, list_crate.orphan_git());
         }
-        #[cfg(feature = "colored-output")]
         println!(
             "{}",
             format!(
@@ -461,14 +425,6 @@ fn orphan_clean(
                 size_cleaned
             )
             .bright_blue()
-        );
-        #[cfg(feature = "non-colored-output")]
-        println!(
-            "{}",
-            format!(
-                "Total size of orphan crates removed :- {:.3} MB",
-                size_cleaned
-            )
         );
     }
 }
@@ -608,10 +564,7 @@ fn force_remove(
             delete_folder(&dir_path.checkout_dir());
             delete_folder(&dir_path.db_dir());
         }
-        #[cfg(feature = "colored-output")]
         println!("{}", "Successfully removed all crates".red());
-        #[cfg(feature = "non-colored-output")]
-        println!("Successfully removed all crates");
     }
 }
 
@@ -638,7 +591,6 @@ fn remove_all(
                     git_crates_location.remove_all(&config_file, crate_name, crate_detail);
             }
         }
-        #[cfg(feature = "colored-output")]
         println!(
             "{}",
             format!(
@@ -646,14 +598,6 @@ fn remove_all(
                 total_size_cleaned
             )
             .bright_blue()
-        );
-        #[cfg(feature = "non-colored-output")]
-        println!(
-            "{}",
-            format!(
-                "Total size of crates removed :- {:.3} MB",
-                total_size_cleaned
-            )
         );
     }
 }
@@ -689,15 +633,9 @@ fn remove_crate(
             git_crates_location.remove_crate(value);
             size_cleaned += crate_detail.find_size_git_all(value);
         }
-        #[cfg(feature = "colored-output")]
         println!(
             "{}",
             format!("Total size removed :- {:.3} MB", size_cleaned).bright_blue()
-        );
-        #[cfg(feature = "non-colored-output")]
-        println!(
-            "{}",
-            format!("Total size removed :- {:.3} MB", size_cleaned)
         );
     }
 }
@@ -750,10 +688,7 @@ fn show_top_number_crates(crate_detail: &CrateDetail, crate_type: &str, number: 
     let title = format!("Top {} {}", number, crate_type);
     show_title(title.as_str());
     if vector.is_empty() {
-        #[cfg(feature = "colored-output")]
         println!("|{:^40}|{:^10}|", "NONE".red(), "0.000".red());
-        #[cfg(feature = "non-colored-output")]
-        println!("|{:^40}|{:^10}|", "NONE", "0.000");
     } else if vector.len() < number {
         for i in 0..vector.len() {
             print_index_value_crate(&vector, i);
@@ -791,10 +726,7 @@ fn update_cargo_toml(app: &ArgMatches, cargo_toml_location: &[PathBuf]) {
                 }
             }
         }
-        #[cfg(feature = "colored-output")]
         println!("{}", "Successfully update all Cargo.lock".bright_blue());
-        #[cfg(feature = "non-colored-output")]
-        println!("Successfully update all Cargo.lock");
     }
 }
 
