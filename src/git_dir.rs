@@ -9,7 +9,7 @@ pub(crate) struct GitDir {
 }
 
 impl GitDir {
-    // createnew GitDir
+    // create new GitDir
     pub(crate) fn new(checkout_dir: &Path, db_dir: &Path) -> Self {
         let checkout_dir = checkout_dir.to_str().unwrap().to_string();
         let db_dir = db_dir.to_str().unwrap().to_string();

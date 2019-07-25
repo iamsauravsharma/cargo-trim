@@ -259,8 +259,8 @@ fn read_content(list: &[PathBuf], db_dir: &Path) -> (Vec<String>, Vec<String>) {
     for lock in list.iter() {
         let mut lock_folder = lock.clone();
         lock_folder.push("Cargo.lock");
-        // try generating lockfile from Cargo.toml file location to gurantee this path
-        // should have lockfile or not
+        // try generating lock file from Cargo.toml file location to guarantee this path
+        // should have lock file or not
         if !lock_folder.exists() {
             if let Err(e) = Command::new("cargo")
                 .arg("generate-lockfile")

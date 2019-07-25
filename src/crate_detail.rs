@@ -21,7 +21,7 @@ impl CrateDetail {
         }
     }
 
-    // return bin crates size informations
+    // return bin crates size information
     pub(crate) fn bin(&self) -> &HashMap<String, u64> {
         &self.bin
     }

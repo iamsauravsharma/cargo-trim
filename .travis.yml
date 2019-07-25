@@ -8,7 +8,7 @@ rust:
 git:
   depth: false
  
-dist: xenial
+dist: bionic
   
 os:
   - linux

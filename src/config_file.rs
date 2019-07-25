@@ -48,11 +48,11 @@ pub(crate) fn modify_config_file(
         let serialize = serde_json::to_string(&initial_config).unwrap();
         buffer.push_str(&serialize)
     }
-    let mut deserialized: ConfigFile = serde_json::from_str(&buffer).unwrap();
+    let mut deserialize_config: ConfigFile = serde_json::from_str(&buffer).unwrap();
 
     // add working directory to config
     if app.is_present("init") {
-        deserialized.directory.push(
+        deserialize_config.directory.push(
             std::env::current_dir()
                 .unwrap()
                 .to_str()
@@ -65,13 +65,13 @@ pub(crate) fn modify_config_file(
         if app.is_present(name) {
             let value = app.value_of(name).unwrap();
             if name == "set directory" {
-                deserialized.directory.push(value.to_string());
+                deserialize_config.directory.push(value.to_string());
             }
             if name == "exclude" {
-                deserialized.exclude.push(value.to_string());
+                deserialize_config.exclude.push(value.to_string());
             }
             if name == "include" {
-                deserialized.include.push(value.to_string());
+                deserialize_config.include.push(value.to_string());
             }
         }
     }
@@ -79,7 +79,7 @@ pub(crate) fn modify_config_file(
     // clear working directory from config file
     if app.is_present("clear") {
         remove_item_crate(
-            &mut deserialized.directory,
+            &mut deserialize_config.directory,
             std::env::current_dir().unwrap().to_str().unwrap(),
         )
     }
@@ -91,23 +91,23 @@ pub(crate) fn modify_config_file(
             if subcommand.is_present(name) {
                 let value = subcommand.value_of(name).unwrap().to_string();
                 if name == "directory" {
-                    remove_item_crate(&mut deserialized.directory, &value);
+                    remove_item_crate(&mut deserialize_config.directory, &value);
                 }
                 if name == "exclude" {
-                    remove_item_crate(&mut deserialized.exclude, &value);
+                    remove_item_crate(&mut deserialize_config.exclude, &value);
                 }
                 if name == "include" {
-                    remove_item_crate(&mut deserialized.include, &value);
+                    remove_item_crate(&mut deserialize_config.include, &value);
                 }
             }
         }
     }
 
-    let serialized = serde_json::to_string_pretty(&deserialized).unwrap();
+    let serialized = serde_json::to_string_pretty(&deserialize_config).unwrap();
     buffer.clear();
     buffer.push_str(&serialized);
     fs::write(config_dir, buffer).unwrap();
-    deserialized
+    deserialize_config
 }
 
 // helper function to help in removing certain value from a config file

@@ -102,7 +102,7 @@ fn main() {
     // Query about config file information on -s flag
     query_subcommand(&app, &config_file);
 
-    // Perform action on -o flagmatches which remove all old crates
+    // Perform action on -o flag matches which remove all old crates
     let old_app = app.is_present("old clean");
     let old_registry = registry_subcommand.is_present("old clean");
     let old_git = git_subcommand.is_present("old clean");
@@ -161,8 +161,8 @@ fn main() {
     // Show top crates
     top_crates(&app, &git_subcommand, &registry_subcommand, &crate_detail);
 
-    let crago_toml_location = list_crate.cargo_toml_location().location_path();
-    update_cargo_toml(&app, crago_toml_location);
+    let cargo_toml_location = list_crate.cargo_toml_location().location_path();
+    update_cargo_toml(&app, cargo_toml_location);
 
     // Wipe certain folder all together
     wipe_directory(&app, &dir_path);
@@ -257,7 +257,7 @@ fn run_git_compress_commands(repo_path: &PathBuf) {
         );
     }
 
-    // cleanup unneccessary file and optimize a local repo
+    // cleanup unnecessary file and optimize a local repo
     if let Err(e) = Command::new("git")
         .arg("gc")
         .arg("--aggressive")
@@ -269,7 +269,7 @@ fn run_git_compress_commands(repo_path: &PathBuf) {
     } else {
         println!(
             "{:70}.......Step 3/3",
-            "  \u{2514} Cleaned up unneccessary files and optimize a files"
+            "  \u{2514} Cleaned up unnecessary files and optimize a files"
         );
     }
 }
@@ -330,7 +330,7 @@ fn list_subcommand(app: &ArgMatches, list_crate: &CrateList, crate_detail: &Crat
     }
 }
 
-// list ceratin crate type to terminal
+// list certain crate type to terminal
 fn list_crate_type(crate_detail: &CrateDetail, crate_type: &[String], title: &str) {
     show_title(title);
 
