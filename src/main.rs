@@ -191,11 +191,13 @@ fn git_compress(app: &ArgMatches, index_dir: &PathBuf, checkout_dir: &PathBuf, d
         if (value == "index" || value == "all") && index_dir.exists() {
             for entry in fs::read_dir(index_dir).unwrap() {
                 let repo_path = entry.unwrap().path();
-                let path = repo_path.to_str().unwrap();
-                if path.contains("github.com") {
-                    println!("{}", "Compressing registry index".bright_blue());
-                    run_git_compress_commands(&repo_path);
-                }
+                let file_name = repo_path.file_name().unwrap();
+                println!(
+                    "{}",
+                    format!("Compressing {} registry index", file_name.to_str().unwrap())
+                        .bright_blue()
+                );
+                run_git_compress_commands(&repo_path);
             }
         }
         if value.contains("git") || value == "all" {
