@@ -11,8 +11,8 @@ pub(crate) struct RegistryDir {
 impl RegistryDir {
     // Create new RegistryDir
     pub(crate) fn new(cache_dir: &Path, src_dir: &Path) -> Self {
-        let cache_dir = open_github_folder(cache_dir);
-        let src_dir = open_github_folder(src_dir);
+        let cache_dir = cache_dir.to_str().unwrap().to_string();
+        let src_dir = src_dir.to_str().unwrap().to_string();
         Self { cache_dir, src_dir }
     }
 
@@ -28,7 +28,7 @@ impl RegistryDir {
         &self.src_dir
     }
 
-    // Get out src_dir path
+    // Get out cache_dir path
     pub(crate) fn cache(&self) -> &String {
         &self.cache_dir
     }
@@ -85,23 +85,36 @@ impl RegistryDir {
     }
 }
 
-// Use to open github folder present inside src and cache folder
-fn open_github_folder(path: &Path) -> String {
-    let mut path_buf = path.to_path_buf();
-    path_buf.push("github.com-1ecc6299db9ec823");
-    path_buf.to_str().unwrap().to_string()
-}
+// // Use to open github folder present inside src and cache folder
+// fn open_folder(path: &Path) -> Vec<String> {
+//     // let mut path_buf = path.to_path_buf();
+//     let mut folder_list = Vec::new();
+//     for entry in fs::read_dir(path).unwrap() {
+//         let entry = entry.unwrap();
+//         let path = entry.path();
+//         if path.is_dir() {
+//             folder_list.push(path.to_str().unwrap().to_string());
+//         }
+//     }
+//     folder_list
+//     // path_buf.push("github.com-1ecc6299db9ec823");
+//     // path_buf.to_str().unwrap().to_string()
+// }
 
 // Remove crates which name is provided to delete
 fn remove_crate(path: &Path, value: &str) {
     for entry in fs::read_dir(path).unwrap() {
         let entry = entry.unwrap();
         let path = entry.path();
-        if path.to_str().unwrap().contains(value) {
-            if path.is_file() {
-                fs::remove_file(&path).unwrap();
-            } else if path.is_dir() {
-                fs::remove_dir_all(&path).unwrap();
+        for entry in fs::read_dir(path).unwrap() {
+            let entry = entry.unwrap();
+            let path = entry.path();
+            if path.to_str().unwrap().contains(value) {
+                if path.is_file() {
+                    fs::remove_file(&path).unwrap();
+                } else if path.is_dir() {
+                    fs::remove_dir_all(&path).unwrap();
+                }
             }
         }
     }

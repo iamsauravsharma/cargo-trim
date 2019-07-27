@@ -378,25 +378,31 @@ fn get_installed_crate_registry(
     let mut installed_crate_registry = Vec::new();
     if src_dir.exists() {
         for entry in fs::read_dir(src_dir).unwrap() {
-            let entry = entry.unwrap().path();
-            let path = entry.as_path();
-            let crate_size = get_size(&path).unwrap();
-            let file_name = path.file_name().unwrap();
-            let crate_name = file_name.to_str().unwrap().to_string();
-            crate_detail.add_registry_crate_source(crate_name.to_owned(), crate_size);
-            installed_crate_registry.push(crate_name)
+            let main_entry = entry.unwrap().path();
+            for entry in fs::read_dir(main_entry).unwrap() {
+                let entry = entry.unwrap().path();
+                let path = entry.as_path();
+                let crate_size = get_size(&path).unwrap();
+                let file_name = path.file_name().unwrap();
+                let crate_name = file_name.to_str().unwrap().to_string();
+                crate_detail.add_registry_crate_source(crate_name.to_owned(), crate_size);
+                installed_crate_registry.push(crate_name)
+            }
         }
     }
     if cache_dir.exists() {
         for entry in fs::read_dir(cache_dir).unwrap() {
-            let entry = entry.unwrap().path();
-            let path = entry.as_path();
-            let file_name = path.file_name().unwrap();
-            let crate_size = get_size(&path).unwrap();
-            let crate_name = file_name.to_str().unwrap().to_string();
-            let splitted_name = crate_name.rsplitn(2, '.').collect::<Vec<&str>>();
-            crate_detail.add_registry_crate_archive(splitted_name[1].to_owned(), crate_size);
-            installed_crate_registry.push(splitted_name[1].to_owned());
+            let main_entry = entry.unwrap().path();
+            for entry in fs::read_dir(main_entry).unwrap() {
+                let entry = entry.unwrap().path();
+                let path = entry.as_path();
+                let file_name = path.file_name().unwrap();
+                let crate_size = get_size(&path).unwrap();
+                let crate_name = file_name.to_str().unwrap().to_string();
+                let splitted_name = crate_name.rsplitn(2, '.').collect::<Vec<&str>>();
+                crate_detail.add_registry_crate_archive(splitted_name[1].to_owned(), crate_size);
+                installed_crate_registry.push(splitted_name[1].to_owned());
+            }
         }
     }
     installed_crate_registry.sort();
