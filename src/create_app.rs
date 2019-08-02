@@ -17,7 +17,7 @@ pub(super) fn app() -> ArgMatches<'static> {
     let clear_config = Arg::with_name("clear config")
         .short("c")
         .long("clear")
-        .help("Clear config data");
+        .help("Clear config file data");
 
     let directory = Arg::with_name("directory").short("d").long("directory");
     let directory_config = directory.clone().help("Query about directory data");
@@ -38,7 +38,7 @@ pub(super) fn app() -> ArgMatches<'static> {
     let exclude_conf = exclude
         .clone()
         .help(
-            "add listed crates to default conf file exclude list [use TRIM_EXCLUDE environment \
+            "add listed crates to default conf file exclude list [use $TRIM_EXCLUDE environment \
              variable for creating exclude list without editing conf file]",
         )
         .multiple(true)
@@ -68,7 +68,7 @@ pub(super) fn app() -> ArgMatches<'static> {
     let include_conf = include
         .clone()
         .help(
-            "add listed crates to default conf file include list [use TRIM_INCLUDE environment \
+            "add listed crates to default conf file include list [use $TRIM_INCLUDE environment \
              variable for creating include list without editing conf file]",
         )
         .multiple(true)
@@ -78,7 +78,7 @@ pub(super) fn app() -> ArgMatches<'static> {
     let light_cleanup = Arg::with_name("light cleanup").short("l").long("light");
     let light_cleanup_trim = light_cleanup.clone().help(
         "Light cleanup repos by removing git checkout and registry source but stores git db and \
-         registry archive for future compilation",
+         registry archive for future compilation without internet requirement",
     );
 
     let light_cleanup_git = light_cleanup.clone().help(
@@ -107,23 +107,26 @@ pub(super) fn app() -> ArgMatches<'static> {
     let orphan_clean = Arg::with_name("orphan clean")
         .short("x")
         .long("orphan-clean")
-        .help("Clean orphan cache crates");
+        .help(
+            "Clean orphan cache crates i.e all crates which are not present in lock file \
+             generated till now use cargo trim -u to guarantee your all project generate lock file",
+        );
 
     let query_size = Arg::with_name("query size").short("q").long("query");
     let query_size_trim = query_size
         .clone()
-        .help("Return size of .cargo/cache folders");
+        .help("Return size of different .cargo/cache folders");
     let query_size_git = query_size
         .clone()
-        .help("Return size of .cargo/git cache folders");
+        .help("Return size of different .cargo/git cache folders");
     let query_size_registry = query_size
         .clone()
-        .help("Return size of .cargo/registry cache folders");
+        .help("Return size of different .cargo/registry cache folders");
 
     let remove_crate = Arg::with_name("remove-crate")
         .short("r")
         .long("remove")
-        .help("Remove listed crates")
+        .help("Remove provided crates from registry or git")
         .multiple(true)
         .takes_value(true)
         .value_name("Crate");
@@ -157,7 +160,7 @@ pub(super) fn app() -> ArgMatches<'static> {
     let update = Arg::with_name("update")
         .short("u")
         .long("update")
-        .help("Update Cargo.lock file present inside config directory folder path");
+        .help("Generate and Update Cargo.lock file present inside config directory folder path");
 
     let used = Arg::with_name("used")
         .short("u")

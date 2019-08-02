@@ -11,10 +11,11 @@ FLAGS:
     -l, --light           Light cleanup repos by removing registry source but stores registry archive for future
                           compilation
     -o, --old-clean       Clean old cache crates
-    -x, --orphan-clean    Clean orphan cache crates
-    -q, --query           Return size of .cargo/registry cache folders
+    -x, --orphan-clean    Clean orphan cache crates i.e all crates which are not present in lock file generated till now
+                          use cargo trim -u to guarantee your all project generate lock file
+    -q, --query           Return size of different .cargo/registry cache folders
     -V, --version         Prints version information
 
 OPTIONS:
-    -r, --remove <Crate>...    Remove listed crates
+    -r, --remove <Crate>...    Remove provided crates from registry or git
     -t, --top <number>         Show certain number of top registry crates which have highest size

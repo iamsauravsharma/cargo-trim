@@ -20,12 +20,7 @@ use crate::{
 use clap::ArgMatches;
 use colored::*;
 use fs_extra::dir::get_size;
-use std::{
-    collections::HashMap,
-    fs,
-    path::{Path, PathBuf},
-    process::Command,
-};
+use std::{collections::HashMap, fs, path::PathBuf, process::Command};
 
 fn main() {
     // set all dir path
@@ -55,11 +50,8 @@ fn main() {
 
     // List out crate list
     let list_crate = list_crate::CrateList::create_list(
-        dir_path.bin_dir().as_path(),
-        Path::new(registry_crates_location.cache()),
-        Path::new(registry_crates_location.src()),
-        dir_path.checkout_dir().as_path(),
-        dir_path.db_dir().as_path(),
+        &dir_path,
+        &registry_crates_location,
         &config_file,
         &mut crate_detail,
     );
@@ -717,6 +709,16 @@ fn update_cargo_toml(app: &ArgMatches, cargo_toml_location: &[PathBuf]) {
         for location in cargo_toml_location {
             let mut cargo_lock = location.clone();
             cargo_lock.push("Cargo.lock");
+            // at first try generating lock file
+            if !cargo_lock.exists() {
+                if let Err(e) = Command::new("cargo")
+                    .arg("generate-lockfile")
+                    .current_dir(location)
+                    .output()
+                {
+                    panic!(format!("Failed to generate Cargo.lock {}", e));
+                }
+            }
             // helps so we may not need to generate lock file again for workspace project
             if cargo_lock.exists() {
                 if let Err(e) = Command::new("cargo")

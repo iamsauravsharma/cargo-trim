@@ -1,10 +1,12 @@
-use crate::{config_file::ConfigFile, crate_detail::CrateDetail};
+use crate::{
+    config_file::ConfigFile, crate_detail::CrateDetail, dir_path::DirPath,
+    registry_dir::RegistryDir,
+};
 use fs_extra::dir::get_size;
 use std::{
     env, fs,
     io::prelude::*,
     path::{Path, PathBuf},
-    process::Command,
 };
 
 // struct store Cargo.lock file location
@@ -47,14 +49,16 @@ pub(crate) struct CrateList {
 impl CrateList {
     // create list of all types of crate present in directory
     pub(crate) fn create_list(
-        bin_dir: &Path,
-        cache_dir: &Path,
-        src_dir: &Path,
-        checkout_dir: &Path,
-        db_dir: &Path,
+        dir_path: &DirPath,
+        registry_crates_location: &RegistryDir,
         config_file: &ConfigFile,
         crate_detail: &mut CrateDetail,
     ) -> Self {
+        let bin_dir = dir_path.bin_dir().as_path();
+        let cache_dir = Path::new(registry_crates_location.cache());
+        let src_dir = Path::new(registry_crates_location.src());
+        let checkout_dir = dir_path.checkout_dir().as_path();
+        let db_dir = dir_path.db_dir().as_path();
         // list out installed crates
         let installed_bin = get_installed_bin(bin_dir, crate_detail);
         let installed_crate_registry =
@@ -259,17 +263,6 @@ fn read_content(list: &[PathBuf], db_dir: &Path) -> (Vec<String>, Vec<String>) {
     for lock in list.iter() {
         let mut lock_folder = lock.clone();
         lock_folder.push("Cargo.lock");
-        // try generating lock file from Cargo.toml file location to guarantee this path
-        // should have lock file or not
-        if !lock_folder.exists() {
-            if let Err(e) = Command::new("cargo")
-                .arg("generate-lockfile")
-                .current_dir(lock)
-                .output()
-            {
-                panic!(format!("Failed to generate Cargo.lock {}", e));
-            }
-        }
         if lock_folder.exists() {
             let lock_file = lock_folder.to_str().unwrap();
             let mut buffer = String::new();
