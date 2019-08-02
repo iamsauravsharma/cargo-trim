@@ -51,7 +51,7 @@ By default cargo-trim print out colored output if you want to use a non colored 
 All cargo-trim can be run using ```cargo trim <command>```
 ```cargo trim --help``` will produce out following output which list out all of available output for cargo-trim
 ```
-cargo-trim 0.3.0
+cargo-trim 0.4.0
 Saurav Sharma <appdroiddeveloper@gmail.com>
 Binary application to cleanup $CARGO_HOME cache
 
@@ -60,25 +60,26 @@ USAGE:
 
 FLAGS:
     -a, --all             Clean up all .cargo/registry & .cargo/git follow config file data
-    -c, --clear           Clear config data
+    -c, --clear           Clear config file data
     -f, --force           Force clear cache without reading conf file
     -h, --help            Prints help information
     -l, --light           Light cleanup repos by removing git checkout and registry source but stores git db and
-                          registry archive for future compilation
+                          registry archive for future compilation without internet requirement
     -o, --old-clean       Clean old cache crates
-    -x, --orphan-clean    Clean orphan cache crates
-    -q, --query           Return size of .cargo/cache folders
-    -u, --update          Update Cargo.lock file present inside config directory folder path
+    -x, --orphan-clean    Clean orphan cache crates i.e all crates which are not present in lock file generated till now
+                          use cargo trim -u to guarantee your all project generate lock file
+    -q, --query           Return size of different .cargo/cache folders
+    -u, --update          Generate and Update Cargo.lock file present inside config directory folder path
     -V, --version         Prints version information
 
 OPTIONS:
-    -e, --exclude <Crate>...              add listed crates to default conf file exclude list [use TRIM_EXCLUDE
+    -e, --exclude <Crate>...              add listed crates to default conf file exclude list [use $TRIM_EXCLUDE
                                           environment variable for creating exclude list without editing conf file]
     -g, --gc <git compress>               Git compress to reduce size of .cargo [possible values: all, index, git, git-
                                           checkout, git-db]
-    -i, --include <Crate>...              add listed crates to default conf file include list [use TRIM_INCLUDE
+    -i, --include <Crate>...              add listed crates to default conf file include list [use $TRIM_INCLUDE
                                           environment variable for creating include list without editing conf file]
-    -r, --remove <Crate>...               Remove listed crates
+    -r, --remove <Crate>...               Remove provided crates from registry or git
     -s, --set-directory <Directory>...    Set directory of Rust project [use TRIM_DIRECTORY environment variable for
                                           creating directory list without editing conf file]
     -t, --top <number>                    Show certain number of top crates which have highest size
