@@ -74,6 +74,7 @@ fn main() {
     light_cleanup(
         &dir_path.checkout_dir(),
         &dir_path.src_dir(),
+        &dir_path.index_dir(),
         (light_cleanup_app, light_cleanup_git, light_cleanup_registry),
     );
 
@@ -91,8 +92,8 @@ fn main() {
         &crate_detail,
     );
 
-    // Query about config file information on -s flag
-    query_subcommand(&app, &config_file);
+    // Query about config file information
+    config_subcommand(&app, &config_file);
 
     // Perform action on -o flag matches which remove all old crates
     let old_app = app.is_present("old clean");
@@ -128,7 +129,8 @@ fn main() {
         &crate_detail,
     );
 
-    // Force remove all crates without reading config file
+    // Force remove all crates without reading config file also remove index .cache
+    // folder
     let force_remove_app = app.is_present("force remove");
     let force_remove_git = git_subcommand.is_present("force remove");
     let force_remove_registry = registry_subcommand.is_present("force remove");
@@ -272,11 +274,24 @@ fn run_git_compress_commands(repo_path: &PathBuf) {
 fn light_cleanup(
     checkout_dir: &PathBuf,
     src_dir: &PathBuf,
+    index_dir: &PathBuf,
     (light_cleanup_app, light_cleanup_git, light_cleanup_registry): (bool, bool, bool),
 ) {
     if light_cleanup_app || light_cleanup_git || light_cleanup_registry {
         if light_cleanup_app || light_cleanup_registry {
             delete_folder(checkout_dir);
+            // Delete out .cache folder also
+            for entry in fs::read_dir(index_dir).unwrap() {
+                let entry = entry.unwrap().path();
+                let registry_dir = entry.as_path();
+                for folder in fs::read_dir(registry_dir).unwrap() {
+                    let folder = folder.unwrap().path();
+                    let folder_name = folder.file_name().unwrap();
+                    if folder_name == ".cache" {
+                        delete_folder(&folder);
+                    }
+                }
+            }
         }
         if light_cleanup_app || light_cleanup_git {
             delete_folder(src_dir);
@@ -519,8 +534,8 @@ fn query_size(
     }
 }
 
-// Perform all query subcommand call operation
-fn query_subcommand(app: &ArgMatches, config_file: &ConfigFile) {
+// Perform query about config file data
+fn config_subcommand(app: &ArgMatches, config_file: &ConfigFile) {
     if app.is_present("config") {
         let matches = app.subcommand_matches("config").unwrap();
         let read_include = config_file.include();
@@ -553,6 +568,19 @@ fn force_remove(
         if force_remove_app || force_remove_registry {
             delete_folder(&dir_path.cache_dir());
             delete_folder(&dir_path.src_dir());
+            // Delete out .cache folder also
+            let index_path = dir_path.index_dir();
+            for entry in fs::read_dir(index_path).unwrap() {
+                let entry = entry.unwrap().path();
+                let registry_dir = entry.as_path();
+                for folder in fs::read_dir(registry_dir).unwrap() {
+                    let folder = folder.unwrap().path();
+                    let folder_name = folder.file_name().unwrap();
+                    if folder_name == ".cache" {
+                        delete_folder(&folder);
+                    }
+                }
+            }
         }
         if force_remove_app || force_remove_git {
             delete_folder(&dir_path.checkout_dir());

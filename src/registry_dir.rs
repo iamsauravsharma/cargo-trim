@@ -85,22 +85,6 @@ impl RegistryDir {
     }
 }
 
-// // Use to open github folder present inside src and cache folder
-// fn open_folder(path: &Path) -> Vec<String> {
-//     // let mut path_buf = path.to_path_buf();
-//     let mut folder_list = Vec::new();
-//     for entry in fs::read_dir(path).unwrap() {
-//         let entry = entry.unwrap();
-//         let path = entry.path();
-//         if path.is_dir() {
-//             folder_list.push(path.to_str().unwrap().to_string());
-//         }
-//     }
-//     folder_list
-//     // path_buf.push("github.com-1ecc6299db9ec823");
-//     // path_buf.to_str().unwrap().to_string()
-// }
-
 // Remove crates which name is provided to delete
 fn remove_crate(path: &Path, value: &str) {
     for entry in fs::read_dir(path).unwrap() {
