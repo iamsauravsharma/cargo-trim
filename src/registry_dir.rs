@@ -54,9 +54,10 @@ impl RegistryDir {
                 .iter()
                 .filter(|x| x.contains(name))
                 .collect();
-            if same_name_list.len() <= 1 {
-                remove_index_cache(Path::new(index_cache_dir), crate_name);
+            if same_name_list.len() == 1 {
+                remove_index_cache(Path::new(&index_cache_dir), crate_name);
             }
+            remove_empty_index_cache_dir(Path::new(&index_cache_dir));
             self.installed_crate.retain(|x| x != crate_name);
         });
         println!("{} {:?}", "Removed".red(), crate_name);
@@ -159,5 +160,22 @@ fn remove_index_cache(path: &Path, value: &str) {
     };
     if remove_file_location.exists() && remove_file_location.is_file() {
         fs::remove_file(remove_file_location).unwrap();
+    }
+}
+
+fn remove_empty_index_cache_dir(path: &Path) {
+    if path
+        .read_dir()
+        .map(|mut i| i.next().is_none())
+        .unwrap_or(false)
+    {
+        fs::remove_dir(path).unwrap();
+    } else {
+        for entry in path.read_dir().unwrap() {
+            let path = entry.unwrap().path();
+            if path.is_dir() {
+                remove_empty_index_cache_dir(path.as_path())
+            }
+        }
     }
 }
