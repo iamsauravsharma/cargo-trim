@@ -139,21 +139,21 @@ fn remove_index_cache(path: &Path, value: &str) -> Option<String> {
         1 => {
             remove_file_location.push("1");
             remove_file_location.push(name);
-        },
+        }
         2 => {
             remove_file_location.push("2");
             remove_file_location.push(name);
-        },
+        }
         3 => {
             remove_file_location.push("3");
             remove_file_location.push(&name[..1]);
             remove_file_location.push(name);
-        },
+        }
         _ => {
             remove_file_location.push(&name[..2]);
             remove_file_location.push(&name[2..4]);
             remove_file_location.push(name);
-        },
+        }
     };
     if remove_file_location.exists() && remove_file_location.is_file() {
         fs::remove_file(remove_file_location).unwrap();
