@@ -6,31 +6,58 @@ use std::{fs, path::Path};
 pub(crate) struct RegistryDir {
     cache_dir: String,
     src_dir: String,
+    index_cache_dir: Vec<String>,
+    installed_crate: Vec<String>,
 }
 
 impl RegistryDir {
     // Create new RegistryDir
-    pub(crate) fn new(cache_dir: &Path, src_dir: &Path) -> Self {
+    pub(crate) fn new(
+        cache_dir: &Path,
+        src_dir: &Path,
+        index_dir: &Path,
+        installed_crate: &[String],
+    ) -> Self {
         let cache_dir = cache_dir.to_str().unwrap().to_string();
         let src_dir = src_dir.to_str().unwrap().to_string();
-        Self { cache_dir, src_dir }
+        let mut index_cache_dir = Vec::new();
+        for entry in fs::read_dir(index_dir).unwrap() {
+            let entry = entry.unwrap().path();
+            let registry_dir = entry.as_path();
+            for folder in fs::read_dir(registry_dir).unwrap() {
+                let folder = folder.unwrap().path();
+                let folder_name = folder.file_name().unwrap();
+                if folder_name == ".cache" {
+                    index_cache_dir.push(folder.to_str().unwrap().to_string());
+                }
+            }
+        }
+
+        Self {
+            cache_dir,
+            src_dir,
+            index_cache_dir,
+            installed_crate: installed_crate.to_owned(),
+        }
     }
 
     // Remove crate from src & cache directory
     pub(crate) fn remove_crate(&self, crate_name: &str) {
         remove_crate(Path::new(&self.cache_dir), crate_name);
         remove_crate(Path::new(&self.src_dir), crate_name);
+        let splitted_value: Vec<&str> = crate_name.rsplitn(2, '-').collect();
+        let name = splitted_value[1];
+        self.index_cache_dir.iter().for_each(|index_cache_dir| {
+            let same_name_list: Vec<&String> = self
+                .installed_crate
+                .iter()
+                .filter(|x| x.contains(name))
+                .collect();
+            if same_name_list.len() <= 1 {
+                remove_index_cache(Path::new(index_cache_dir), crate_name);
+            }
+        });
         println!("{} {:?}", "Removed".red(), crate_name);
-    }
-
-    // Get out src_dir path
-    pub(crate) fn src(&self) -> &String {
-        &self.src_dir
-    }
-
-    // Get out cache_dir path
-    pub(crate) fn cache(&self) -> &String {
-        &self.cache_dir
     }
 
     // Remove list of crates
@@ -101,5 +128,37 @@ fn remove_crate(path: &Path, value: &str) {
                 }
             }
         }
+    }
+}
+
+fn remove_index_cache(path: &Path, value: &str) -> Option<String> {
+    let mut remove_file_location = path.to_path_buf();
+    let splitted_value: Vec<&str> = value.rsplitn(2, '-').collect();
+    let name = splitted_value[1];
+    match name.len() {
+        1 => {
+            remove_file_location.push("1");
+            remove_file_location.push(name);
+        },
+        2 => {
+            remove_file_location.push("2");
+            remove_file_location.push(name);
+        },
+        3 => {
+            remove_file_location.push("3");
+            remove_file_location.push(&name[..1]);
+            remove_file_location.push(name);
+        },
+        _ => {
+            remove_file_location.push(&name[..2]);
+            remove_file_location.push(&name[2..4]);
+            remove_file_location.push(name);
+        },
+    };
+    if remove_file_location.exists() && remove_file_location.is_file() {
+        fs::remove_file(remove_file_location).unwrap();
+        Some(value.to_owned())
+    } else {
+        None
     }
 }

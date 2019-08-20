@@ -40,21 +40,20 @@ fn main() {
     // Perform all modification of config file flag and subcommand operation
     let config_file = config_file::modify_config_file(&mut file, app, &dir_path.config_dir());
 
-    // Get Location where registry crates and git crates are stored out by cargo
-    let registry_crates_location =
-        registry_dir::RegistryDir::new(&dir_path.cache_dir(), &dir_path.src_dir());
-    let git_crates_location = git_dir::GitDir::new(&dir_path.checkout_dir(), &dir_path.db_dir());
-
     // create new CrateDetail struct
     let mut crate_detail = CrateDetail::new();
 
     // List out crate list
-    let list_crate = list_crate::CrateList::create_list(
-        &dir_path,
-        &registry_crates_location,
-        &config_file,
-        &mut crate_detail,
+    let list_crate = list_crate::CrateList::create_list(&dir_path, &config_file, &mut crate_detail);
+
+    // Get Location where registry crates and git crates are stored out by cargo
+    let registry_crates_location = registry_dir::RegistryDir::new(
+        &dir_path.cache_dir(),
+        &dir_path.src_dir(),
+        &dir_path.index_dir(),
+        list_crate.installed_registry(),
     );
+    let git_crates_location = git_dir::GitDir::new(&dir_path.checkout_dir(), &dir_path.db_dir());
 
     // Perform action of removing config file with -c flag
     clear_config(&app, &dir_path);
@@ -170,7 +169,7 @@ fn folder_size(path: &PathBuf) -> f64 {
     }
 }
 
-// Clear Config file data
+// Clear config file data
 fn clear_config(app: &ArgMatches, dir_path: &DirPath) {
     if app.is_present("clear config") {
         fs::remove_file(dir_path.config_dir().as_path()).unwrap();
@@ -731,7 +730,7 @@ fn print_index_value_crate(vector: &[(&String, &u64)], i: usize) {
     println!("|{:^40}|{:^10.3}|", crate_name, size);
 }
 
-// Update cargo lock before doing some actions
+// Update cargo lock
 fn update_cargo_toml(app: &ArgMatches, cargo_toml_location: &[PathBuf]) {
     if app.is_present("update") {
         for location in cargo_toml_location {

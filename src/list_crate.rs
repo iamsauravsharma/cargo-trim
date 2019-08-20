@@ -1,7 +1,4 @@
-use crate::{
-    config_file::ConfigFile, crate_detail::CrateDetail, dir_path::DirPath,
-    registry_dir::RegistryDir,
-};
+use crate::{config_file::ConfigFile, crate_detail::CrateDetail, dir_path::DirPath};
 use fs_extra::dir::get_size;
 use std::{
     env, fs,
@@ -50,13 +47,12 @@ impl CrateList {
     // create list of all types of crate present in directory
     pub(crate) fn create_list(
         dir_path: &DirPath,
-        registry_crates_location: &RegistryDir,
         config_file: &ConfigFile,
         crate_detail: &mut CrateDetail,
     ) -> Self {
         let bin_dir = dir_path.bin_dir().as_path();
-        let cache_dir = Path::new(registry_crates_location.cache());
-        let src_dir = Path::new(registry_crates_location.src());
+        let cache_dir = dir_path.cache_dir();
+        let src_dir = dir_path.src_dir();
         let checkout_dir = dir_path.checkout_dir().as_path();
         let db_dir = dir_path.db_dir().as_path();
         // list out installed crates
