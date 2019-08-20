@@ -47,7 +47,7 @@ fn main() {
     let list_crate = list_crate::CrateList::create_list(&dir_path, &config_file, &mut crate_detail);
 
     // Get Location where registry crates and git crates are stored out by cargo
-    let registry_crates_location = registry_dir::RegistryDir::new(
+    let mut registry_crates_location = registry_dir::RegistryDir::new(
         &dir_path.cache_dir(),
         &dir_path.src_dir(),
         &dir_path.index_dir(),
@@ -101,7 +101,7 @@ fn main() {
     old_clean(
         &list_crate,
         (old_app, old_registry, old_git),
-        &registry_crates_location,
+        &mut registry_crates_location,
         &git_crates_location,
         &crate_detail,
     );
@@ -114,7 +114,7 @@ fn main() {
     orphan_clean(
         &list_crate,
         (orphan_app, orphan_git, orphan_registry),
-        &registry_crates_location,
+        &mut registry_crates_location,
         &git_crates_location,
         &crate_detail,
     );
@@ -123,7 +123,7 @@ fn main() {
     remove_crate(
         &list_crate,
         (&app, &git_subcommand, &registry_subcommand),
-        &registry_crates_location,
+        &mut registry_crates_location,
         &git_crates_location,
         &crate_detail,
     );
@@ -145,7 +145,7 @@ fn main() {
     remove_all(
         &list_crate,
         &config_file,
-        &registry_crates_location,
+        &mut registry_crates_location,
         &git_crates_location,
         (all_app, all_git, all_registry),
         &crate_detail,
@@ -387,7 +387,7 @@ fn print_dash() {
 fn old_clean(
     list_crate: &CrateList,
     (old_app, old_registry, old_git): (bool, bool, bool),
-    registry_crates_location: &RegistryDir,
+    registry_crates_location: &mut RegistryDir,
     git_crates_location: &GitDir,
     crate_detail: &CrateDetail,
 ) {
@@ -412,7 +412,7 @@ fn old_clean(
 fn orphan_clean(
     list_crate: &CrateList,
     (orphan_app, orphan_git, orphan_registry): (bool, bool, bool),
-    registry_crates_location: &RegistryDir,
+    registry_crates_location: &mut RegistryDir,
     git_crates_location: &GitDir,
     crate_detail: &CrateDetail,
 ) {
@@ -593,7 +593,7 @@ fn force_remove(
 fn remove_all(
     list_crate: &CrateList,
     config_file: &ConfigFile,
-    registry_crates_location: &RegistryDir,
+    registry_crates_location: &mut RegistryDir,
     git_crates_location: &GitDir,
     (all_app, all_git, all_registry): (bool, bool, bool),
     crate_detail: &CrateDetail,
@@ -627,7 +627,7 @@ fn remove_all(
 fn remove_crate(
     list_crate: &CrateList,
     (app, git_subcommand, registry_subcommand): (&ArgMatches, &ArgMatches, &ArgMatches),
-    registry_crates_location: &RegistryDir,
+    registry_crates_location: &mut RegistryDir,
     git_crates_location: &GitDir,
     crate_detail: &CrateDetail,
 ) {

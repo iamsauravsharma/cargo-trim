@@ -42,12 +42,13 @@ impl RegistryDir {
     }
 
     // Remove crate from src & cache directory
-    pub(crate) fn remove_crate(&self, crate_name: &str) {
+    pub(crate) fn remove_crate(&mut self, crate_name: &str) {
         remove_crate(Path::new(&self.cache_dir), crate_name);
         remove_crate(Path::new(&self.src_dir), crate_name);
         let splitted_value: Vec<&str> = crate_name.rsplitn(2, '-').collect();
         let name = splitted_value[1];
-        self.index_cache_dir.iter().for_each(|index_cache_dir| {
+        let index_cache = self.index_cache_dir.to_owned();
+        index_cache.iter().for_each(|index_cache_dir| {
             let same_name_list: Vec<&String> = self
                 .installed_crate
                 .iter()
@@ -56,12 +57,13 @@ impl RegistryDir {
             if same_name_list.len() <= 1 {
                 remove_index_cache(Path::new(index_cache_dir), crate_name);
             }
+            self.installed_crate.retain(|x| x != crate_name);
         });
         println!("{} {:?}", "Removed".red(), crate_name);
     }
 
     // Remove list of crates
-    pub(crate) fn remove_crate_list(&self, crate_detail: &CrateDetail, list: &[String]) -> f64 {
+    pub(crate) fn remove_crate_list(&mut self, crate_detail: &CrateDetail, list: &[String]) -> f64 {
         let mut size_cleaned = 0.0;
         for crate_name in list {
             self.remove_crate(crate_name);
@@ -72,7 +74,7 @@ impl RegistryDir {
 
     // Remove all crates from registry folder
     pub(crate) fn remove_all(
-        &self,
+        &mut self,
         config_file: &ConfigFile,
         crate_name: &str,
         crate_detail: &CrateDetail,
@@ -131,7 +133,7 @@ fn remove_crate(path: &Path, value: &str) {
     }
 }
 
-fn remove_index_cache(path: &Path, value: &str) -> Option<String> {
+fn remove_index_cache(path: &Path, value: &str) {
     let mut remove_file_location = path.to_path_buf();
     let splitted_value: Vec<&str> = value.rsplitn(2, '-').collect();
     let name = splitted_value[1];
@@ -157,8 +159,5 @@ fn remove_index_cache(path: &Path, value: &str) -> Option<String> {
     };
     if remove_file_location.exists() && remove_file_location.is_file() {
         fs::remove_file(remove_file_location).unwrap();
-        Some(value.to_owned())
-    } else {
-        None
     }
 }
