@@ -764,6 +764,8 @@ fn update_cargo_toml(app: &ArgMatches, cargo_toml_location: &[PathBuf]) {
             }
             // helps so we may not need to generate lock file again for workspace project
             if cargo_lock.exists() {
+                let message = format!("Updating {}", cargo_lock.to_str().unwrap().bright_blue());
+                println!("{}", message);
                 if let Err(e) = Command::new("cargo")
                     .arg("update")
                     .current_dir(location)
