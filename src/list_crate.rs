@@ -81,10 +81,12 @@ impl CrateList {
             if !crate_name.contains("-HEAD") {
                 let name = crate_name.rsplitn(2, '-').collect::<Vec<&str>>();
                 let mut full_name_list = Vec::new();
-                for crates in fs::read_dir(db_dir).unwrap() {
+                for crates in fs::read_dir(db_dir).expect("failed to read db dir") {
                     let entry = crates.unwrap().path();
                     let path = entry.as_path();
-                    let file_name = path.file_name().unwrap();
+                    let file_name = path
+                        .file_name()
+                        .expect("failed to get file name form db directory sub folder");
                     let file_name = file_name.to_str().unwrap().to_string();
                     if file_name.contains(name[1]) {
                         let output = std::process::Command::new("git")
@@ -93,9 +95,10 @@ impl CrateList {
                             .arg("--max-count=1")
                             .current_dir(path)
                             .output()
-                            .unwrap();
-                        let mut rev_value =
-                            std::str::from_utf8(&output.stdout).unwrap().to_string();
+                            .expect("failed to execute process");
+                        let mut rev_value = std::str::from_utf8(&output.stdout)
+                            .expect("stdout is not utf8")
+                            .to_string();
                         rev_value.retain(|c| c != '\'');
                         let full_name = format!("{}-{}", name[1], rev_value);
                         full_name_list.push(full_name)
@@ -236,7 +239,9 @@ fn clear_version_value(a: &str) -> String {
 fn list_cargo_toml(path: &Path) -> CargoTomlLocation {
     let mut list = CargoTomlLocation::new();
     if path.exists() {
-        for entry in std::fs::read_dir(path).unwrap() {
+        for entry in std::fs::read_dir(path)
+            .expect("failed to read directory while trying to find cargo.toml")
+        {
             let data_path_buf = entry.unwrap().path();
             let data = data_path_buf.as_path();
             if data.is_dir() {
@@ -262,8 +267,9 @@ fn read_content(list: &[PathBuf], db_dir: &Path) -> (Vec<String>, Vec<String>) {
         if lock_folder.exists() {
             let lock_file = lock_folder.to_str().unwrap();
             let mut buffer = String::new();
-            let mut file = std::fs::File::open(lock_file).unwrap();
-            file.read_to_string(&mut buffer).unwrap();
+            let mut file = std::fs::File::open(lock_file).expect("failed to open cargo lock file");
+            file.read_to_string(&mut buffer)
+                .expect("failed to read cargo lock content to string");
             let mut set_flag = 0;
             for line in buffer.lines() {
                 if line.contains("[metadata]") {
@@ -273,9 +279,11 @@ fn read_content(list: &[PathBuf], db_dir: &Path) -> (Vec<String>, Vec<String>) {
                 if set_flag == 1 {
                     let mut split = line.split_whitespace();
                     split.next();
-                    let name = split.next().unwrap();
-                    let version = split.next().unwrap();
-                    let source = split.next().unwrap();
+                    let name = split.next().expect("no next element is present for name");
+                    let version = split
+                        .next()
+                        .expect("no next element is present for version");
+                    let source = split.next().expect("no next element is present for source");
                     if source.contains("registry+") {
                         let full_name = format!("{}-{}", name, version);
                         present_crate_registry.push(full_name);
@@ -305,8 +313,9 @@ fn read_content(list: &[PathBuf], db_dir: &Path) -> (Vec<String>, Vec<String>) {
                                 .arg(branch_value)
                                 .current_dir(path_db)
                                 .output()
-                                .unwrap();
-                            let rev_value = std::str::from_utf8(&output.stdout).unwrap();
+                                .expect("failed to execute command for pretty log of branch");
+                            let rev_value =
+                                std::str::from_utf8(&output.stdout).expect("stdout is not utf8");
                             let full_name = format!("{}-{}", name, rev_value);
                             present_crate_git.push(full_name);
                         } else {
@@ -316,8 +325,9 @@ fn read_content(list: &[PathBuf], db_dir: &Path) -> (Vec<String>, Vec<String>) {
                                 .arg("--max-count=1")
                                 .current_dir(path_db)
                                 .output()
-                                .unwrap();
-                            let rev_value = std::str::from_utf8(&output.stdout).unwrap();
+                                .expect("failed to process command");
+                            let rev_value =
+                                std::str::from_utf8(&output.stdout).expect("stdout is not ut8");
                             let full_name = format!("{}-{}", name, rev_value);
                             present_crate_git.push(full_name);
                         }
@@ -344,11 +354,13 @@ fn remove_version(installed_crate_registry: &[String]) -> Vec<String> {
 fn get_installed_bin(bin_dir: &Path, crate_detail: &mut CrateDetail) -> Vec<String> {
     let mut installed_bin = Vec::new();
     if bin_dir.exists() {
-        for entry in fs::read_dir(bin_dir).unwrap() {
+        for entry in fs::read_dir(bin_dir).expect("failed to read bin directory") {
             let entry = entry.unwrap().path();
             let path = entry.as_path();
-            let bin_size = get_size(&path).unwrap();
-            let file_name = path.file_name().unwrap();
+            let bin_size = get_size(&path).expect("failed to get size of bin directory");
+            let file_name = path
+                .file_name()
+                .expect("failed to get file name from bin directory");
             let bin_name = file_name.to_str().unwrap().to_string();
             crate_detail.add_bin(bin_name.to_owned(), bin_size);
             installed_bin.push(bin_name)
@@ -366,13 +378,15 @@ fn get_installed_crate_registry(
 ) -> Vec<String> {
     let mut installed_crate_registry = Vec::new();
     if src_dir.exists() {
-        for entry in fs::read_dir(src_dir).unwrap() {
+        for entry in fs::read_dir(src_dir).expect("failed to read src directory") {
             let main_entry = entry.unwrap().path();
-            for entry in fs::read_dir(main_entry).unwrap() {
+            for entry in fs::read_dir(main_entry).expect("failed to read main entry") {
                 let entry = entry.unwrap().path();
                 let path = entry.as_path();
-                let crate_size = get_size(&path).unwrap();
-                let file_name = path.file_name().unwrap();
+                let crate_size = get_size(&path).expect("failed to get main entry sub folder path");
+                let file_name = path
+                    .file_name()
+                    .expect("failed to get file name form main entry");
                 let crate_name = file_name.to_str().unwrap().to_string();
                 crate_detail.add_registry_crate_source(crate_name.to_owned(), crate_size);
                 installed_crate_registry.push(crate_name)
@@ -380,13 +394,15 @@ fn get_installed_crate_registry(
         }
     }
     if cache_dir.exists() {
-        for entry in fs::read_dir(cache_dir).unwrap() {
+        for entry in fs::read_dir(cache_dir).expect("failed to read cache dir") {
             let main_entry = entry.unwrap().path();
-            for entry in fs::read_dir(main_entry).unwrap() {
+            for entry in fs::read_dir(main_entry).expect("failed to read cache dir main entry") {
                 let entry = entry.unwrap().path();
                 let path = entry.as_path();
-                let file_name = path.file_name().unwrap();
-                let crate_size = get_size(&path).unwrap();
+                let file_name = path
+                    .file_name()
+                    .expect("failed to get file name from cache dir");
+                let crate_size = get_size(&path).expect("failed to get size");
                 let crate_name = file_name.to_str().unwrap().to_string();
                 let splitted_name = crate_name.rsplitn(2, '.').collect::<Vec<&str>>();
                 crate_detail.add_registry_crate_archive(splitted_name[1].to_owned(), crate_size);
@@ -407,15 +423,18 @@ fn get_installed_crate_git(
 ) -> Vec<String> {
     let mut installed_crate_git = Vec::new();
     if checkout_dir.exists() {
-        for entry in fs::read_dir(checkout_dir).unwrap() {
+        for entry in fs::read_dir(checkout_dir).expect("failed to read checkout directory") {
             let entry = entry.unwrap().path();
             let path = entry.as_path();
-            let file_path = path.file_name().unwrap();
-            for git_sha_entry in fs::read_dir(path).unwrap() {
+            let file_path = path
+                .file_name()
+                .expect("failed to obtain checkout directory sub folder file name");
+            for git_sha_entry in fs::read_dir(path).expect("failed to read checkout dir sub folder")
+            {
                 let git_sha_entry = git_sha_entry.unwrap().path();
                 let git_sha_path = git_sha_entry.as_path();
-                let crate_size = get_size(git_sha_path).unwrap();
-                let git_sha_file_name = git_sha_path.file_name().unwrap();
+                let crate_size = get_size(git_sha_path).expect("failed to get folder size");
+                let git_sha_file_name = git_sha_path.file_name().expect("failed to get file name");
                 let git_sha = git_sha_file_name.to_str().unwrap().to_string();
                 let file_name = file_path.to_str().unwrap().to_string();
                 let splitted_name = file_name.rsplitn(2, '-').collect::<Vec<&str>>();
@@ -426,11 +445,11 @@ fn get_installed_crate_git(
         }
     }
     if db_dir.exists() {
-        for entry in fs::read_dir(db_dir).unwrap() {
+        for entry in fs::read_dir(db_dir).expect("failed to read db dir") {
             let entry = entry.unwrap().path();
             let path = entry.as_path();
-            let crate_size = get_size(path).unwrap();
-            let file_name = path.file_name().unwrap();
+            let crate_size = get_size(path).expect("failed to get size of db dir folders");
+            let file_name = path.file_name().expect("failed to get file name");
             let file_name = file_name.to_str().unwrap().to_string();
             let full_name = format!("{}-HEAD", file_name);
             crate_detail.add_git_crate_source(full_name.to_owned(), crate_size);

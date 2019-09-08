@@ -20,12 +20,13 @@ impl DirPath {
     // set directory path
     pub(crate) fn set_dir_path() -> Self {
         // set config file directory path
-        let mut config_dir = dirs::config_dir().unwrap();
+        let mut config_dir = dirs::config_dir()
+            .expect("Cannot get config directory location it may be not supported OS");
         config_dir.push("cargo_trim_config.json");
 
         // If config file does not exists create one config file
         if !config_dir.exists() {
-            fs::File::create(config_dir.to_str().unwrap()).unwrap();
+            fs::File::create(config_dir.to_str().unwrap()).expect("Failed to create config file");
         }
 
         let home_dir = Path::new(env!("CARGO_HOME"));

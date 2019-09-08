@@ -25,7 +25,8 @@ use std::{collections::HashMap, fs, path::PathBuf, process::Command};
 fn main() {
     // set all dir path
     let dir_path = DirPath::set_dir_path();
-    let mut file = fs::File::open(dir_path.config_dir().to_str().unwrap()).unwrap();
+    let mut file = fs::File::open(dir_path.config_dir().to_str().unwrap())
+        .expect("failed to open config dir folder");
     let app = create_app::app();
     let app = app.subcommand_matches("trim").unwrap();
     let mut git_subcommand = &ArgMatches::new();
@@ -172,7 +173,7 @@ fn folder_size(path: &PathBuf) -> f64 {
 // Clear config file data
 fn clear_config(app: &ArgMatches, dir_path: &DirPath) {
     if app.is_present("clear config") {
-        fs::remove_file(dir_path.config_dir().as_path()).unwrap();
+        fs::remove_file(dir_path.config_dir().as_path()).expect("failed to delete config file");
         println!("Cleared Config file");
     }
 }
@@ -182,9 +183,11 @@ fn git_compress(app: &ArgMatches, index_dir: &PathBuf, checkout_dir: &PathBuf, d
     if app.is_present("git compress") {
         let value = app.value_of("git compress").unwrap();
         if (value == "index" || value == "all") && index_dir.exists() {
-            for entry in fs::read_dir(index_dir).unwrap() {
+            for entry in fs::read_dir(index_dir).expect("failed to read registry index folder") {
                 let repo_path = entry.unwrap().path();
-                let file_name = repo_path.file_name().unwrap();
+                let file_name = repo_path
+                    .file_name()
+                    .expect("Failed to get a file name / folder name");
                 println!(
                     "{}",
                     format!("Compressing {} registry index", file_name.to_str().unwrap())
@@ -195,9 +198,12 @@ fn git_compress(app: &ArgMatches, index_dir: &PathBuf, checkout_dir: &PathBuf, d
         }
         if value.contains("git") || value == "all" {
             if (value == "git" || value == "git-checkout") && checkout_dir.exists() {
-                for entry in fs::read_dir(checkout_dir).unwrap() {
+                for entry in fs::read_dir(checkout_dir).expect("failed to read checkout directory")
+                {
                     let repo_path = entry.unwrap().path();
-                    for rev in fs::read_dir(repo_path).unwrap() {
+                    for rev in fs::read_dir(repo_path)
+                        .expect("failed to read checkout directory sub directory")
+                    {
                         let rev_path = rev.unwrap().path();
                         println!("{}", "Compressing git checkout".bright_blue());
                         run_git_compress_commands(&rev_path)
@@ -205,7 +211,7 @@ fn git_compress(app: &ArgMatches, index_dir: &PathBuf, checkout_dir: &PathBuf, d
                 }
             }
             if (value == "git" || value == "git-db") && db_dir.exists() {
-                for entry in fs::read_dir(db_dir).unwrap() {
+                for entry in fs::read_dir(db_dir).expect("failed to read db dir") {
                     let repo_path = entry.unwrap().path();
                     println!("{}", "Compressing git db".bright_blue());
                     run_git_compress_commands(&repo_path);
@@ -280,12 +286,16 @@ fn light_cleanup(
         if light_cleanup_app || light_cleanup_registry {
             delete_folder(checkout_dir);
             // Delete out .cache folder also
-            for entry in fs::read_dir(index_dir).unwrap() {
+            for entry in fs::read_dir(index_dir).expect("failed to read out index directory") {
                 let entry = entry.unwrap().path();
                 let registry_dir = entry.as_path();
-                for folder in fs::read_dir(registry_dir).unwrap() {
+                for folder in
+                    fs::read_dir(registry_dir).expect("failed to read out registry directory")
+                {
                     let folder = folder.unwrap().path();
-                    let folder_name = folder.file_name().unwrap();
+                    let folder_name = folder
+                        .file_name()
+                        .expect("failed to get file name form registry directory sub folder");
                     if folder_name == ".cache" {
                         delete_folder(&folder);
                     }
@@ -526,7 +536,7 @@ fn query_size(
             "{:50} {:10.2} MB",
             format!(
                 "Total size occupied by {}",
-                std::env::var("CARGO_HOME").unwrap()
+                std::env::var("CARGO_HOME").expect("No environmental variable CARGO_HOME present")
             ),
             final_size
         );
@@ -569,10 +579,14 @@ fn force_remove(
             delete_folder(&dir_path.src_dir());
             // Delete out .cache folder also
             let index_path = dir_path.index_dir();
-            for entry in fs::read_dir(index_path).unwrap() {
+            for entry in fs::read_dir(index_path)
+                .expect("Failed to read index directory during force remove")
+            {
                 let entry = entry.unwrap().path();
                 let registry_dir = entry.as_path();
-                for folder in fs::read_dir(registry_dir).unwrap() {
+                for folder in fs::read_dir(registry_dir)
+                    .expect("Failed to read registry directory in force remove")
+                {
                     let folder = folder.unwrap().path();
                     let folder_name = folder.file_name().unwrap();
                     if folder_name == ".cache" {
@@ -678,7 +692,9 @@ fn top_crates(
                 .unwrap_or_else(|| registry_subcommand.value_of("top crates").unwrap())
         });
 
-        let number = value.parse::<usize>().unwrap();
+        let number = value
+            .parse::<usize>()
+            .expect("Cannot convert top n crates value in usize");
         if top_app {
             show_top_number_crates(crate_detail, "bin", number);
         }
@@ -781,6 +797,6 @@ fn wipe_directory(app: &ArgMatches, dir_path: &DirPath) {
 // delete folder with folder path provided
 fn delete_folder(path: &PathBuf) {
     if path.exists() {
-        fs::remove_dir_all(path).unwrap();
+        fs::remove_dir_all(path).expect("failed to remove all directory content");
     }
 }

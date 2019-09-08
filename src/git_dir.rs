@@ -82,7 +82,7 @@ impl GitDir {
 
 // preform remove operation
 fn remove_crate(location: &Path, crate_name: &str) {
-    for entry in fs::read_dir(location).unwrap() {
+    for entry in fs::read_dir(location).expect("failed to read directory") {
         let entry = entry.unwrap();
         let path = entry.path();
         let name = crate_name.rsplitn(2, '-').collect::<Vec<&str>>();
@@ -90,14 +90,19 @@ fn remove_crate(location: &Path, crate_name: &str) {
         let rev_sha = name[0];
         if path.to_str().unwrap().contains(crate_name) {
             if rev_sha.contains("HEAD") {
-                fs::remove_dir_all(&path).unwrap();
+                fs::remove_dir_all(&path).expect("failed to remove all directory");
             } else {
-                for rev in fs::read_dir(path).unwrap() {
+                for rev in fs::read_dir(path).expect("failed to read git checkout directory") {
                     let entry = rev.unwrap();
                     let path = entry.path();
-                    let file_name = path.file_name().unwrap().to_str().unwrap();
+                    let file_name = path
+                        .file_name()
+                        .expect("path is terminating with ..")
+                        .to_str()
+                        .unwrap();
                     if file_name == rev_sha {
-                        fs::remove_dir_all(&path).unwrap();
+                        fs::remove_dir_all(&path)
+                            .expect("failed to remove all directory from Path");
                     }
                 }
             }

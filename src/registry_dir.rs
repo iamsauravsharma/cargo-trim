@@ -21,12 +21,14 @@ impl RegistryDir {
         let cache_dir = cache_dir.to_str().unwrap().to_string();
         let src_dir = src_dir.to_str().unwrap().to_string();
         let mut index_cache_dir = Vec::new();
-        for entry in fs::read_dir(index_dir).unwrap() {
+        for entry in fs::read_dir(index_dir).expect("failed to read index directory") {
             let entry = entry.unwrap().path();
             let registry_dir = entry.as_path();
-            for folder in fs::read_dir(registry_dir).unwrap() {
+            for folder in fs::read_dir(registry_dir).expect("failed to read registry directory") {
                 let folder = folder.unwrap().path();
-                let folder_name = folder.file_name().unwrap();
+                let folder_name = folder
+                    .file_name()
+                    .expect("failed to get file name form registry sub directory");
                 if folder_name == ".cache" {
                     index_cache_dir.push(folder.to_str().unwrap().to_string());
                 }
@@ -117,17 +119,17 @@ impl RegistryDir {
 
 // Remove crates which name is provided to delete
 fn remove_crate(path: &Path, value: &str) {
-    for entry in fs::read_dir(path).unwrap() {
+    for entry in fs::read_dir(path).expect("failed to read index or cache dir") {
         let entry = entry.unwrap();
         let path = entry.path();
-        for entry in fs::read_dir(path).unwrap() {
+        for entry in fs::read_dir(path).expect("failed to read crates path") {
             let entry = entry.unwrap();
             let path = entry.path();
             if path.to_str().unwrap().contains(value) {
                 if path.is_file() {
-                    fs::remove_file(&path).unwrap();
+                    fs::remove_file(&path).expect("failed to remove file");
                 } else if path.is_dir() {
-                    fs::remove_dir_all(&path).unwrap();
+                    fs::remove_dir_all(&path).expect("failed to remove all directory contents");
                 }
             }
         }
@@ -159,7 +161,7 @@ fn remove_index_cache(path: &Path, value: &str) {
         }
     };
     if remove_file_location.exists() && remove_file_location.is_file() {
-        fs::remove_file(remove_file_location).unwrap();
+        fs::remove_file(remove_file_location).expect("Failed to remove .cache file");
     }
 }
 
@@ -169,9 +171,9 @@ fn remove_empty_index_cache_dir(path: &Path) {
         .map(|mut i| i.next().is_none())
         .unwrap_or(false)
     {
-        fs::remove_dir(path).unwrap();
+        fs::remove_dir(path).expect("Failed to remove empty index cache");
     } else {
-        for entry in path.read_dir().unwrap() {
+        for entry in path.read_dir().expect("Failed to read .cache sub folder") {
             let path = entry.unwrap().path();
             if path.is_dir() {
                 remove_empty_index_cache_dir(path.as_path())
