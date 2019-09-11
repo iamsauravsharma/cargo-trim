@@ -74,7 +74,7 @@ impl CrateDetail {
     // find size of certain git crate source
     pub(crate) fn find_size_git_source(&self, crate_name: &str) -> f64 {
         if let Some(size) = self.git_crates_source.get(crate_name) {
-            (*size as f64) / 1024_f64.powf(2.0)
+            (*size as f64) / 1000_f64.powf(2.0)
         } else {
             0.0
         }
@@ -83,7 +83,7 @@ impl CrateDetail {
     // find size of certain registry source
     pub(crate) fn find_size_registry_source(&self, crate_name: &str) -> f64 {
         if let Some(size) = self.registry_crates_source.get(crate_name) {
-            (*size as f64) / 1024_f64.powf(2.0)
+            (*size as f64) / 1000_f64.powf(2.0)
         } else {
             0.0
         }
@@ -92,7 +92,7 @@ impl CrateDetail {
     // find size of certain git crate archive
     pub(crate) fn find_size_git_archive(&self, crate_name: &str) -> f64 {
         if let Some(size) = self.git_crates_archive.get(crate_name) {
-            (*size as f64) / 1024_f64.powf(2.0)
+            (*size as f64) / 1000_f64.powf(2.0)
         } else {
             0.0
         }
@@ -101,7 +101,7 @@ impl CrateDetail {
     // find size of certain registry archive
     pub(crate) fn find_size_registry_archive(&self, crate_name: &str) -> f64 {
         if let Some(size) = self.registry_crates_archive.get(crate_name) {
-            (*size as f64) / 1024_f64.powf(2.0)
+            (*size as f64) / 1000_f64.powf(2.0)
         } else {
             0.0
         }

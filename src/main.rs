@@ -20,6 +20,7 @@ use crate::{
 use clap::ArgMatches;
 use colored::*;
 use fs_extra::dir::get_size;
+use pretty_bytes::converter::convert;
 use std::{collections::HashMap, fs, path::PathBuf, process::Command};
 
 fn main() {
@@ -160,14 +161,6 @@ fn main() {
 
     // Wipe certain folder all together
     wipe_directory(&app, &dir_path);
-}
-
-// Return a size of directory if present otherwise return 0.0 as a size in MB
-fn folder_size(path: &PathBuf) -> f64 {
-    match get_size(path) {
-        Ok(size) => (size as f64) / (1024_f64.powf(2.0)),
-        Err(_) => 0.0,
-    }
 }
 
 // Clear config file data
@@ -454,91 +447,92 @@ fn query_size(
     crate_list: &CrateList,
     crate_detail: &CrateDetail,
 ) {
-    let mut final_size = 0.0;
+    let mut final_size = 0_u64;
     if query_size_app || query_size_git || query_size_registry {
         if query_size_app {
-            let bin_dir_size = folder_size(dir_path.bin_dir());
+            let bin_dir_size = get_size(dir_path.bin_dir()).unwrap_or(0_u64);
             final_size += bin_dir_size;
             println!(
-                "{:50} {:10.2} MB",
+                "{:50} {:>10}",
                 format!(
                     "Total size of {} .cargo/bin binary:",
                     crate_list.installed_bin().len()
                 ),
-                bin_dir_size
+                convert(bin_dir_size as f64)
             );
             print_dash();
         }
         if query_size_app || query_size_git {
-            let git_dir_size = folder_size(dir_path.git_dir());
+            let git_dir_size = get_size(dir_path.git_dir()).unwrap_or(0_u64);
             final_size += git_dir_size;
             println!(
-                "{:50} {:10.2} MB",
+                "{:50} {:>10}",
                 format!(
                     "Total size of {} .cargo/git crates:",
                     crate_list.installed_git().len()
                 ),
-                git_dir_size
+                convert(git_dir_size as f64)
             );
             println!(
-                "{:50} {:10.2} MB",
+                "{:50} {:>10}",
                 format!(
                     "   \u{251c} Size of {} .cargo/git/checkout folder",
                     crate_detail.git_crates_archive().len()
                 ),
-                folder_size(dir_path.checkout_dir())
+                convert(get_size(dir_path.checkout_dir()).unwrap_or(0_u64) as f64)
             );
             println!(
-                "{:50} {:10.2} MB",
+                "{:50} {:>10}",
                 format!(
                     "   \u{2514} Size of {} .cargo/git/db folder",
                     crate_detail.git_crates_source().len()
                 ),
-                folder_size(dir_path.db_dir())
+                convert(get_size(dir_path.db_dir()).unwrap_or(0_u64) as f64)
             );
             print_dash();
         }
         if query_size_app || query_size_registry {
-            let registry_dir_size = folder_size(dir_path.registry_dir());
+            let registry_dir_size =
+                get_size(dir_path.registry_dir()).expect("failed to get size of registry dir");
             final_size += registry_dir_size;
             println!(
-                "{:50} {:10.2} MB",
+                "{:50} {:>10}",
                 format!(
                     "Total size of {} .cargo/registry crates:",
                     crate_list.installed_registry().len()
                 ),
-                registry_dir_size
+                convert(registry_dir_size as f64)
             );
             println!(
-                "{:50} {:10.2} MB",
+                "{:50} {:>10}",
                 format!(
                     "   \u{251c} Size of {} .cargo/registry/cache folder",
                     crate_detail.registry_crates_archive().len()
                 ),
-                folder_size(dir_path.cache_dir())
+                convert(get_size(dir_path.cache_dir()).unwrap_or(0_u64) as f64)
             );
             println!(
-                "{:50} {:10.2} MB",
+                "{:50} {:>10}",
                 "   \u{251c} Size of .cargo/registry/index folder",
-                folder_size(dir_path.index_dir())
+                convert(get_size(dir_path.index_dir()).unwrap_or(0_u64) as f64)
             );
             println!(
-                "{:50} {:10.2} MB",
+                "{:50} {:>10}",
                 format!(
                     "   \u{2514} Size of {} .cargo/git/src folder",
                     crate_detail.registry_crates_source().len()
                 ),
-                folder_size(dir_path.src_dir())
+                convert(get_size(dir_path.src_dir()).unwrap_or(0_u64) as f64)
             );
             print_dash();
         }
         println!(
-            "{:50} {:10.2} MB",
+            "{:50} {:>10}",
             format!(
                 "Total size occupied by {}",
                 std::env::var("CARGO_HOME").expect("No environmental variable CARGO_HOME present")
             ),
-            final_size
+            convert(final_size as f64)
         );
     }
 }
