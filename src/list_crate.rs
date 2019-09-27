@@ -180,10 +180,16 @@ impl CrateList {
                 if used_crate_git.is_empty() {
                     orphan_crate_git.push(crates.to_string());
                 }
+                let mut used_in_project = false;
                 for used in &used_crate_git {
-                    if !used.contains(split_installed[1]) {
-                        orphan_crate_git.push(crates.to_string())
+                    if used.contains(split_installed[1]) {
+                        used_in_project = true;
+                        // Break if found to be used one time no need to check for other
+                        break;
                     }
+                }
+                if !used_in_project {
+                    orphan_crate_git.push(crates.to_string());
                 }
             } else if !used_crate_git.contains(crates) {
                 orphan_crate_git.push(crates.to_string());
@@ -317,7 +323,7 @@ fn read_content(list: &[PathBuf], db_dir: &Path) -> (Vec<String>, Vec<String>) {
                             present_crate_registry.push(full_name);
                         }
                         if source.contains("git+") {
-                            let mut path_db = db_dir.to_path_buf();
+                            let mut path_db_list = Vec::new();
                             for git_db in fs::read_dir(db_dir).expect("failed to read git db dir") {
                                 let entry = git_db.unwrap().path();
                                 let file_name = entry
@@ -326,49 +332,54 @@ fn read_content(list: &[PathBuf], db_dir: &Path) -> (Vec<String>, Vec<String>) {
                                     .to_str()
                                     .expect("failed to convert OS str to str");
                                 if file_name.contains(name) {
+                                    let mut path_db = db_dir.to_path_buf();
                                     path_db.push(&file_name);
-                                    break;
+                                    path_db_list.push(path_db);
                                 }
                             }
-                            if source.contains("?rev=") {
-                                let rev: Vec<&str> = source.split("?rev=").collect();
-                                let rev_sha: Vec<&str> = rev[1].split('#').collect();
-                                let rev_value = rev_sha[1].to_string();
-                                let rev_short_form = &rev_value[..=6];
-                                let full_name = format!("{}-{}", name, rev_short_form);
-                                present_crate_git.push(full_name);
-                            } else if source.contains("?branch=") || source.contains("?tag=") {
-                                let branch: Vec<&str> = if source.contains("?branch=") {
-                                    source.split("?branch=").collect()
+                            for path_db in path_db_list {
+                                if source.contains("?rev=") {
+                                    let rev: Vec<&str> = source.split("?rev=").collect();
+                                    let rev_sha: Vec<&str> = rev[1].split('#').collect();
+                                    let rev_value = rev_sha[1].to_string();
+                                    let rev_short_form = &rev_value[..=6];
+                                    let full_name = format!("{}-{}", name, rev_short_form);
+                                    present_crate_git.push(full_name);
+                                } else if source.contains("?branch=") || source.contains("?tag=") {
+                                    let branch: Vec<&str> = if source.contains("?branch=") {
+                                        source.split("?branch=").collect()
+                                    } else {
+                                        source.split("?tag=").collect()
+                                    };
+                                    let branch: Vec<&str> = branch[1].split('#').collect();
+                                    let branch_value = branch[0];
+                                    let output = std::process::Command::new("git")
+                                        .arg("log")
+                                        .arg("--pretty=format:%h")
+                                        .arg("--max-count=1")
+                                        .arg(branch_value)
+                                        .current_dir(path_db)
+                                        .output()
+                                        .expect(
+                                            "failed to execute command for pretty log of branch",
+                                        );
+                                    let rev_value = std::str::from_utf8(&output.stdout)
+                                        .expect("stdout is not utf8");
+                                    let full_name = format!("{}-{}", name, rev_value);
+                                    present_crate_git.push(full_name);
                                 } else {
-                                    source.split("?tag=").collect()
-                                };
-                                let branch: Vec<&str> = branch[1].split('#').collect();
-                                let branch_value = branch[0];
-                                let output = std::process::Command::new("git")
-                                    .arg("log")
-                                    .arg("--pretty=format:%h")
-                                    .arg("--max-count=1")
-                                    .arg(branch_value)
-                                    .current_dir(path_db)
-                                    .output()
-                                    .expect("failed to execute command for pretty log of branch");
-                                let rev_value = std::str::from_utf8(&output.stdout)
-                                    .expect("stdout is not utf8");
-                                let full_name = format!("{}-{}", name, rev_value);
-                                present_crate_git.push(full_name);
-                            } else {
-                                let output = std::process::Command::new("git")
-                                    .arg("log")
-                                    .arg("--pretty=format:%h")
-                                    .arg("--max-count=1")
-                                    .current_dir(path_db)
-                                    .output()
-                                    .expect("failed to process command");
-                                let rev_value =
-                                    std::str::from_utf8(&output.stdout).expect("stdout is not ut8");
-                                let full_name = format!("{}-{}", name, rev_value);
-                                present_crate_git.push(full_name);
+                                    let output = std::process::Command::new("git")
+                                        .arg("log")
+                                        .arg("--pretty=format:%h")
+                                        .arg("--max-count=1")
+                                        .current_dir(path_db)
+                                        .output()
+                                        .expect("failed to process command");
+                                    let rev_value = std::str::from_utf8(&output.stdout)
+                                        .expect("stdout is not ut8");
+                                    let full_name = format!("{}-{}", name, rev_value);
+                                    present_crate_git.push(full_name);
+                                }
                             }
                         }
                     }
