@@ -107,6 +107,7 @@ impl CrateList {
             }
         }
         old_crate_registry.sort();
+        old_crate_registry.dedup();
 
         // list old git crate
         let mut old_crate_git = Vec::new();
@@ -143,6 +144,7 @@ impl CrateList {
             }
         }
         old_crate_git.sort();
+        old_crate_git.dedup();
 
         // list all used crates in rust program
         let mut used_crate_registry = Vec::new();
@@ -195,6 +197,11 @@ impl CrateList {
                 orphan_crate_git.push(crates.to_string());
             }
         }
+        orphan_crate_registry.sort();
+        orphan_crate_registry.dedup();
+        orphan_crate_git.sort();
+        orphan_crate_git.dedup();
+
         Self {
             installed_bin,
             installed_crate_registry,
@@ -502,7 +509,8 @@ fn get_installed_crate_git(
             let crate_size = get_size(path).expect("failed to get size of db dir folders");
             let file_name = path.file_name().expect("failed to get file name");
             let file_name = file_name.to_str().unwrap().to_string();
-            let full_name = format!("{}-HEAD", file_name);
+            let splitted_name = file_name.rsplitn(2, '-').collect::<Vec<&str>>();
+            let full_name = format!("{}-HEAD", splitted_name[1]);
             crate_detail.add_git_crate_source(full_name.to_owned(), crate_size);
             installed_crate_git.push(full_name);
         }
