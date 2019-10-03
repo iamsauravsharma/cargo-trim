@@ -13,9 +13,10 @@ pull_request_rules:
     conditions:
       - author=iamsauravsharma
       - status-success=DCO
-      - label!=work in progress
+      - label!=WIP
       - status-success=Travis CI - Branch
       - status-success=Travis CI - Pull Request
+      - status-success=WIP
     actions:
       delete_head_branch: {}
       merge:
@@ -25,10 +26,11 @@ pull_request_rules:
       - "#approved-reviews-by>=1"
       - "#changes-requested-reviews-by=0"
       - approved-reviews-by=iamsauravsharma
-      - label!=work in progress
+      - label!=WIP
       - status-success=DCO
       - status-success=Travis CI - Branch
       - status-success=Travis CI - Pull Request
+      - status-success=WIP
     actions:
       merge:
        strict: smart
