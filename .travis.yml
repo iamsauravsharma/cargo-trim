@@ -1,19 +1,17 @@
 language: rust
 
-rust:
-  - stable
-  - beta
-  - nightly
-
 git:
   depth: false
  
 dist: xenial
-  
-os:
-  - linux
-  - osx
-  - windows
+
+matrix:
+  include:
+  - os: linux
+  - os: osx
+  - os: windows
+  - rust: beta
+  - rust: nightly
 
 install:
   - rustup component add rustfmt && RUSTFMT="yes" || RUSTFMT="no"

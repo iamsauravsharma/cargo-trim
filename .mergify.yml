@@ -1,36 +1,48 @@
 pull_request_rules:
-  - name: automatic merge renovate bot PR
+
+  -
+    name: 'automatic merge renovate bot PR'
     conditions:
-      - author=renovate[bot]
+      - 'author=renovate[bot]'
       - label=dependencies
-      - status-success=Travis CI - Branch
-      - status-success=Travis CI - Pull Request
+      - 'status-success=Travis CI - Branch'
+      - 'status-success=Travis CI - Pull Request'
     actions:
       delete_head_branch: {}
       merge:
-       strict: smart
-  - name: merge iamsauravsharma PR
+        strict: smart
+
+  -
+    name: 'merge iamsauravsharma PR'
     conditions:
       - author=iamsauravsharma
-      - status-success=DCO
       - label!=WIP
-      - status-success=Travis CI - Branch
-      - status-success=Travis CI - Pull Request
+      - '-conflict'
+      - status-success=DCO
+      - status-success=CommitCheck
+      - 'status-success=Travis CI - Branch'
+      - 'status-success=Travis CI - Pull Request'
       - status-success=WIP
     actions:
       delete_head_branch: {}
       merge:
-       strict: smart
-  - name: merge reviewed check pass commit
+        strict: smart
+
+  -
+    name: 'merge reviewed checked and status success PR'
     conditions:
-      - "#approved-reviews-by>=1"
-      - "#changes-requested-reviews-by=0"
+      - '#approved-reviews-by>=1'
+      - '#changes-requested-reviews-by=0'
       - approved-reviews-by=iamsauravsharma
+      - '-conflict'
       - label!=WIP
       - status-success=DCO
-      - status-success=Travis CI - Branch
-      - status-success=Travis CI - Pull Request
+      - status-success=CommitCheck
+      - 'status-success=Travis CI - Branch'
+      - 'status-success=Travis CI - Pull Request'
       - status-success=WIP
     actions:
+      dismiss_reviews:
+        changes_requested: False
       merge:
-       strict: smart
+        strict: smart
