@@ -1,28 +1,16 @@
 # CARGO-TRIM
 
-**Status:**
+**Project status & info:**
 
-| Travis Build Status | Dependency Status |
-| :---: | :---: | 
-| [![Travis Build Status][build_badge]][build_link] | [![Dependency status][deps_badge]][deps_link] |
+| Travis Build Status | Dependency Status | License | Crates Version |
+| :---: | :---: | :---: | :---: |
+| [![Travis Build Status][build_badge]][build_link] | [![Dependency status][deps_badge]][deps_link] | [![License: MIT][license_badge]][license_link] | [![Crate][cratesio_badge]][cratesio_link] |
 
-**Project Info:**
+**Rust & OS support:**
 
-| License | LoC | Crates Version |
-| :---: | :---: | :---: |
-| [![License: MIT][license_badge]][license_link] | [![LoC][loc_badge]][loc_link] | [![Crate][cratesio_badge]][cratesio_link] |
-
-**Rust version support:**
-
-| Stable | Beta | Nightly |
-| :---: | :---: | :---: |
-| [![Stable support][stable_supported_badge]][git_link] | [![Beta support][beta_supported_badge]][git_link] | [![Nightly support][nightly_supported_badge]][git_link] |
-
-**OS support:**
-
-| Linux | OSX | Windows |
-| :---: | :---: | :---: |
-| [![Linux support][linux_supported_badge]][git_link] | [![OSX support][osx_supported_badge]][git_link] | [![Windows support][windows_supported_badge]][git_link] |
+| Stable | Beta | Nightly | Linux | OSX | Windows |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| [![Stable support][stable_supported_badge]][git_link] | [![Beta support][beta_supported_badge]][git_link] | [![Nightly support][nightly_supported_badge]][git_link] | [![Linux support][linux_supported_badge]][git_link] | [![OSX support][osx_supported_badge]][git_link] | [![Windows support][windows_supported_badge]][git_link] |
 
 Binary application for cleaning __\$CARGO_HOME/registry__  & __\$CARGO_HOME/git__ folder support orphan cleaning and old cleaning
 Default \$CARGO_HOME is set as \$HOME/.cargo
@@ -110,9 +98,6 @@ In file cargo-trim stores out information about directory of rust projects and e
 
 [license_badge]: https://img.shields.io/github/license/iamsauravsharma/cargo-trim.svg
 [license_link]: LICENSE
-
-[loc_badge]: https://tokei.rs/b1/github/iamsauravsharma/cargo-trim
-[loc_link]: https://github.com/iamsauravsharma/cargo-trim
 
 [cratesio_badge]: https://img.shields.io/crates/v/cargo-trim.svg
 [cratesio_link]: https://crates.io/crates/cargo-trim
