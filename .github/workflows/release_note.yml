@@ -1,0 +1,30 @@
+name: 'Publish Release note'
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  cargo-build:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        uses: actions/checkout@master
+      -
+        name: 'cargo build'
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+  
+  publish-release-note:
+    runs-on: ubuntu-latest
+    needs:
+      - cargo-build
+    steps:
+      -
+        uses: actions/checkout@master
+      -
+        name: 'Release notary action'
+        uses: commitsar-app/release-notary@master
+        env:
+          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
