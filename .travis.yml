@@ -8,6 +8,7 @@ dist: xenial
 matrix:
   include:
   - os: linux
+    env: PUBLISH_PACKAGE=true
   - os: osx
   - os: windows
   - rust: beta
@@ -41,4 +42,7 @@ deploy:
   token: $CARGO_TOKEN
   on:
     tags: true
-    condition: $TRAVIS_OS_NAME = linux && $TRAVIS_RUST_VERSION = stable
+    condition: $PUBLISH_PACKAGE = true
+
+notifications:
+  email: false

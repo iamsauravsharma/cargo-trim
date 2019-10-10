@@ -5,6 +5,7 @@ pull_request_rules:
     conditions:
       - 'author=renovate[bot]'
       - label=dependencies
+      - approved-reviews-by=iamsauravsharma
       - 'status-success=Travis CI - Branch'
       - 'status-success=Travis CI - Pull Request'
     actions:
