@@ -1,7 +1,7 @@
-use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
+use clap::{App, AppSettings, Arg, SubCommand};
 
 // Create all list of subcommand options flag using clap
-pub(super) fn app() -> ArgMatches<'static> {
+pub(super) fn app() -> App<'static, 'static> {
     let all = Arg::with_name("all").short("a").long("all");
     let all_trim = all
         .clone()
@@ -142,6 +142,12 @@ pub(super) fn app() -> ArgMatches<'static> {
         )
         .takes_value(true);
 
+    let shell_type = Arg::with_name("shell")
+        .help("Shell name for generation script")
+        .required(true)
+        .index(1)
+        .possible_values(&["bash", "zsh", "fish", "powershell", "elvish"]);
+
     let top_crate = Arg::with_name("top crates")
         .short("t")
         .long("top")
@@ -275,7 +281,12 @@ pub(super) fn app() -> ArgMatches<'static> {
                         .about("Remove values from config file [alias: \"rm\"]")
                         .alias("rm")
                         .args(&[directory_remove, exclude_remove, include_remove]),
+                )
+                .subcommand(
+                    SubCommand::with_name("completions")
+                        .about("Generate tab-completions scripts for shell [alias: \"comp\"]")
+                        .alias("comp")
+                        .arg(shell_type),
                 ),
         )
-        .get_matches()
 }

@@ -124,3 +124,24 @@ fn test_registry_help() {
         buffer.replace("\r", "").replace("\n", "")
     );
 }
+
+// test check registry subcommand help
+#[test]
+fn test_completions_help() {
+    let output = Command::new("cargo")
+        .arg("run")
+        .arg("--")
+        .arg("trim")
+        .arg("help")
+        .arg("completions")
+        .output()
+        .expect("failed to execute process");
+    let output = String::from_utf8(output.stdout).unwrap();
+    let mut buffer = String::new();
+    let mut file = std::fs::File::open("tests/command_output/completions.txt").unwrap();
+    file.read_to_string(&mut buffer).unwrap();
+    assert_eq!(
+        output.replace("\r", "").replace("\n", ""),
+        buffer.replace("\r", "").replace("\n", "")
+    );
+}

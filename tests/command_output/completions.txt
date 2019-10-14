@@ -1,0 +1,12 @@
+cargo-trim-completions 0.4.2
+Generate tab-completions scripts for shell [alias: "comp"]
+
+USAGE:
+    cargo trim completions <shell>
+
+FLAGS:
+    -h, --help       Prints help information
+    -V, --version    Prints version information
+
+ARGS:
+    <shell>    Shell name for generation script [possible values: bash, zsh, fish, powershell, elvish]

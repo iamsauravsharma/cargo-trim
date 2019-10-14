@@ -17,7 +17,7 @@ use crate::{
     config_file::ConfigFile, crate_detail::CrateDetail, dir_path::DirPath, git_dir::GitDir,
     list_crate::CrateList, registry_dir::RegistryDir,
 };
-use clap::ArgMatches;
+use clap::{ArgMatches, Shell};
 use colored::*;
 use fs_extra::dir::get_size;
 use pretty_bytes::converter::convert;
@@ -28,8 +28,43 @@ fn main() {
     let dir_path = DirPath::set_dir_path();
     let mut file = fs::File::open(dir_path.config_dir().to_str().unwrap())
         .expect("failed to open config dir folder");
-    let app = create_app::app();
+    let app = create_app::app().get_matches();
     let app = app.subcommand_matches("trim").unwrap();
+    if app.is_present("completions") {
+        let shell_value = app
+            .subcommand_matches("completions")
+            .unwrap()
+            .value_of("shell")
+            .unwrap();
+        match shell_value {
+            "bash" => create_app::app().gen_completions_to(
+                "cargo-trim",
+                Shell::Bash,
+                &mut std::io::stdout(),
+            ),
+            "fish" => create_app::app().gen_completions_to(
+                "cargo-trim",
+                Shell::Fish,
+                &mut std::io::stdout(),
+            ),
+            "zsh" => create_app::app().gen_completions_to(
+                "cargo-trim",
+                Shell::Zsh,
+                &mut std::io::stdout(),
+            ),
+            "powershell" => create_app::app().gen_completions_to(
+                "cargo-trim",
+                Shell::PowerShell,
+                &mut std::io::stdout(),
+            ),
+            "elvish" => create_app::app().gen_completions_to(
+                "cargo-trim",
+                Shell::Elvish,
+                &mut std::io::stdout(),
+            ),
+            _ => {}
+        }
+    }
     let mut git_subcommand = &ArgMatches::new();
     let mut registry_subcommand = &ArgMatches::new();
     if app.is_present("git") {
