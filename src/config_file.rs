@@ -1,3 +1,4 @@
+use colored::*;
 use serde_derive::{Deserialize, Serialize};
 use std::{fs, io::Read, path::PathBuf};
 
@@ -83,12 +84,15 @@ pub(crate) fn modify_config_file(
 
     // clear working directory from config file
     if app.is_present("clear") {
+        let subcommand = app.subcommand_matches("clear").unwrap();
+        let dry_run = app.is_present("dry-run") || subcommand.is_present("dry run");
         remove_item_crate(
             &mut deserialize_config.directory,
             std::env::current_dir()
                 .expect("Current working directory is invalid")
                 .to_str()
-                .expect("failed to convert current directory PAth to str"),
+                .expect("failed to convert current directory Path to str"),
+            dry_run,
         )
     }
 
@@ -96,19 +100,20 @@ pub(crate) fn modify_config_file(
     if app.is_present("remove") {
         let subcommand = app.subcommand_matches("remove").unwrap();
         for &name in &["directory", "exclude", "include"] {
+            let dry_run = app.is_present("dry run") || subcommand.is_present("dry run");
             if subcommand.is_present(name) {
                 let value = subcommand
                     .value_of(name)
                     .expect("No value is present for remove value from config file flag")
                     .to_string();
                 if name == "directory" {
-                    remove_item_crate(&mut deserialize_config.directory, &value);
+                    remove_item_crate(&mut deserialize_config.directory, &value, dry_run);
                 }
                 if name == "exclude" {
-                    remove_item_crate(&mut deserialize_config.exclude, &value);
+                    remove_item_crate(&mut deserialize_config.exclude, &value, dry_run);
                 }
                 if name == "include" {
-                    remove_item_crate(&mut deserialize_config.include, &value);
+                    remove_item_crate(&mut deserialize_config.include, &value, dry_run);
                 }
             }
         }
@@ -123,6 +128,11 @@ pub(crate) fn modify_config_file(
 }
 
 // helper function to help in removing certain value from a config file
-fn remove_item_crate(data: &mut Vec<String>, value: &str) {
-    data.retain(|data| data != value);
+fn remove_item_crate(data: &mut Vec<String>, value: &str, dry_run: bool) {
+    if dry_run {
+        println!("{} {} {:?}", "Dry run:".yellow(), "removed".red(), value);
+    } else {
+        data.retain(|data| data != value);
+        println!("{} {:?}", "Removed".red(), value);
+    }
 }

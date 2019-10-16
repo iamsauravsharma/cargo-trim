@@ -8,6 +8,7 @@ pub(crate) struct RegistryDir {
     src_dir: String,
     index_cache_dir: Vec<String>,
     installed_crate: Vec<String>,
+    dry_run: bool,
 }
 
 impl RegistryDir {
@@ -17,6 +18,7 @@ impl RegistryDir {
         src_dir: &Path,
         index_dir: &Path,
         installed_crate: &[String],
+        dry_run: bool,
     ) -> Self {
         let cache_dir = cache_dir.to_str().unwrap().to_string();
         let src_dir = src_dir.to_str().unwrap().to_string();
@@ -40,13 +42,14 @@ impl RegistryDir {
             src_dir,
             index_cache_dir,
             installed_crate: installed_crate.to_owned(),
+            dry_run,
         }
     }
 
     // Remove crate from src & cache directory
     pub(crate) fn remove_crate(&mut self, crate_name: &str) {
-        remove_crate(Path::new(&self.cache_dir), crate_name);
-        remove_crate(Path::new(&self.src_dir), crate_name);
+        remove_crate(Path::new(&self.cache_dir), crate_name, self.dry_run);
+        remove_crate(Path::new(&self.src_dir), crate_name, self.dry_run);
         let splitted_value: Vec<&str> = crate_name.rsplitn(2, '-').collect();
         let name = splitted_value[1];
         let index_cache = self.index_cache_dir.to_owned();
@@ -62,7 +65,16 @@ impl RegistryDir {
             remove_empty_index_cache_dir(Path::new(&index_cache_dir));
             self.installed_crate.retain(|x| x != crate_name);
         });
-        println!("{} {:?}", "Removed".red(), crate_name);
+        if self.dry_run {
+            println!(
+                "{} {} {:?}",
+                "Dry run:".yellow(),
+                "removed".red(),
+                crate_name
+            );
+        } else {
+            println!("{} {:?}", "Removed".red(), crate_name);
+        }
     }
 
     // Remove list of crates
@@ -118,7 +130,7 @@ impl RegistryDir {
 }
 
 // Remove crates which name is provided to delete
-fn remove_crate(path: &Path, value: &str) {
+fn remove_crate(path: &Path, value: &str, dry_run: bool) {
     for entry in fs::read_dir(path).expect("failed to read index or cache dir") {
         let entry = entry.unwrap();
         let path = entry.path();
@@ -126,9 +138,9 @@ fn remove_crate(path: &Path, value: &str) {
             let entry = entry.unwrap();
             let path = entry.path();
             if path.to_str().unwrap().contains(value) {
-                if path.is_file() {
+                if path.is_file() && !dry_run {
                     fs::remove_file(&path).expect("failed to remove file");
-                } else if path.is_dir() {
+                } else if path.is_dir() && !dry_run {
                     fs::remove_dir_all(&path).expect("failed to remove all directory contents");
                 }
             }

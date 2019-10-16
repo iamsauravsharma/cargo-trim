@@ -23,9 +23,14 @@ pub(super) fn app() -> App<'static, 'static> {
     let directory_config = directory.clone().help("Query about directory data");
     let directory_remove = directory
         .clone()
-        .help("directory name to be removed")
+        .help("directory to be removed")
         .takes_value(true)
         .value_name("Folder");
+
+    let dry_run = Arg::with_name("dry run")
+        .short("z")
+        .long("dry-run")
+        .help("Run command in dry run mode to see what would be removed");
 
     let exclude = Arg::with_name("exclude").short("e").long("exclude");
     let exclude_config = exclude.clone().help("Query about exclude data");
@@ -202,6 +207,7 @@ pub(super) fn app() -> App<'static, 'static> {
                     all_trim,
                     clear_config,
                     exclude_conf,
+                    dry_run.clone(),
                     force_remove.clone(),
                     git_compress,
                     include_conf,
@@ -229,7 +235,8 @@ pub(super) fn app() -> App<'static, 'static> {
                             "Clear current working directory from cargo cache config [alias: \
                              \"clr\"]",
                         )
-                        .alias("clr"),
+                        .alias("clr")
+                        .arg(dry_run.clone()),
                 )
                 .subcommand(
                     SubCommand::with_name("config")
@@ -243,6 +250,7 @@ pub(super) fn app() -> App<'static, 'static> {
                         .alias("g")
                         .args(&[
                             all_git,
+                            dry_run.clone(),
                             force_remove.clone(),
                             light_cleanup_git,
                             old_clean.clone(),
@@ -261,6 +269,7 @@ pub(super) fn app() -> App<'static, 'static> {
                         .alias("reg")
                         .args(&[
                             all_registry,
+                            dry_run.clone(),
                             force_remove.clone(),
                             light_cleanup_registry,
                             old_clean.clone(),
@@ -280,7 +289,12 @@ pub(super) fn app() -> App<'static, 'static> {
                     SubCommand::with_name("remove")
                         .about("Remove values from config file [alias: \"rm\"]")
                         .alias("rm")
-                        .args(&[directory_remove, exclude_remove, include_remove]),
+                        .args(&[
+                            directory_remove,
+                            dry_run.clone(),
+                            exclude_remove,
+                            include_remove,
+                        ]),
                 )
                 .subcommand(
                     SubCommand::with_name("completions")
