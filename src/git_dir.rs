@@ -6,27 +6,38 @@ use std::{fs, path::Path};
 pub(crate) struct GitDir {
     checkout_dir: String,
     db_dir: String,
+    dry_run: bool,
 }
 
 impl GitDir {
     // create new GitDir
-    pub(crate) fn new(checkout_dir: &Path, db_dir: &Path) -> Self {
+    pub(crate) fn new(checkout_dir: &Path, db_dir: &Path, dry_run: bool) -> Self {
         let checkout_dir = checkout_dir.to_str().unwrap().to_string();
         let db_dir = db_dir.to_str().unwrap().to_string();
         Self {
             checkout_dir,
             db_dir,
+            dry_run,
         }
     }
 
     // remove crates
     pub(crate) fn remove_crate(&self, crate_name: &str) {
         if crate_name.contains("-HEAD") {
-            remove_crate(Path::new(&self.db_dir), crate_name);
+            remove_crate(Path::new(&self.db_dir), crate_name, self.dry_run);
         } else {
-            remove_crate(Path::new(&self.checkout_dir), crate_name);
+            remove_crate(Path::new(&self.checkout_dir), crate_name, self.dry_run);
         }
-        println!("{} {:?}", "Removed".red(), crate_name);
+        if self.dry_run {
+            println!(
+                "{} {} {:?}",
+                "Dry run:".yellow(),
+                "removed".red(),
+                crate_name
+            );
+        } else {
+            println!("{} {:?}", "Removed".red(), crate_name);
+        }
     }
 
     // Remove list of crates
@@ -81,7 +92,7 @@ impl GitDir {
 }
 
 // preform remove operation
-fn remove_crate(location: &Path, crate_name: &str) {
+fn remove_crate(location: &Path, crate_name: &str, dry_run: bool) {
     for entry in fs::read_dir(location).expect("failed to read directory") {
         let entry = entry.unwrap();
         let path = entry.path();
@@ -89,7 +100,7 @@ fn remove_crate(location: &Path, crate_name: &str) {
         let crate_name = name[1];
         let rev_sha = name[0];
         if path.to_str().unwrap().contains(crate_name) {
-            if rev_sha.contains("HEAD") {
+            if rev_sha.contains("HEAD") && !dry_run {
                 fs::remove_dir_all(&path).expect("failed to remove all directory");
             } else {
                 for rev in fs::read_dir(path).expect("failed to read git checkout directory") {
@@ -100,7 +111,7 @@ fn remove_crate(location: &Path, crate_name: &str) {
                         .expect("path is terminating with ..")
                         .to_str()
                         .unwrap();
-                    if file_name == rev_sha {
+                    if file_name == rev_sha && !dry_run {
                         fs::remove_dir_all(&path)
                             .expect("failed to remove all directory from Path");
                     }

@@ -6,6 +6,7 @@ USAGE:
 
 FLAGS:
     -a, --all             Clean up all .cargo/registry follow config file data
+    -z, --dry-run         Run command in dry run mode to see what would be removed
     -f, --force           Force clear cache without reading conf file
     -h, --help            Prints help information
     -l, --light           Light cleanup repos by removing registry source but stores registry archive for future

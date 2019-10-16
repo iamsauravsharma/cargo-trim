@@ -2,13 +2,14 @@ cargo-trim-remove 0.4.2
 Remove values from config file [alias: "rm"]
 
 USAGE:
-    cargo trim remove [OPTIONS]
+    cargo trim remove [FLAGS] [OPTIONS]
 
 FLAGS:
+    -z, --dry-run    Run command in dry run mode to see what would be removed
     -h, --help       Prints help information
     -V, --version    Prints version information
 
 OPTIONS:
-    -d, --directory <Folder>    directory name to be removed
+    -d, --directory <Folder>    directory to be removed
     -e, --exclude <Crate>       Remove crate from exclude
     -i, --include <Crate>       Remove crate from include

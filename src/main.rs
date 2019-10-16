@@ -74,6 +74,10 @@ fn main() {
         registry_subcommand = app.subcommand_matches("registry").unwrap();
     }
 
+    let dry_run_app = app.is_present("dry run");
+    let dry_run_git = git_subcommand.is_present("dry run");
+    let dry_run_registry = registry_subcommand.is_present("dry run");
+
     // Perform all modification of config file flag and subcommand operation
     let config_file = config_file::modify_config_file(&mut file, app, &dir_path.config_dir());
 
@@ -89,8 +93,13 @@ fn main() {
         &dir_path.src_dir(),
         &dir_path.index_dir(),
         list_crate.installed_registry(),
+        dry_run_app || dry_run_registry,
     );
-    let git_crates_location = git_dir::GitDir::new(&dir_path.checkout_dir(), &dir_path.db_dir());
+    let git_crates_location = git_dir::GitDir::new(
+        &dir_path.checkout_dir(),
+        &dir_path.db_dir(),
+        dry_run_app || dry_run_git,
+    );
 
     // Perform action of removing config file with -c flag
     clear_config(&app, &dir_path);
@@ -112,6 +121,7 @@ fn main() {
         &dir_path.src_dir(),
         &dir_path.index_dir(),
         (light_cleanup_app, light_cleanup_git, light_cleanup_registry),
+        (dry_run_app, dry_run_git, dry_run_registry),
     );
 
     // Perform action on list subcommand
@@ -173,6 +183,7 @@ fn main() {
     force_remove(
         &dir_path,
         (force_remove_app, force_remove_git, force_remove_registry),
+        (dry_run_app, dry_run_git, dry_run_registry),
     );
 
     // Remove all crates by following config file
@@ -201,8 +212,12 @@ fn main() {
 // Clear config file data
 fn clear_config(app: &ArgMatches, dir_path: &DirPath) {
     if app.is_present("clear config") {
-        fs::remove_file(dir_path.config_dir().as_path()).expect("failed to delete config file");
-        println!("Cleared Config file");
+        if app.is_present("dry run") {
+            println!("{} Cleared config file", "Dry run:".yellow());
+        } else {
+            fs::remove_file(dir_path.config_dir().as_path()).expect("failed to delete config file");
+            println!("Cleared config file");
+        }
     }
 }
 
@@ -303,16 +318,18 @@ fn run_git_compress_commands(repo_path: &PathBuf) {
     }
 }
 
-// light cleanup unused directory
+// light cleanup registry directory
 fn light_cleanup(
     checkout_dir: &PathBuf,
     src_dir: &PathBuf,
     index_dir: &PathBuf,
     (light_cleanup_app, light_cleanup_git, light_cleanup_registry): (bool, bool, bool),
+    (dry_run_app, dry_run_git, dry_run_registry): (bool, bool, bool),
 ) {
     if light_cleanup_app || light_cleanup_git || light_cleanup_registry {
         if light_cleanup_app || light_cleanup_registry {
-            delete_folder(checkout_dir);
+            let dry_run = dry_run_app || dry_run_registry;
+            delete_folder(checkout_dir, dry_run);
             // Delete out .cache folder also
             for entry in fs::read_dir(index_dir).expect("failed to read out index directory") {
                 let entry = entry.unwrap().path();
@@ -325,13 +342,14 @@ fn light_cleanup(
                         .file_name()
                         .expect("failed to get file name form registry directory sub folder");
                     if folder_name == ".cache" {
-                        delete_folder(&folder);
+                        delete_folder(&folder, dry_run);
                     }
                 }
             }
         }
         if light_cleanup_app || light_cleanup_git {
-            delete_folder(src_dir);
+            let dry_run = dry_run_app || dry_run_git;
+            delete_folder(src_dir, dry_run);
         }
     }
 }
@@ -601,11 +619,13 @@ fn config_subcommand(app: &ArgMatches, config_file: &ConfigFile) {
 fn force_remove(
     dir_path: &DirPath,
     (force_remove_app, force_remove_git, force_remove_registry): (bool, bool, bool),
+    (dry_run_app, dry_run_git, dry_run_registry): (bool, bool, bool),
 ) {
     if force_remove_app || force_remove_git || force_remove_registry {
         if force_remove_app || force_remove_registry {
-            delete_folder(&dir_path.cache_dir());
-            delete_folder(&dir_path.src_dir());
+            let dry_run = dry_run_app || dry_run_registry;
+            delete_folder(&dir_path.cache_dir(), dry_run);
+            delete_folder(&dir_path.src_dir(), dry_run);
             // Delete out .cache folder also
             let index_path = dir_path.index_dir();
             for entry in fs::read_dir(index_path)
@@ -619,14 +639,15 @@ fn force_remove(
                     let folder = folder.unwrap().path();
                     let folder_name = folder.file_name().unwrap();
                     if folder_name == ".cache" {
-                        delete_folder(&folder);
+                        delete_folder(&folder, dry_run);
                     }
                 }
             }
         }
         if force_remove_app || force_remove_git {
-            delete_folder(&dir_path.checkout_dir());
-            delete_folder(&dir_path.db_dir());
+            let dry_run = dry_run_app || dry_run_git;
+            delete_folder(&dir_path.checkout_dir(), dry_run);
+            delete_folder(&dir_path.db_dir(), dry_run);
         }
         println!("{}", "Successfully removed all crates".red());
     }
@@ -812,22 +833,28 @@ fn update_cargo_toml(app: &ArgMatches, cargo_toml_location: &[PathBuf]) {
 fn wipe_directory(app: &ArgMatches, dir_path: &DirPath) {
     if app.is_present("wipe") {
         let value = app.value_of("wipe").unwrap();
+        let dry_run = app.is_present("dry run");
         match value {
-            "git" => delete_folder(&dir_path.git_dir()),
-            "checkouts" => delete_folder(&dir_path.checkout_dir()),
-            "db" => delete_folder(&dir_path.db_dir()),
-            "registry" => delete_folder(&dir_path.registry_dir()),
-            "cache" => delete_folder(&dir_path.cache_dir()),
-            "index" => delete_folder(&dir_path.index_dir()),
-            "src" => delete_folder(&dir_path.src_dir()),
+            "git" => delete_folder(&dir_path.git_dir(), dry_run),
+            "checkouts" => delete_folder(&dir_path.checkout_dir(), dry_run),
+            "db" => delete_folder(&dir_path.db_dir(), dry_run),
+            "registry" => delete_folder(&dir_path.registry_dir(), dry_run),
+            "cache" => delete_folder(&dir_path.cache_dir(), dry_run),
+            "index" => delete_folder(&dir_path.index_dir(), dry_run),
+            "src" => delete_folder(&dir_path.src_dir(), dry_run),
             _ => (),
         }
     }
 }
 
 // delete folder with folder path provided
-fn delete_folder(path: &PathBuf) {
+fn delete_folder(path: &PathBuf, dry_run: bool) {
     if path.exists() {
-        fs::remove_dir_all(path).expect("failed to remove all directory content");
+        if dry_run {
+            println!("{} {} {:?}", "Dry run:".yellow(), "removed".red(), path);
+        } else {
+            fs::remove_dir_all(path).expect("failed to remove all directory content");
+            println!("{} {:?}", "Removed".red(), path);
+        }
     }
 }
