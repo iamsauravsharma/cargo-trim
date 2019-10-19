@@ -100,8 +100,12 @@ fn remove_crate(location: &Path, crate_name: &str, dry_run: bool) {
         let crate_name = name[1];
         let rev_sha = name[0];
         if path.to_str().unwrap().contains(crate_name) {
-            if rev_sha.contains("HEAD") && !dry_run {
-                fs::remove_dir_all(&path).expect("failed to remove all directory");
+            if rev_sha.contains("HEAD") {
+                if dry_run {
+                    println!("{} {} {:?}", "Dry run:".yellow(), "removed".red(), path);
+                } else {
+                    fs::remove_dir_all(&path).expect("failed to remove all directory");
+                }
             } else {
                 for rev in fs::read_dir(path).expect("failed to read git checkout directory") {
                     let entry = rev.unwrap();
@@ -111,9 +115,13 @@ fn remove_crate(location: &Path, crate_name: &str, dry_run: bool) {
                         .expect("path is terminating with ..")
                         .to_str()
                         .unwrap();
-                    if file_name == rev_sha && !dry_run {
-                        fs::remove_dir_all(&path)
-                            .expect("failed to remove all directory from Path");
+                    if file_name == rev_sha {
+                        if dry_run {
+                            println!("{} {} {:?}", "Dry run:".yellow(), "removed".red(), path);
+                        } else {
+                            fs::remove_dir_all(&path)
+                                .expect("failed to remove all directory from Path");
+                        }
                     }
                 }
             }

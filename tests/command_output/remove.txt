@@ -5,11 +5,11 @@ USAGE:
     cargo trim remove [FLAGS] [OPTIONS]
 
 FLAGS:
-    -z, --dry-run    Run command in dry run mode to see what would be removed
+    -n, --dry-run    Run command in dry run mode to see what would be removed
     -h, --help       Prints help information
     -V, --version    Prints version information
 
 OPTIONS:
-    -d, --directory <Folder>    directory to be removed
-    -e, --exclude <Crate>       Remove crate from exclude
-    -i, --include <Crate>       Remove crate from include
+    -d, --directory <directory>    directory to be removed
+    -e, --exclude <crate>          Remove crate from exclude
+    -i, --include <crate>          Remove crate from include

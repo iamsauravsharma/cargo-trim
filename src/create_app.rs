@@ -25,10 +25,10 @@ pub(super) fn app() -> App<'static, 'static> {
         .clone()
         .help("directory to be removed")
         .takes_value(true)
-        .value_name("Folder");
+        .value_name("directory");
 
     let dry_run = Arg::with_name("dry run")
-        .short("z")
+        .short("n")
         .long("dry-run")
         .help("Run command in dry run mode to see what would be removed");
 
@@ -38,7 +38,7 @@ pub(super) fn app() -> App<'static, 'static> {
         .clone()
         .help("Remove crate from exclude")
         .takes_value(true)
-        .value_name("Crate");
+        .value_name("crate");
 
     let exclude_conf = exclude
         .clone()
@@ -48,7 +48,7 @@ pub(super) fn app() -> App<'static, 'static> {
         )
         .multiple(true)
         .takes_value(true)
-        .value_name("Crate");
+        .value_name("crate");
 
     let force_remove = Arg::with_name("force remove")
         .short("f")
@@ -68,7 +68,7 @@ pub(super) fn app() -> App<'static, 'static> {
         .clone()
         .help("Remove crate from include")
         .takes_value(true)
-        .value_name("Crate");
+        .value_name("crate");
 
     let include_conf = include
         .clone()
@@ -78,7 +78,7 @@ pub(super) fn app() -> App<'static, 'static> {
         )
         .multiple(true)
         .takes_value(true)
-        .value_name("Crate");
+        .value_name("crate");
 
     let light_cleanup = Arg::with_name("light cleanup").short("l").long("light");
     let light_cleanup_trim = light_cleanup.clone().help(
@@ -134,7 +134,7 @@ pub(super) fn app() -> App<'static, 'static> {
         .help("Remove provided crates from registry or git")
         .multiple(true)
         .takes_value(true)
-        .value_name("Crate");
+        .value_name("crate");
 
     let set_directory = Arg::with_name("set directory")
         .short("s")
@@ -192,7 +192,7 @@ pub(super) fn app() -> App<'static, 'static> {
             "src",
         ])
         .takes_value(true)
-        .value_name("Folder");
+        .value_name("folder");
 
     App::new(env!("CARGO_PKG_NAME"))
         .bin_name("cargo")

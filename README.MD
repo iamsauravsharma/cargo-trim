@@ -49,6 +49,7 @@ USAGE:
 FLAGS:
     -a, --all             Clean up all .cargo/registry & .cargo/git follow config file data
     -c, --clear           Clear config file data
+    -n, --dry-run         Run command in dry run mode to see what would be removed
     -f, --force           Force clear cache without reading conf file
     -h, --help            Prints help information
     -l, --light           Light cleanup repos by removing git checkout and registry source but stores git db and
@@ -61,17 +62,17 @@ FLAGS:
     -V, --version         Prints version information
 
 OPTIONS:
-    -e, --exclude <Crate>...              add listed crates to default conf file exclude list [use $TRIM_EXCLUDE
+    -e, --exclude <crate>...              add listed crates to default conf file exclude list [use $TRIM_EXCLUDE
                                           environment variable for creating exclude list without editing conf file]
     -g, --gc <git compress>               Git compress to reduce size of .cargo [possible values: all, index, git, git-
                                           checkout, git-db]
-    -i, --include <Crate>...              add listed crates to default conf file include list [use $TRIM_INCLUDE
+    -i, --include <crate>...              add listed crates to default conf file include list [use $TRIM_INCLUDE
                                           environment variable for creating include list without editing conf file]
-    -r, --remove <Crate>...               Remove provided crates from registry or git
+    -r, --remove <crate>...               Remove provided crates from registry or git
     -s, --set-directory <Directory>...    Set directory of Rust project [use TRIM_DIRECTORY environment variable for
                                           creating directory list without editing conf file]
     -t, --top <number>                    Show certain number of top crates which have highest size
-    -w, --wipe <Folder>                   Wipe folder [possible values: git, checkouts, db, registry, cache, index, src]
+    -w, --wipe <folder>                   Wipe folder [possible values: git, checkouts, db, registry, cache, index, src]
 
 SUBCOMMANDS:
     clear          Clear current working directory from cargo cache config [alias: "clr"]
@@ -86,8 +87,8 @@ SUBCOMMANDS:
 ```
 
 ### Config file location
-cargo-trim store its config file to config directory of OS and name config file as cargo_trim_config.json.
-In file cargo-trim stores out information about directory of rust projects and exclude and include crates list.
+cargo-trim store its config file to config directory of OS and name config file as `cargo_trim_config.json`.
+In file cargo-trim stores out information about directory of rust projects and exclude and include crates list for cargo trim.
 
 [git_link]: https://github.com/iamsauravsharma/cargo-trim
 
