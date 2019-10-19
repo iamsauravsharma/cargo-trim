@@ -1,30 +1,33 @@
-name: 'Publish Release note'
+name: Publish release note
 on:
   push:
-    tags:
-      - 'v*'
-
+    tags: "v*"
 jobs:
-  cargo-build:
+
+  build:
+    name: Publish release note
     runs-on: ubuntu-latest
     steps:
-      -
-        uses: actions/checkout@master
-      -
-        name: 'cargo build'
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-  
-  publish-release-note:
-    runs-on: ubuntu-latest
-    needs:
-      - cargo-build
-    steps:
-      -
-        uses: actions/checkout@master
-      -
-        name: 'Release notary action'
-        uses: commitsar-app/release-notary@master
-        env:
-          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+
+    - name: Set up Go
+      uses: actions/setup-go@v1
+      with:
+        go-version: "1.13"
+      id: go
+
+    - name: Checkout
+      uses: actions/checkout@v1
+
+    - name: Generate Release note
+      run: |
+          # Temporary fix for https://github.com/actions/setup-go/issues/14
+          export PATH=$PATH:$(go env GOPATH)/bin
+          go get -u github.com/git-chglog/git-chglog/cmd/git-chglog
+          git-chglog $(git describe --tags) > RELEASE_NOTE.md
+
+    - name: Create GitHub release
+      uses: softprops/action-gh-release@v1
+      with:
+        body_path: RELEASE_NOTE.md
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
