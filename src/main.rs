@@ -371,21 +371,24 @@ fn list_subcommand(app: &ArgMatches, list_crate: &CrateList, crate_detail: &Crat
                 "REGISTRY OLD CRATE",
             );
             list_crate_type(crate_detail, list_crate.old_git(), "GIT OLD CRATE");
-        } else if list_subcommand.is_present("orphan") {
+        }
+        if list_subcommand.is_present("orphan") {
             list_crate_type(
                 crate_detail,
                 list_crate.orphan_registry(),
                 "REGISTRY ORPHAN CRATE",
             );
             list_crate_type(crate_detail, list_crate.orphan_git(), "GIT ORPHAN CRATE");
-        } else if list_subcommand.is_present("used") {
+        }
+        if list_subcommand.is_present("used") {
             list_crate_type(
                 crate_detail,
                 list_crate.used_registry(),
                 "REGISTRY USED CRATE",
             );
             list_crate_type(crate_detail, list_crate.used_git(), "GIT USED CRATE");
-        } else {
+        }
+        if list_subcommand.is_present("all") {
             list_crate_type(
                 crate_detail,
                 list_crate.installed_registry(),

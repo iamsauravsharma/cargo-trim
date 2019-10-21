@@ -198,6 +198,7 @@ pub(super) fn app() -> App<'static, 'static> {
         .bin_name("cargo")
         .version(env!("CARGO_PKG_VERSION"))
         .settings(&[AppSettings::GlobalVersion, AppSettings::SubcommandRequired])
+        .global_setting(AppSettings::ArgRequiredElseHelp)
         .subcommand(
             SubCommand::with_name("trim")
                 .author(env!("CARGO_PKG_AUTHORS"))
