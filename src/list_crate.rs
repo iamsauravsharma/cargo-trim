@@ -437,11 +437,11 @@ fn get_installed_crate_registry(
     let mut installed_crate_registry = Vec::new();
     if src_dir.exists() {
         for entry in fs::read_dir(src_dir).expect("failed to read src directory") {
-            let main_entry = entry.unwrap().path();
-            for entry in fs::read_dir(main_entry).expect("failed to read main entry") {
+            let registry = entry.unwrap().path();
+            for entry in fs::read_dir(registry).expect("failed to read registry folder") {
                 let entry = entry.unwrap().path();
                 let path = entry.as_path();
-                let crate_size = get_size(&path).expect("failed to get main entry sub folder path");
+                let crate_size = get_size(&path).expect("failed to get registry crate size");
                 let file_name = path
                     .file_name()
                     .expect("failed to get file name form main entry");
@@ -453,8 +453,8 @@ fn get_installed_crate_registry(
     }
     if cache_dir.exists() {
         for entry in fs::read_dir(cache_dir).expect("failed to read cache dir") {
-            let main_entry = entry.unwrap().path();
-            for entry in fs::read_dir(main_entry).expect("failed to read cache dir main entry") {
+            let registry = entry.unwrap().path();
+            for entry in fs::read_dir(registry).expect("failed to read cache dir registry folder") {
                 let entry = entry.unwrap().path();
                 let path = entry.as_path();
                 let file_name = path

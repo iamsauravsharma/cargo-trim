@@ -1,6 +1,7 @@
 #![warn(unreachable_pub, anonymous_parameters, bare_trait_objects)]
 #![deny(unsafe_code)]
-#![deny(clippy::all, clippy::pedantic)]
+#![deny(clippy::all)]
+#![warn(clippy::pedantic)]
 #![allow(clippy::cast_precision_loss, clippy::too_many_lines)]
 
 mod config_file;
@@ -30,41 +31,7 @@ fn main() {
         .expect("failed to open config dir folder");
     let app = create_app::app().get_matches();
     let app = app.subcommand_matches("trim").unwrap();
-    if app.is_present("completions") {
-        let shell_value = app
-            .subcommand_matches("completions")
-            .unwrap()
-            .value_of("shell")
-            .unwrap();
-        match shell_value {
-            "bash" => create_app::app().gen_completions_to(
-                "cargo-trim",
-                Shell::Bash,
-                &mut std::io::stdout(),
-            ),
-            "fish" => create_app::app().gen_completions_to(
-                "cargo-trim",
-                Shell::Fish,
-                &mut std::io::stdout(),
-            ),
-            "zsh" => create_app::app().gen_completions_to(
-                "cargo-trim",
-                Shell::Zsh,
-                &mut std::io::stdout(),
-            ),
-            "powershell" => create_app::app().gen_completions_to(
-                "cargo-trim",
-                Shell::PowerShell,
-                &mut std::io::stdout(),
-            ),
-            "elvish" => create_app::app().gen_completions_to(
-                "cargo-trim",
-                Shell::Elvish,
-                &mut std::io::stdout(),
-            ),
-            _ => {}
-        }
-    }
+    generate_completions(app);
     let mut git_subcommand = &ArgMatches::new();
     let mut registry_subcommand = &ArgMatches::new();
     if app.is_present("git") {
@@ -207,6 +174,45 @@ fn main() {
 
     // Wipe certain folder all together
     wipe_directory(&app, &dir_path);
+}
+
+// Generate out completions script for different shell
+fn generate_completions(app: &ArgMatches) {
+    if app.is_present("completions") {
+        let shell_value = app
+            .subcommand_matches("completions")
+            .unwrap()
+            .value_of("shell")
+            .unwrap();
+        match shell_value {
+            "bash" => create_app::app().gen_completions_to(
+                "cargo-trim",
+                Shell::Bash,
+                &mut std::io::stdout(),
+            ),
+            "fish" => create_app::app().gen_completions_to(
+                "cargo-trim",
+                Shell::Fish,
+                &mut std::io::stdout(),
+            ),
+            "zsh" => create_app::app().gen_completions_to(
+                "cargo-trim",
+                Shell::Zsh,
+                &mut std::io::stdout(),
+            ),
+            "powershell" => create_app::app().gen_completions_to(
+                "cargo-trim",
+                Shell::PowerShell,
+                &mut std::io::stdout(),
+            ),
+            "elvish" => create_app::app().gen_completions_to(
+                "cargo-trim",
+                Shell::Elvish,
+                &mut std::io::stdout(),
+            ),
+            _ => {}
+        }
+    }
 }
 
 // Clear config file data
