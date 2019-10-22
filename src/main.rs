@@ -48,28 +48,22 @@ fn main() {
     // Perform all modification of config file flag and subcommand operation
     let config_file = config_file::modify_config_file(&mut file, app, &dir_path.config_dir());
 
-    // create new CrateDetail struct
-    let mut crate_detail = CrateDetail::new();
-
-    // List out crate list
-    let list_crate = list_crate::CrateList::create_list(&dir_path, &config_file, &mut crate_detail);
-
-    // Get Location where registry crates and git crates are stored out by cargo
-    let mut registry_crates_location = registry_dir::RegistryDir::new(
-        &dir_path.cache_dir(),
-        &dir_path.src_dir(),
-        &dir_path.index_dir(),
-        list_crate.installed_registry(),
-        dry_run_app || dry_run_registry,
-    );
-    let git_crates_location = git_dir::GitDir::new(
-        &dir_path.checkout_dir(),
-        &dir_path.db_dir(),
-        dry_run_app || dry_run_git,
-    );
-
     // Perform action of removing config file with -c flag
     clear_config(&app, &dir_path);
+
+    // Query about config file information
+    config_subcommand(&app, &config_file);
+
+    // Force remove all crates without reading config file also remove index .cache
+    // folder
+    let force_remove_app = app.is_present("force remove");
+    let force_remove_git = git_subcommand.is_present("force remove");
+    let force_remove_registry = registry_subcommand.is_present("force remove");
+    force_remove(
+        &dir_path,
+        (force_remove_app, force_remove_git, force_remove_registry),
+        (dry_run_app, dry_run_git, dry_run_registry),
+    );
 
     // Perform git compress to .cargo/index
     git_compress(
@@ -91,22 +85,32 @@ fn main() {
         (dry_run_app, dry_run_git, dry_run_registry),
     );
 
-    // Perform action on list subcommand
-    list_subcommand(app, &list_crate, &crate_detail);
+    // Wipe a certain folder all together
+    wipe_directory(&app, &dir_path);
 
-    // Perform action for -q flag
-    let query_size_app = app.is_present("query size");
-    let query_size_git = git_subcommand.is_present("query size");
-    let query_size_registry = registry_subcommand.is_present("query size");
-    query_size(
-        &dir_path,
-        (query_size_app, query_size_git, query_size_registry),
-        &list_crate,
-        &crate_detail,
+    // create new CrateDetail struct
+    let mut crate_detail = CrateDetail::new();
+
+    // List out crates
+    let list_crate = list_crate::CrateList::create_list(&dir_path, &config_file, &mut crate_detail);
+
+    // Get Location where registry crates and git crates are stored out by cargo
+    let mut registry_crates_location = registry_dir::RegistryDir::new(
+        &dir_path.cache_dir(),
+        &dir_path.src_dir(),
+        &dir_path.index_dir(),
+        list_crate.installed_registry(),
+        dry_run_app || dry_run_registry,
     );
 
-    // Query about config file information
-    config_subcommand(&app, &config_file);
+    let git_crates_location = git_dir::GitDir::new(
+        &dir_path.checkout_dir(),
+        &dir_path.db_dir(),
+        dry_run_app || dry_run_git,
+    );
+
+    // Perform action on list subcommand
+    list_subcommand(app, &list_crate, &crate_detail);
 
     // Perform action on -o flag matches which remove all old crates
     let old_app = app.is_present("old clean");
@@ -133,24 +137,15 @@ fn main() {
         &crate_detail,
     );
 
-    // Remove certain crate provided with -r flag
-    remove_crate(
-        &list_crate,
-        (&app, &git_subcommand, &registry_subcommand),
-        &mut registry_crates_location,
-        &git_crates_location,
-        &crate_detail,
-    );
-
-    // Force remove all crates without reading config file also remove index .cache
-    // folder
-    let force_remove_app = app.is_present("force remove");
-    let force_remove_git = git_subcommand.is_present("force remove");
-    let force_remove_registry = registry_subcommand.is_present("force remove");
-    force_remove(
+    // Perform action for -q flag
+    let query_size_app = app.is_present("query size");
+    let query_size_git = git_subcommand.is_present("query size");
+    let query_size_registry = registry_subcommand.is_present("query size");
+    query_size(
         &dir_path,
-        (force_remove_app, force_remove_git, force_remove_registry),
-        (dry_run_app, dry_run_git, dry_run_registry),
+        (query_size_app, query_size_git, query_size_registry),
+        &list_crate,
+        &crate_detail,
     );
 
     // Remove all crates by following config file
@@ -166,14 +161,20 @@ fn main() {
         &crate_detail,
     );
 
+    // Remove certain crate provided with -r flag
+    remove_crate(
+        &list_crate,
+        (&app, &git_subcommand, &registry_subcommand),
+        &mut registry_crates_location,
+        &git_crates_location,
+        &crate_detail,
+    );
+
     // Show top crates
     top_crates(&app, &git_subcommand, &registry_subcommand, &crate_detail);
 
     let cargo_toml_location = list_crate.cargo_toml_location().location_path();
     update_cargo_toml(&app, cargo_toml_location);
-
-    // Wipe certain folder all together
-    wipe_directory(&app, &dir_path);
 }
 
 // Generate out completions script for different shell

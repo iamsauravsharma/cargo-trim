@@ -64,6 +64,7 @@ pub(crate) fn modify_config_file(
                 .to_string(),
         );
     }
+
     // Add new value in config file
     for &name in &["set directory", "exclude", "include"] {
         if app.is_present(name) {
@@ -93,7 +94,7 @@ pub(crate) fn modify_config_file(
                 .to_str()
                 .expect("failed to convert current directory Path to str"),
             dry_run,
-        )
+        );
     }
 
     // remove value from config file

@@ -3,13 +3,13 @@
 **Project status & info:**
 
 | Travis Build Status | Dependency Status | License | Crates Version |
-| :---: | :---: | :---: | :---: |
+| :-----------------: | :---------------: | :-----: | :------------: |
 | [![Travis Build Status][build_badge]][build_link] | [![Dependency status][deps_badge]][deps_link] | [![License: MIT][license_badge]][license_link] | [![Crate][cratesio_badge]][cratesio_link] |
 
 **Rust & OS support:**
 
-| Stable | Beta | Nightly | Linux | OSX | Windows |
-| :---: | :---: | :---: | :---: | :---: | :---: |
+| Stable |  Beta | Nightly | Linux |  OSX  | Windows |
+| :----: | :---: | :-----: | :---: | :---: | :-----: |
 | [![Stable support][stable_supported_badge]][git_link] | [![Beta support][beta_supported_badge]][git_link] | [![Nightly support][nightly_supported_badge]][git_link] | [![Linux support][linux_supported_badge]][git_link] | [![OSX support][osx_supported_badge]][git_link] | [![Windows support][windows_supported_badge]][git_link] |
 
 Binary application for cleaning __\$CARGO_HOME/registry__  & __\$CARGO_HOME/git__ folder support orphan cleaning and old cleaning
@@ -36,8 +36,8 @@ By default cargo-trim print out colored output if you want to use a non colored 
 ```
 
 ### Command output
-All cargo-trim can be run using ```cargo trim <command>```
-```cargo trim --help``` will produce out following output which list out all of available output for cargo-trim
+All cargo-trim can be run using `cargo trim <command>`
+`cargo trim --help` will produce out following output which list out all of available output for cargo-trim
 ```
 cargo-trim 0.4.2
 Saurav Sharma <appdroiddeveloper@gmail.com>
