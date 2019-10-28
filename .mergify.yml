@@ -1,49 +1,86 @@
 pull_request_rules:
 
-  -
-    name: 'automatic merge renovate bot PR'
+  - name: trigger bors try when PR is created out
     conditions:
-      - 'author=renovate[bot]'
-      - label=dependencies
-      - approved-reviews-by=iamsauravsharma
-      - 'status-success=Travis CI - Branch'
-      - 'status-success=Travis CI - Pull Request'
+      - "-closed"
+      - "-conflict"
+      - author!=["iamsauravsharma"]
+      - label!=["bors-trying-phase","bors-staging-phase"]
+      - "-merged"
+      - status-success=WIP
     actions:
-      delete_head_branch: {}
-      merge:
-        method: merge
+      comment:
+        message: bors try
+      label:
+        add:
+          - bors-trying-phase
+  
+  - name: merge renovate bot PR when approved review
+    conditions:
+      - approved-reviews-by=iamsauravsharma
+      - author=renovate[bot]
+      - label=["dependencies","bors-trying-phase"]
+      - status-success=Travis CI - Pull Request
+    actions:
+      comment:
+        message: bors merge
+      label:
+        add:
+          - bors-staging-phase
+        remove:
+          - bors-trying-phase
 
-  -
-    name: 'merge iamsauravsharma PR'
+
+  - name: merge reviewed and status success PR
+    conditions:
+      - "#approved-reviews-by>=1"
+      - "#changes-requested-reviews-by=0"
+      - approved-reviews-by=iamsauravsharma
+      - "-closed"
+      - "-conflict"
+      - label!=WIP
+      - label="bors-trying-phase"
+      - status-success=["DCO","CommitCheck","Travis CI - Pull Request","WIP"]
+    actions:
+      comment:
+        message: bors merge
+      label:
+        add:
+          - bors-staging-phase
+        remove:
+          - bors-trying-phase
+
+  - name: merge status success iamsauravsharma PR
     conditions:
       - author=iamsauravsharma
+      - "-closed"
+      - "-conflict"
       - label!=WIP
-      - '-conflict'
-      - status-success=DCO
-      - status-success=CommitCheck
-      - 'status-success=Travis CI - Branch'
-      - 'status-success=Travis CI - Pull Request'
-      - status-success=WIP
+      - status-success=["DCO","CommitCheck","Travis CI - Pull Request","WIP"]
     actions:
-      delete_head_branch: {}
-      merge:
-        method: merge
-
-  -
-    name: 'merge reviewed checked and status success PR'
+      comment:
+        message: bors merge
+      label:
+        add:
+          - bors-staging-phase
+  
+  - name: auto close invalid or duplicate PR
     conditions:
-      - '#approved-reviews-by>=1'
-      - '#changes-requested-reviews-by=0'
-      - approved-reviews-by=iamsauravsharma
-      - '-conflict'
-      - label!=WIP
-      - status-success=DCO
-      - status-success=CommitCheck
-      - 'status-success=Travis CI - Branch'
-      - 'status-success=Travis CI - Pull Request'
-      - status-success=WIP
+      - "-closed"
+      - label~=^(invalid|duplicate)$
     actions:
-      dismiss_reviews:
-        changes_requested: False
-      merge:
-        method: merge
+      close:
+        message: |
+          This PR is automatically closed by Mergify. This PR was labeled as invalid or duplicate by collaborators
+      label:
+        remove:
+          - bors-trying-phase
+  
+  - name: remove label from merged PR
+    conditions:
+      - merged
+      - label=bors-staging-phase
+    actions:
+      label:
+        remove:
+         - bors-staging-phase
