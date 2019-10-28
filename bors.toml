@@ -1,0 +1,4 @@
+status=["continuous-integration/travis-ci/push"]
+block_labels=["invalid","duplicate","blocked"]
+pr_status=["DCO","Commit Check","WIP"]
+delete_merged_branches=true

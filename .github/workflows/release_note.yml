@@ -2,9 +2,9 @@ name: Publish release note
 on:
   push:
     tags: "v*"
-jobs:
 
-  build:
+jobs:
+  publish_release_note:
     name: Publish release note
     runs-on: ubuntu-latest
     steps:
