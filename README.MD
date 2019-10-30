@@ -4,7 +4,8 @@
 
 | Travis Build Status | Dependency Status | License | Crates Version |
 | :-----------------: | :---------------: | :-----: | :------------: |
-| [![Travis Build Status][build_badge]][build_link] | [![Dependency status][deps_badge]][deps_link] | [![License: MIT][license_badge]][license_link] | [![Crate][cratesio_badge]][cratesio_link] |
+| [![Travis Build Status][build_badge]][build_link] [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fiamsauravsharma%2Fcargo-trim.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fiamsauravsharma%2Fcargo-trim?ref=badge_shield)
+| [![Dependency status][deps_badge]][deps_link] | [![License: MIT][license_badge]][license_link] | [![Crate][cratesio_badge]][cratesio_link] |
 
 **Rust & OS support:**
 
@@ -117,3 +118,6 @@ In file cargo-trim stores out information about directory of rust projects and e
 [linux_not_supported_badge]: https://img.shields.io/badge/linux-not%20supported-red.svg?logo=linux
 [osx_not_supported_badge]: https://img.shields.io/badge/osx-not%20supported-red.svg?logo=apple
 [nightly_not_supported_badge]: https://img.shields.io/badge/windows-not%20supported-red.svg?logo=windows
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fiamsauravsharma%2Fcargo-trim.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fiamsauravsharma%2Fcargo-trim?ref=badge_large)
