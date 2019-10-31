@@ -4,8 +4,8 @@ pull_request_rules:
     conditions:
       - "-closed"
       - "-conflict"
-      - author!=["iamsauravsharma"]
-      - label!=["bors-trying-phase","bors-staging-phase"]
+      - author!=["renovate[bot]", "iamsauravsharma"]
+      - label!=["bors-trying-phase", "bors-staging-phase"]
       - "-merged"
       - status-success=WIP
     actions:
@@ -19,7 +19,7 @@ pull_request_rules:
     conditions:
       - approved-reviews-by=iamsauravsharma
       - author=renovate[bot]
-      - label=["dependencies","bors-trying-phase"]
+      - label=["dependencies", "bors-trying-phase"]
       - status-success=Travis CI - Pull Request
     actions:
       comment:
@@ -40,7 +40,7 @@ pull_request_rules:
       - "-conflict"
       - label!=WIP
       - label="bors-trying-phase"
-      - status-success=["DCO","CommitCheck","Travis CI - Pull Request","WIP"]
+      - status-success=["DCO", "CommitCheck", "Travis CI - Pull Request", "WIP"]
     actions:
       comment:
         message: bors merge
@@ -56,7 +56,7 @@ pull_request_rules:
       - "-closed"
       - "-conflict"
       - label!=WIP
-      - status-success=["DCO","CommitCheck","Travis CI - Pull Request","WIP"]
+      - status-success=["DCO", "CommitCheck", "Travis CI - Pull Request", "WIP"]
     actions:
       comment:
         message: bors merge

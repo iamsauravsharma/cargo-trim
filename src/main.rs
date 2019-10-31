@@ -65,7 +65,7 @@ fn main() {
         (dry_run_app, dry_run_git, dry_run_registry),
     );
 
-    // Perform git compress to .cargo/index
+    // Perform git compress
     git_compress(
         &app,
         &dir_path.index_dir(),
@@ -231,6 +231,7 @@ fn clear_config(app: &ArgMatches, dir_path: &DirPath) {
 // Git compress git files
 fn git_compress(app: &ArgMatches, index_dir: &PathBuf, checkout_dir: &PathBuf, db_dir: &PathBuf) {
     if app.is_present("git compress") {
+        let dry_run = app.is_present("dry run");
         let value = app.value_of("git compress").unwrap();
         if (value == "index" || value == "all") && index_dir.exists() {
             for entry in fs::read_dir(index_dir).expect("failed to read registry index folder") {
@@ -238,12 +239,14 @@ fn git_compress(app: &ArgMatches, index_dir: &PathBuf, checkout_dir: &PathBuf, d
                 let file_name = repo_path
                     .file_name()
                     .expect("Failed to get a file name / folder name");
-                println!(
-                    "{}",
-                    format!("Compressing {} registry index", file_name.to_str().unwrap())
-                        .bright_blue()
-                );
-                run_git_compress_commands(&repo_path);
+                if !dry_run {
+                    println!(
+                        "{}",
+                        format!("Compressing {} registry index", file_name.to_str().unwrap())
+                            .bright_blue()
+                    );
+                }
+                run_git_compress_commands(&repo_path, dry_run);
             }
         }
         if value.contains("git") || value == "all" {
@@ -255,16 +258,20 @@ fn git_compress(app: &ArgMatches, index_dir: &PathBuf, checkout_dir: &PathBuf, d
                         .expect("failed to read checkout directory sub directory")
                     {
                         let rev_path = rev.unwrap().path();
-                        println!("{}", "Compressing git checkout".bright_blue());
-                        run_git_compress_commands(&rev_path)
+                        if !dry_run {
+                            println!("{}", "Compressing git checkout".bright_blue());
+                        }
+                        run_git_compress_commands(&rev_path, dry_run)
                     }
                 }
             }
             if (value == "git" || value == "git-db") && db_dir.exists() {
                 for entry in fs::read_dir(db_dir).expect("failed to read db dir") {
                     let repo_path = entry.unwrap().path();
-                    println!("{}", "Compressing git db".bright_blue());
-                    run_git_compress_commands(&repo_path);
+                    if !dry_run {
+                        println!("{}", "Compressing git db".bright_blue());
+                    }
+                    run_git_compress_commands(&repo_path, dry_run);
                 }
             }
         }
@@ -273,55 +280,59 @@ fn git_compress(app: &ArgMatches, index_dir: &PathBuf, checkout_dir: &PathBuf, d
 }
 
 // run combination of commands which git compress a index of registry
-fn run_git_compress_commands(repo_path: &PathBuf) {
-    // Remove history of all checkout which will help in remove dangling commits
-    if let Err(e) = Command::new("git")
-        .arg("reflog")
-        .arg("expire")
-        .arg("--expire=now")
-        .arg("--all")
-        .current_dir(repo_path)
-        .output()
-    {
-        panic!(format!("git reflog failed to execute due to error {}", e));
+fn run_git_compress_commands(repo_path: &PathBuf, dry_run: bool) {
+    if dry_run {
+        println!("{} git compressing {:?}", "Dry run:".yellow(), repo_path);
     } else {
-        println!("{:70}.......Step 1/3", "  \u{251c} Completed git reflog");
-    }
+        // Remove history of all checkout which will help in remove dangling commits
+        if let Err(e) = Command::new("git")
+            .arg("reflog")
+            .arg("expire")
+            .arg("--expire=now")
+            .arg("--all")
+            .current_dir(repo_path)
+            .output()
+        {
+            panic!(format!("git reflog failed to execute due to error {}", e));
+        } else {
+            println!("{:70}.......Step 1/3", "  \u{251c} Completed git reflog");
+        }
 
-    // pack refs of branches/tags etc into one file know as pack-refs file for
-    // effective repo access
-    if let Err(e) = Command::new("git")
-        .arg("pack-refs")
-        .arg("--all")
-        .arg("--prune")
-        .current_dir(repo_path)
-        .output()
-    {
-        panic!(format!(
-            "git pack-refs failed to execute due to error {}",
-            e
-        ));
-    } else {
-        println!(
-            "{:70}.......Step 2/3",
-            "  \u{251c} Packed refs and tags successfully"
-        );
-    }
+        // pack refs of branches/tags etc into one file know as pack-refs file for
+        // effective repo access
+        if let Err(e) = Command::new("git")
+            .arg("pack-refs")
+            .arg("--all")
+            .arg("--prune")
+            .current_dir(repo_path)
+            .output()
+        {
+            panic!(format!(
+                "git pack-refs failed to execute due to error {}",
+                e
+            ));
+        } else {
+            println!(
+                "{:70}.......Step 2/3",
+                "  \u{251c} Packed refs and tags successfully"
+            );
+        }
 
-    // cleanup unnecessary file and optimize a local repo
-    if let Err(e) = Command::new("git")
-        .arg("gc")
-        .arg("--aggressive")
-        .arg("--prune=now")
-        .current_dir(repo_path)
-        .output()
-    {
-        panic!(format!("git gc failed to execute due to error {}", e));
-    } else {
-        println!(
-            "{:70}.......Step 3/3",
-            "  \u{2514} Cleaned up unnecessary files and optimize a files"
-        );
+        // cleanup unnecessary file and optimize a local repo
+        if let Err(e) = Command::new("git")
+            .arg("gc")
+            .arg("--aggressive")
+            .arg("--prune=now")
+            .current_dir(repo_path)
+            .output()
+        {
+            panic!(format!("git gc failed to execute due to error {}", e));
+        } else {
+            println!(
+                "{:70}.......Step 3/3",
+                "  \u{2514} Cleaned up unnecessary files and optimize a files"
+            );
+        }
     }
 }
 
@@ -824,14 +835,23 @@ fn update_cargo_toml(app: &ArgMatches, cargo_toml_location: &[PathBuf]) {
             }
             // helps so we may not need to generate lock file again for workspace project
             if cargo_lock.exists() {
-                let message = format!("Updating {}", cargo_lock.to_str().unwrap().bright_blue());
-                println!("{}", message);
-                if let Err(e) = Command::new("cargo")
-                    .arg("update")
-                    .current_dir(location)
-                    .output()
-                {
-                    panic!(format!("Failed to update Cargo.lock {}", e));
+                if app.is_present("dry run") {
+                    println!(
+                        "{} Updating lockfile at path {:?}",
+                        "Dry run:".yellow(),
+                        location
+                    )
+                } else {
+                    let message =
+                        format!("Updating {}", cargo_lock.to_str().unwrap().bright_blue());
+                    println!("{}", message);
+                    if let Err(e) = Command::new("cargo")
+                        .arg("update")
+                        .current_dir(location)
+                        .output()
+                    {
+                        panic!(format!("Failed to update Cargo.lock {}", e));
+                    }
                 }
             }
         }
