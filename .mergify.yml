@@ -4,8 +4,8 @@ pull_request_rules:
     conditions:
       - "-closed"
       - "-conflict"
-      - author!="renovate[bot]"
-      - author!="iamsauravsharma"
+      - author!=renovate[bot]
+      - author!=iamsauravsharma
       - label!=["bors-trying-phase", "bors-staging-phase"]
       - "-merged"
       - status-success=WIP
