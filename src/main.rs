@@ -11,8 +11,6 @@ mod dir_path;
 mod git_dir;
 mod list_crate;
 mod registry_dir;
-#[cfg(test)]
-mod test;
 
 use crate::{
     config_file::ConfigFile, crate_detail::CrateDetail, dir_path::DirPath, git_dir::GitDir,
