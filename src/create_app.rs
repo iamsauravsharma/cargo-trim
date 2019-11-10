@@ -23,7 +23,7 @@ pub(super) fn app() -> App<'static, 'static> {
     let directory_config = directory.clone().help("Query about directory data");
     let directory_remove = directory
         .clone()
-        .help("directory to be removed")
+        .help("Directory to be removed")
         .takes_value(true)
         .value_name("directory");
 
@@ -43,7 +43,7 @@ pub(super) fn app() -> App<'static, 'static> {
     let exclude_conf = exclude
         .clone()
         .help(
-            "add listed crates to default conf file exclude list [use $TRIM_EXCLUDE environment \
+            "Add listed crates to default conf file exclude list [use $TRIM_EXCLUDE environment \
              variable for creating exclude list without editing conf file]",
         )
         .multiple(true)
@@ -73,7 +73,7 @@ pub(super) fn app() -> App<'static, 'static> {
     let include_conf = include
         .clone()
         .help(
-            "add listed crates to default conf file include list [use $TRIM_INCLUDE environment \
+            "Add listed crates to default conf file include list [use $TRIM_INCLUDE environment \
              variable for creating include list without editing conf file]",
         )
         .multiple(true)
@@ -97,17 +97,25 @@ pub(super) fn app() -> App<'static, 'static> {
     let old = Arg::with_name("old")
         .short("o")
         .long("old")
-        .help("list out old crates");
+        .help("List out old crates");
+    let old_orphan = Arg::with_name("old-orphan")
+        .short("z")
+        .long("old-orphan")
+        .help("List out crates which is both old and orphan");
 
     let old_clean = Arg::with_name("old clean")
         .short("o")
         .long("old-clean")
         .help("Clean old cache crates");
+    let old_orphan_clean = Arg::with_name("old-orphan-clean")
+        .short("z")
+        .long("old-orphan-clean")
+        .help("Clean crates which is both old and orphan");
 
     let orphan = Arg::with_name("orphan")
         .short("x")
         .long("orphan")
-        .help("list out orphan crates");
+        .help("List out orphan crates");
 
     let orphan_clean = Arg::with_name("orphan clean")
         .short("x")
@@ -176,7 +184,7 @@ pub(super) fn app() -> App<'static, 'static> {
     let used = Arg::with_name("used")
         .short("u")
         .long("use")
-        .help("list out used crates");
+        .help("List out used crates");
 
     let wipe = Arg::with_name("wipe")
         .short("w")
@@ -213,6 +221,7 @@ pub(super) fn app() -> App<'static, 'static> {
                     include_conf,
                     light_cleanup_trim,
                     old_clean.clone(),
+                    old_orphan_clean.clone(),
                     orphan_clean.clone(),
                     query_size_trim,
                     remove_crate.clone(),
@@ -254,6 +263,7 @@ pub(super) fn app() -> App<'static, 'static> {
                             force_remove.clone(),
                             light_cleanup_git,
                             old_clean.clone(),
+                            old_orphan_clean.clone(),
                             orphan_clean.clone(),
                             query_size_git,
                             remove_crate.clone(),
@@ -273,6 +283,7 @@ pub(super) fn app() -> App<'static, 'static> {
                             force_remove.clone(),
                             light_cleanup_registry,
                             old_clean.clone(),
+                            old_orphan_clean.clone(),
                             orphan_clean.clone(),
                             query_size_registry,
                             remove_crate.clone(),
@@ -283,7 +294,7 @@ pub(super) fn app() -> App<'static, 'static> {
                     SubCommand::with_name("list")
                         .about("List out crates [alias: \"l\"]")
                         .alias("l")
-                        .args(&[all_list, old, orphan, used]),
+                        .args(&[all_list, old, old_orphan, orphan, used]),
                 )
                 .subcommand(
                     SubCommand::with_name("remove")
