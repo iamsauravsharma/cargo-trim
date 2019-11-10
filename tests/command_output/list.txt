@@ -5,9 +5,10 @@ USAGE:
     cargo trim list [FLAGS]
 
 FLAGS:
-    -a, --all        list out all installed crate
-    -h, --help       Prints help information
-    -o, --old        list out old crates
-    -x, --orphan     list out orphan crates
-    -u, --use        list out used crates
-    -V, --version    Prints version information
+    -a, --all           list out all installed crate
+    -h, --help          Prints help information
+    -o, --old           List out old crates
+    -z, --old-orphan    List out crates which is both old and orphan
+    -x, --orphan        List out orphan crates
+    -u, --use           List out used crates
+    -V, --version       Prints version information

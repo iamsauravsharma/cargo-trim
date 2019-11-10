@@ -122,6 +122,19 @@ fn main() {
         &crate_detail,
     );
 
+    // Perform action on -z flag matches which removes crates which is both old and
+    // orphan
+    let old_orphan_app = app.is_present("old-orphan-clean");
+    let old_orphan_registry = registry_subcommand.is_present("old-orphan-clean");
+    let old_orphan_git = git_subcommand.is_present("old-orphan-clean");
+    old_orphan_clean(
+        &list_crate,
+        (old_orphan_app, old_orphan_registry, old_orphan_git),
+        &mut registry_crates_location,
+        &git_crates_location,
+        &crate_detail,
+    );
+
     // Orphan clean a crates which is not present in directory stored in directory
     // value of config file on -x flag
     let orphan_app = app.is_present("orphan clean");
@@ -370,6 +383,30 @@ fn light_cleanup(
     }
 }
 
+// list out crates which is both old and orphan
+fn old_orphan_registry_list(list_crate: &CrateList) -> Vec<String> {
+    let mut old_orphan_registry = Vec::new();
+    let orphan_list = list_crate.orphan_registry();
+    for crates in list_crate.old_registry() {
+        if orphan_list.contains(crates) {
+            old_orphan_registry.push(crates.to_string())
+        }
+    }
+    old_orphan_registry
+}
+
+// list out git crates which is both old and orphan
+fn old_orphan_git_list(list_crate: &CrateList) -> Vec<String> {
+    let mut old_orphan_git = Vec::new();
+    let orphan_list = list_crate.orphan_git();
+    for crates in list_crate.old_git() {
+        if orphan_list.contains(crates) {
+            old_orphan_git.push(crates.to_string())
+        }
+    }
+    old_orphan_git
+}
+
 // Perform different operation for a list subcommand
 fn list_subcommand(app: &ArgMatches, list_crate: &CrateList, crate_detail: &CrateDetail) {
     if app.is_present("list") {
@@ -408,6 +445,18 @@ fn list_subcommand(app: &ArgMatches, list_crate: &CrateList, crate_detail: &Crat
                 crate_detail,
                 list_crate.installed_git(),
                 "GIT INSTALLED CRATE",
+            );
+        }
+        if list_subcommand.is_present("old-orphan") {
+            list_crate_type(
+                crate_detail,
+                &old_orphan_registry_list(list_crate),
+                "REGISTRY OLD+ORPHAN CRATE",
+            );
+            list_crate_type(
+                crate_detail,
+                &old_orphan_git_list(list_crate),
+                "GIT OLD+ORPHAN CRATE",
             );
         }
     }
@@ -479,6 +528,36 @@ fn old_clean(
         println!(
             "{}",
             format!("Total size of old crates removed :- {:.3} MB", size_cleaned).bright_blue()
+        );
+    }
+}
+
+// Clean out crates which is both old and orphan
+fn old_orphan_clean(
+    list_crate: &CrateList,
+    (old_orphan_app, old_orphan_registry, old_orphan_git): (bool, bool, bool),
+    registry_crates_location: &mut RegistryDir,
+    git_crates_location: &GitDir,
+    crate_detail: &CrateDetail,
+) {
+    if old_orphan_app || old_orphan_registry || old_orphan_git {
+        let mut size_cleaned = 0.0;
+        if old_orphan_app || old_orphan_registry {
+            let old_orphan_registry = old_orphan_registry_list(list_crate);
+            size_cleaned +=
+                registry_crates_location.remove_crate_list(&crate_detail, &old_orphan_registry);
+        }
+        if old_orphan_app || old_orphan_git {
+            let old_orphan_git = old_orphan_git_list(list_crate);
+            size_cleaned += git_crates_location.remove_crate_list(&crate_detail, &old_orphan_git);
+        }
+        println!(
+            "{}",
+            format!(
+                "Total size of crates which is both old and orphan crate removed :- {:.3} MB",
+                size_cleaned
+            )
+            .bright_blue()
         );
     }
 }
