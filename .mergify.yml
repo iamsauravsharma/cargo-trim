@@ -20,7 +20,7 @@ pull_request_rules:
     conditions:
       - approved-reviews-by=iamsauravsharma
       - author=renovate[bot]
-      - label=["dependencies", "bors-trying-phase"]
+      - label=dependencies
       - status-success=Travis CI - Pull Request
     actions:
       label:
@@ -39,7 +39,7 @@ pull_request_rules:
       - "-closed"
       - "-conflict"
       - label!=WIP
-      - label="bors-trying-phase"
+      - label=bors-trying-phase
       - status-success=["DCO", "CommitCheck", "Travis CI - Pull Request", "WIP"]
     actions:
       label:
