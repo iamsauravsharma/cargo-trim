@@ -304,7 +304,10 @@ fn run_git_compress_commands(repo_path: &PathBuf, dry_run: bool) {
             .current_dir(repo_path)
             .output()
         {
-            panic!(format!("git reflog failed to execute due to error {}", e));
+            eprintln!(
+                "{}",
+                format!("  \u{2514} git reflog failed to execute due to error {}", e).red()
+            );
         } else {
             println!("{:70}.......Step 1/3", "  \u{251c} Completed git reflog");
         }
@@ -318,10 +321,14 @@ fn run_git_compress_commands(repo_path: &PathBuf, dry_run: bool) {
             .current_dir(repo_path)
             .output()
         {
-            panic!(format!(
-                "git pack-refs failed to execute due to error {}",
-                e
-            ));
+            eprintln!(
+                "{}",
+                format!(
+                    "  \u{2514} git pack-refs failed to execute due to error {}",
+                    e
+                )
+                .red()
+            );
         } else {
             println!(
                 "{:70}.......Step 2/3",
@@ -337,7 +344,10 @@ fn run_git_compress_commands(repo_path: &PathBuf, dry_run: bool) {
             .current_dir(repo_path)
             .output()
         {
-            panic!(format!("git gc failed to execute due to error {}", e));
+            eprintln!(
+                "{}",
+                format!("  \u{2514} git gc failed to execute due to error {}", e).red()
+            );
         } else {
             println!(
                 "{:70}.......Step 3/3",
