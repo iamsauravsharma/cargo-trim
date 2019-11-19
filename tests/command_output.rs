@@ -1,3 +1,4 @@
+use pretty_assertions::assert_eq;
 use std::{io::Read, process::Command};
 
 // test check trim subcommand help

@@ -43,7 +43,7 @@ pub(super) fn app() -> App<'static, 'static> {
     let exclude_conf = exclude
         .clone()
         .help(
-            "Add listed crates to default conf file exclude list [use $TRIM_EXCLUDE environment \
+            "Add listed crates to default conf file exclude list [use TRIM_EXCLUDE environment \
              variable for creating exclude list without editing conf file]",
         )
         .multiple(true)
@@ -73,7 +73,7 @@ pub(super) fn app() -> App<'static, 'static> {
     let include_conf = include
         .clone()
         .help(
-            "Add listed crates to default conf file include list [use $TRIM_INCLUDE environment \
+            "Add listed crates to default conf file include list [use TRIM_INCLUDE environment \
              variable for creating include list without editing conf file]",
         )
         .multiple(true)
