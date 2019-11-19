@@ -932,13 +932,13 @@ fn update_cargo_toml(app: &ArgMatches, cargo_toml_location: &[PathBuf]) {
                     let message =
                         format!("Updating {}", cargo_lock.to_str().unwrap().bright_blue());
                     println!("{}", message);
-                    if let Err(e) = Command::new("cargo")
+                    Command::new("cargo")
                         .arg("update")
                         .current_dir(location)
-                        .output()
-                    {
-                        panic!(format!("Failed to update Cargo.lock {}", e));
-                    }
+                        .spawn()
+                        .expect("Cannot run command")
+                        .wait()
+                        .expect("Failed to wait for child");
                 }
             }
         }

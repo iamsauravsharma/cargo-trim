@@ -123,16 +123,7 @@ impl CrateList {
                         .expect("failed to get file name form db directory sub folder");
                     let file_name = file_name.to_str().unwrap().to_string();
                     if file_name.contains(name[1]) {
-                        let output = std::process::Command::new("git")
-                            .arg("log")
-                            .arg("--pretty=format:'%h'")
-                            .arg("--max-count=1")
-                            .current_dir(path)
-                            .output()
-                            .expect("failed to execute process");
-                        let mut rev_value = std::str::from_utf8(&output.stdout)
-                            .expect("stdout is not utf8")
-                            .to_string();
+                        let mut rev_value = latest_rev_value(path);
                         rev_value.retain(|c| c != '\'');
                         let full_name = format!("{}-{}", name[1], rev_value);
                         full_name_list.push(full_name)
@@ -375,15 +366,7 @@ fn read_content(list: &[PathBuf], db_dir: &Path) -> (Vec<String>, Vec<String>) {
                                     let full_name = format!("{}-{}", name, rev_value);
                                     present_crate_git.push(full_name);
                                 } else {
-                                    let output = std::process::Command::new("git")
-                                        .arg("log")
-                                        .arg("--pretty=format:%h")
-                                        .arg("--max-count=1")
-                                        .current_dir(path_db)
-                                        .output()
-                                        .expect("failed to process command");
-                                    let rev_value = std::str::from_utf8(&output.stdout)
-                                        .expect("stdout is not ut8");
+                                    let rev_value = latest_rev_value(&path_db);
                                     let full_name = format!("{}-{}", name, rev_value);
                                     present_crate_git.push(full_name);
                                 }
@@ -530,4 +513,18 @@ pub(crate) fn env_list(variable: &str) -> Vec<String> {
         }
     }
     vec_list
+}
+
+// get out latest commit rev value
+fn latest_rev_value(path: &Path) -> String {
+    let output = std::process::Command::new("git")
+        .arg("log")
+        .arg("--pretty=format:'%h'")
+        .arg("--max-count=1")
+        .current_dir(path)
+        .output()
+        .expect("failed to execute process");
+    std::str::from_utf8(&output.stdout)
+        .expect("stdout is not utf8")
+        .to_string()
 }
