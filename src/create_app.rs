@@ -12,7 +12,7 @@ pub(super) fn app() -> App<'static, 'static> {
     let all_registry = all
         .clone()
         .help("Clean up all .cargo/registry follow config file data");
-    let all_list = all.clone().help("list out all installed crate");
+    let all_list = all.help("list out all installed crate");
 
     let clear_config = Arg::with_name("clear config")
         .short("c")
@@ -22,7 +22,6 @@ pub(super) fn app() -> App<'static, 'static> {
     let directory = Arg::with_name("directory").short("d").long("directory");
     let directory_config = directory.clone().help("Query about directory data");
     let directory_remove = directory
-        .clone()
         .help("Directory to be removed")
         .takes_value(true)
         .value_name("directory");
@@ -41,7 +40,6 @@ pub(super) fn app() -> App<'static, 'static> {
         .value_name("crate");
 
     let exclude_conf = exclude
-        .clone()
         .help(
             "Add listed crates to default conf file exclude list [use TRIM_EXCLUDE environment \
              variable for creating exclude list without editing conf file]",
@@ -71,7 +69,6 @@ pub(super) fn app() -> App<'static, 'static> {
         .value_name("crate");
 
     let include_conf = include
-        .clone()
         .help(
             "Add listed crates to default conf file include list [use TRIM_INCLUDE environment \
              variable for creating include list without editing conf file]",
@@ -89,7 +86,7 @@ pub(super) fn app() -> App<'static, 'static> {
     let light_cleanup_git = light_cleanup.clone().help(
         "Light cleanup repos by removing git checkout but stores git db for future compilation",
     );
-    let light_cleanup_registry = light_cleanup.clone().help(
+    let light_cleanup_registry = light_cleanup.help(
         "Light cleanup repos by removing registry source but stores registry archive for future \
          compilation",
     );
@@ -132,9 +129,8 @@ pub(super) fn app() -> App<'static, 'static> {
     let query_size_git = query_size
         .clone()
         .help("Return size of different .cargo/git cache folders");
-    let query_size_registry = query_size
-        .clone()
-        .help("Return size of different .cargo/registry cache folders");
+    let query_size_registry =
+        query_size.help("Return size of different .cargo/registry cache folders");
 
     let remove_crate = Arg::with_name("remove-crate")
         .short("r")
@@ -172,9 +168,8 @@ pub(super) fn app() -> App<'static, 'static> {
     let top_crate_git = top_crate
         .clone()
         .help("Show certain number of top git crates which have highest size");
-    let top_crates_registry = top_crate
-        .clone()
-        .help("Show certain number of top registry crates which have highest size");
+    let top_crates_registry =
+        top_crate.help("Show certain number of top registry crates which have highest size");
 
     let update = Arg::with_name("update")
         .short("u")
@@ -280,13 +275,13 @@ pub(super) fn app() -> App<'static, 'static> {
                         .args(&[
                             all_registry,
                             dry_run.clone(),
-                            force_remove.clone(),
+                            force_remove,
                             light_cleanup_registry,
-                            old_clean.clone(),
-                            old_orphan_clean.clone(),
-                            orphan_clean.clone(),
+                            old_clean,
+                            old_orphan_clean,
+                            orphan_clean,
                             query_size_registry,
-                            remove_crate.clone(),
+                            remove_crate,
                             top_crates_registry,
                         ]),
                 )
@@ -300,12 +295,7 @@ pub(super) fn app() -> App<'static, 'static> {
                     SubCommand::with_name("remove")
                         .about("Remove values from config file [alias: \"rm\"]")
                         .alias("rm")
-                        .args(&[
-                            directory_remove,
-                            dry_run.clone(),
-                            exclude_remove,
-                            include_remove,
-                        ]),
+                        .args(&[directory_remove, dry_run, exclude_remove, include_remove]),
                 )
                 .subcommand(
                     SubCommand::with_name("completions")
