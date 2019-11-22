@@ -147,9 +147,9 @@ impl CrateList {
         env_directory.sort();
         env_directory.dedup();
         for path in &env_directory {
-            let list_cargo_toml = list_cargo_toml(&Path::new(path));
+            let list_cargo_toml = list_cargo_toml(Path::new(path));
             let (mut registry_crate, mut git_crate) =
-                read_content(&list_cargo_toml.location_path(), db_dir);
+                read_content(list_cargo_toml.location_path(), db_dir);
             cargo_toml_location.append(list_cargo_toml);
             used_crate_registry.append(&mut registry_crate);
             used_crate_git.append(&mut git_crate);

@@ -63,11 +63,11 @@ FLAGS:
     -V, --version             Prints version information
 
 OPTIONS:
-    -e, --exclude <crate>...              Add listed crates to default conf file exclude list [use $TRIM_EXCLUDE
+    -e, --exclude <crate>...              Add listed crates to default conf file exclude list [use TRIM_EXCLUDE
                                           environment variable for creating exclude list without editing conf file]
     -g, --gc <git compress>               Git compress to reduce size of .cargo [possible values: all, index, git, git-
                                           checkout, git-db]
-    -i, --include <crate>...              Add listed crates to default conf file include list [use $TRIM_INCLUDE
+    -i, --include <crate>...              Add listed crates to default conf file include list [use TRIM_INCLUDE
                                           environment variable for creating include list without editing conf file]
     -r, --remove <crate>...               Remove provided crates from registry or git
     -s, --set-directory <Directory>...    Set directory of Rust project [use TRIM_DIRECTORY environment variable for

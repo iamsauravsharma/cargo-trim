@@ -1,8 +1,12 @@
 #![warn(unreachable_pub, anonymous_parameters, bare_trait_objects)]
 #![deny(unsafe_code)]
 #![deny(clippy::all)]
-#![warn(clippy::pedantic)]
-#![allow(clippy::cast_precision_loss, clippy::too_many_lines)]
+#![warn(clippy::pedantic, clippy::nursery)]
+#![allow(
+    clippy::cast_precision_loss,
+    clippy::too_many_lines,
+    clippy::missing_const_for_fn
+)]
 
 mod config_file;
 mod crate_detail;
@@ -44,13 +48,13 @@ fn main() {
     let dry_run_registry = registry_subcommand.is_present("dry run");
 
     // Perform all modification of config file flag and subcommand operation
-    let config_file = config_file::modify_config_file(&mut file, app, &dir_path.config_dir());
+    let config_file = config_file::modify_config_file(&mut file, app, dir_path.config_dir());
 
     // Perform action of removing config file with -c flag
-    clear_config(&app, &dir_path);
+    clear_config(app, &dir_path);
 
     // Query about config file information
-    config_subcommand(&app, &config_file);
+    config_subcommand(app, &config_file);
 
     // Force remove all crates without reading config file also remove index .cache
     // folder
@@ -65,10 +69,10 @@ fn main() {
 
     // Perform git compress
     git_compress(
-        &app,
-        &dir_path.index_dir(),
-        &dir_path.checkout_dir(),
-        &dir_path.db_dir(),
+        app,
+        dir_path.index_dir(),
+        dir_path.checkout_dir(),
+        dir_path.db_dir(),
     );
 
     // Perform light cleanup
@@ -76,15 +80,15 @@ fn main() {
     let light_cleanup_git = git_subcommand.is_present("light cleanup");
     let light_cleanup_registry = registry_subcommand.is_present("light_cleanup");
     light_cleanup(
-        &dir_path.checkout_dir(),
-        &dir_path.src_dir(),
-        &dir_path.index_dir(),
+        dir_path.checkout_dir(),
+        dir_path.src_dir(),
+        dir_path.index_dir(),
         (light_cleanup_app, light_cleanup_git, light_cleanup_registry),
         (dry_run_app, dry_run_git, dry_run_registry),
     );
 
     // Wipe a certain folder all together
-    wipe_directory(&app, &dir_path);
+    wipe_directory(app, &dir_path);
 
     // create new CrateDetail struct
     let mut crate_detail = CrateDetail::new();
@@ -94,16 +98,16 @@ fn main() {
 
     // Get Location where registry crates and git crates are stored out by cargo
     let mut registry_crates_location = registry_dir::RegistryDir::new(
-        &dir_path.cache_dir(),
-        &dir_path.src_dir(),
-        &dir_path.index_dir(),
+        dir_path.cache_dir(),
+        dir_path.src_dir(),
+        dir_path.index_dir(),
         list_crate.installed_registry(),
         dry_run_app || dry_run_registry,
     );
 
     let git_crates_location = git_dir::GitDir::new(
-        &dir_path.checkout_dir(),
-        &dir_path.db_dir(),
+        dir_path.checkout_dir(),
+        dir_path.db_dir(),
         dry_run_app || dry_run_git,
     );
 
@@ -175,17 +179,17 @@ fn main() {
     // Remove certain crate provided with -r flag
     remove_crate(
         &list_crate,
-        (&app, &git_subcommand, &registry_subcommand),
+        (app, git_subcommand, registry_subcommand),
         &mut registry_crates_location,
         &git_crates_location,
         &crate_detail,
     );
 
     // Show top crates
-    top_crates(&app, &git_subcommand, &registry_subcommand, &crate_detail);
+    top_crates(app, git_subcommand, registry_subcommand, &crate_detail);
 
     let cargo_toml_location = list_crate.cargo_toml_location().location_path();
-    update_cargo_toml(&app, cargo_toml_location);
+    update_cargo_toml(app, cargo_toml_location);
 }
 
 // Generate out completions script for different shell
@@ -528,12 +532,12 @@ fn old_clean(
     if old_app || old_registry || old_git {
         let mut size_cleaned = 0.0;
         if old_app || old_registry {
-            size_cleaned += registry_crates_location
-                .remove_crate_list(&crate_detail, list_crate.old_registry());
+            size_cleaned +=
+                registry_crates_location.remove_crate_list(crate_detail, list_crate.old_registry());
         }
         if old_app || old_git {
             size_cleaned +=
-                git_crates_location.remove_crate_list(&crate_detail, list_crate.old_git());
+                git_crates_location.remove_crate_list(crate_detail, list_crate.old_git());
         }
         println!(
             "{}",
@@ -555,11 +559,11 @@ fn old_orphan_clean(
         if old_orphan_app || old_orphan_registry {
             let old_orphan_registry = old_orphan_registry_list(list_crate);
             size_cleaned +=
-                registry_crates_location.remove_crate_list(&crate_detail, &old_orphan_registry);
+                registry_crates_location.remove_crate_list(crate_detail, &old_orphan_registry);
         }
         if old_orphan_app || old_orphan_git {
             let old_orphan_git = old_orphan_git_list(list_crate);
-            size_cleaned += git_crates_location.remove_crate_list(&crate_detail, &old_orphan_git);
+            size_cleaned += git_crates_location.remove_crate_list(crate_detail, &old_orphan_git);
         }
         println!(
             "{}",
@@ -584,11 +588,11 @@ fn orphan_clean(
         let mut size_cleaned = 0.0;
         if orphan_app || orphan_registry {
             size_cleaned += registry_crates_location
-                .remove_crate_list(&crate_detail, list_crate.orphan_registry());
+                .remove_crate_list(crate_detail, list_crate.orphan_registry());
         }
         if orphan_app || orphan_git {
             size_cleaned +=
-                git_crates_location.remove_crate_list(&crate_detail, list_crate.orphan_git());
+                git_crates_location.remove_crate_list(crate_detail, list_crate.orphan_git());
         }
         println!(
             "{}",
@@ -732,8 +736,8 @@ fn force_remove(
     if force_remove_app || force_remove_git || force_remove_registry {
         if force_remove_app || force_remove_registry {
             let dry_run = dry_run_app || dry_run_registry;
-            delete_folder(&dir_path.cache_dir(), dry_run);
-            delete_folder(&dir_path.src_dir(), dry_run);
+            delete_folder(dir_path.cache_dir(), dry_run);
+            delete_folder(dir_path.src_dir(), dry_run);
             // Delete out .cache folder also
             let index_path = dir_path.index_dir();
             for entry in fs::read_dir(index_path)
@@ -754,8 +758,8 @@ fn force_remove(
         }
         if force_remove_app || force_remove_git {
             let dry_run = dry_run_app || dry_run_git;
-            delete_folder(&dir_path.checkout_dir(), dry_run);
-            delete_folder(&dir_path.db_dir(), dry_run);
+            delete_folder(dir_path.checkout_dir(), dry_run);
+            delete_folder(dir_path.db_dir(), dry_run);
         }
         println!("{}", "Successfully removed all crates".red());
     }
@@ -775,13 +779,13 @@ fn remove_all(
         if all_app || all_registry {
             for crate_name in list_crate.installed_registry() {
                 total_size_cleaned +=
-                    registry_crates_location.remove_all(&config_file, crate_name, crate_detail);
+                    registry_crates_location.remove_all(config_file, crate_name, crate_detail);
             }
         }
         if all_app || all_git {
             for crate_name in list_crate.installed_git() {
                 total_size_cleaned +=
-                    git_crates_location.remove_all(&config_file, crate_name, crate_detail);
+                    git_crates_location.remove_all(config_file, crate_name, crate_detail);
             }
         }
         println!(
@@ -952,13 +956,13 @@ fn wipe_directory(app: &ArgMatches, dir_path: &DirPath) {
         let value = app.value_of("wipe").unwrap();
         let dry_run = app.is_present("dry run");
         match value {
-            "git" => delete_folder(&dir_path.git_dir(), dry_run),
-            "checkouts" => delete_folder(&dir_path.checkout_dir(), dry_run),
-            "db" => delete_folder(&dir_path.db_dir(), dry_run),
-            "registry" => delete_folder(&dir_path.registry_dir(), dry_run),
-            "cache" => delete_folder(&dir_path.cache_dir(), dry_run),
-            "index" => delete_folder(&dir_path.index_dir(), dry_run),
-            "src" => delete_folder(&dir_path.src_dir(), dry_run),
+            "git" => delete_folder(dir_path.git_dir(), dry_run),
+            "checkouts" => delete_folder(dir_path.checkout_dir(), dry_run),
+            "db" => delete_folder(dir_path.db_dir(), dry_run),
+            "registry" => delete_folder(dir_path.registry_dir(), dry_run),
+            "cache" => delete_folder(dir_path.cache_dir(), dry_run),
+            "index" => delete_folder(dir_path.index_dir(), dry_run),
+            "src" => delete_folder(dir_path.src_dir(), dry_run),
             _ => (),
         }
     }
