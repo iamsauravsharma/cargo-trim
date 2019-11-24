@@ -261,14 +261,19 @@ impl CrateList {
 // remove version tag from crates full tag mini function of remove_version
 // function
 fn clear_version_value(a: &str) -> String {
-    let list = a.rsplitn(2, '-');
-    let mut value = String::new();
-    for (i, val) in list.enumerate() {
-        if i == 1 {
-            value = val.to_string()
+    let list: Vec<&str> = a.rsplitn(3, '-').collect();
+    let mut clear_name = String::new();
+    if semver::Version::parse(list[0]).is_ok() {
+        for (i, a) in list[1..].iter().rev().enumerate() {
+            clear_name.push_str(a);
+            if i != list.len() - 2 {
+                clear_name.push_str("-");
+            }
         }
+    } else {
+        clear_name = list[2].to_string();
     }
-    value
+    clear_name
 }
 
 // List out cargo.toml file present directory inside directory listed inside
