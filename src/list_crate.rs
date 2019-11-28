@@ -1,6 +1,6 @@
 use crate::{config_file::ConfigFile, crate_detail::CrateDetail, dir_path::DirPath};
 use fs_extra::dir::get_size;
-use serde_derive::Deserialize;
+use serde::Deserialize;
 use std::{
     env, fs,
     io::prelude::*,

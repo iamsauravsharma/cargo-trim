@@ -1,5 +1,5 @@
 use colored::*;
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use std::{fs, io::Read, path::PathBuf};
 
 // Stores config file information
