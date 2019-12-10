@@ -1,5 +1,5 @@
 cargo-trim-config 0.4.2
-Query config file data [alias: "c"]
+Query config file data
 
 USAGE:
     cargo trim config [FLAGS]

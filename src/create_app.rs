@@ -227,31 +227,21 @@ pub(super) fn app() -> App<'static, 'static> {
                 ])
                 .subcommand(
                     SubCommand::with_name("init")
-                        .about(
-                            "Initialize current working directory as cargo trim directory [alias: \
-                             \"in\"]",
-                        )
-                        .alias("in"),
+                        .about("Initialize current working directory as cargo trim directory"),
                 )
                 .subcommand(
                     SubCommand::with_name("clear")
-                        .about(
-                            "Clear current working directory from cargo cache config [alias: \
-                             \"clr\"]",
-                        )
-                        .alias("clr")
+                        .about("Clear current working directory from cargo cache config")
                         .arg(dry_run.clone()),
                 )
                 .subcommand(
                     SubCommand::with_name("config")
-                        .about("Query config file data [alias: \"c\"]")
-                        .alias("c")
+                        .about("Query config file data")
                         .args(&[directory_config, exclude_config, include_config]),
                 )
                 .subcommand(
                     SubCommand::with_name("git")
-                        .about("Perform operation only to git related cache file [alias: \"g\"]")
-                        .alias("g")
+                        .about("Perform operation only to git related cache file")
                         .args(&[
                             all_git,
                             dry_run.clone(),
@@ -267,11 +257,7 @@ pub(super) fn app() -> App<'static, 'static> {
                 )
                 .subcommand(
                     SubCommand::with_name("registry")
-                        .about(
-                            "Perform operation only to registry related cache file [alias: \
-                             \"reg\"]",
-                        )
-                        .alias("reg")
+                        .about("Perform operation only to registry related cache file")
                         .args(&[
                             all_registry,
                             dry_run.clone(),
@@ -287,20 +273,17 @@ pub(super) fn app() -> App<'static, 'static> {
                 )
                 .subcommand(
                     SubCommand::with_name("list")
-                        .about("List out crates [alias: \"l\"]")
-                        .alias("l")
+                        .about("List out crates")
                         .args(&[all_list, old, old_orphan, orphan, used]),
                 )
                 .subcommand(
                     SubCommand::with_name("remove")
-                        .about("Remove values from config file [alias: \"rm\"]")
-                        .alias("rm")
+                        .about("Remove values from config file")
                         .args(&[directory_remove, dry_run, exclude_remove, include_remove]),
                 )
                 .subcommand(
                     SubCommand::with_name("completions")
-                        .about("Generate tab-completions scripts for shell [alias: \"comp\"]")
-                        .alias("comp")
+                        .about("Generate tab-completions scripts for shell")
                         .arg(shell_type),
                 ),
         )

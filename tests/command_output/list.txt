@@ -1,5 +1,5 @@
 cargo-trim-list 0.4.2
-List out crates [alias: "l"]
+List out crates
 
 USAGE:
     cargo trim list [FLAGS]

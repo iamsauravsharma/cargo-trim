@@ -1,5 +1,5 @@
 cargo-trim-completions 0.4.2
-Generate tab-completions scripts for shell [alias: "comp"]
+Generate tab-completions scripts for shell
 
 USAGE:
     cargo trim completions <shell>

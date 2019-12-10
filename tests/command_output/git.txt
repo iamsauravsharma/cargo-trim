@@ -1,5 +1,5 @@
 cargo-trim-git 0.4.2
-Perform operation only to git related cache file [alias: "g"]
+Perform operation only to git related cache file
 
 USAGE:
     cargo trim git [FLAGS] [OPTIONS]
