@@ -99,10 +99,29 @@ impl CrateList {
         let mut version_removed_crate = remove_version(&installed_crate_registry);
         version_removed_crate.sort();
         if !version_removed_crate.is_empty() {
+            let mut common_crate_version = Vec::new();
             for i in 0..(version_removed_crate.len() - 1) {
-                if version_removed_crate[i] == version_removed_crate[i + 1] {
-                    let old_crate_name = installed_crate_registry[i].to_string();
-                    old_crate_registry.push(old_crate_name);
+                let (name, version) = &version_removed_crate[i];
+                let (next_name, _) = &version_removed_crate[i + 1];
+                if name == next_name {
+                    common_crate_version.push((version, i));
+                } else {
+                    common_crate_version.push((version, i));
+                    let mut latest_version = version;
+                    for (common_version, _) in &common_crate_version {
+                        if semver::Version::parse(latest_version)
+                            < semver::Version::parse(common_version)
+                        {
+                            latest_version = common_version;
+                        }
+                    }
+                    for (crate_version, position) in &common_crate_version {
+                        if crate_version.as_str() != latest_version {
+                            old_crate_registry
+                                .push(installed_crate_registry.get(*position).unwrap().to_string());
+                        }
+                    }
+                    common_crate_version = vec![]
                 }
             }
         }
@@ -260,20 +279,26 @@ impl CrateList {
 
 // remove version tag from crates full tag mini function of remove_version
 // function
-fn clear_version_value(a: &str) -> String {
+fn clear_version_value(a: &str) -> (String, String) {
     let list: Vec<&str> = a.rsplitn(3, '-').collect();
     let mut clear_name = String::new();
-    if semver::Version::parse(list[0]).is_ok() {
+    let version = if semver::Version::parse(list[0]).is_ok() {
         for (i, a) in list[1..].iter().rev().enumerate() {
             clear_name.push_str(a);
             if i != list.len() - 2 {
                 clear_name.push_str("-");
             }
         }
+        list[0].to_string()
     } else {
         clear_name = list[2].to_string();
-    }
-    clear_name
+        let mut version = String::new();
+        version.push_str(list[0]);
+        version.push_str("-");
+        version.push_str(list[1]);
+        version
+    };
+    (clear_name, version)
 }
 
 // List out cargo.toml file present directory inside directory listed inside
@@ -387,7 +412,7 @@ fn read_content(list: &[PathBuf], db_dir: &Path) -> (Vec<String>, Vec<String>) {
 
 // Function used to remove version from installed_crate_registry list so can be
 // used for old clean flag
-fn remove_version(installed_crate_registry: &[String]) -> Vec<String> {
+fn remove_version(installed_crate_registry: &[String]) -> Vec<(String, String)> {
     let mut removed_version = Vec::new();
     for i in installed_crate_registry.iter() {
         let data = clear_version_value(i);
