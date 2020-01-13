@@ -279,10 +279,16 @@ impl CrateList {
 
 // remove version tag from crates full tag mini function of remove_version
 // function
-fn clear_version_value(a: &str) -> (String, String) {
-    let list: Vec<&str> = a.rsplitn(3, '-').collect();
+fn clear_version_value(full_name: &str) -> (String, String) {
+    let build_number_split: Vec<&str> = full_name.rsplitn(2, '+').collect();
+    let splitted_name = if build_number_split.len() == 1 {
+        build_number_split[0]
+    } else {
+        build_number_split[1]
+    };
+    let list: Vec<&str> = splitted_name.rsplitn(3, '-').collect();
     let mut clear_name = String::new();
-    let version = if semver::Version::parse(list[0]).is_ok() {
+    let mut version = if semver::Version::parse(list[0]).is_ok() {
         for (i, a) in list[1..].iter().rev().enumerate() {
             clear_name.push_str(a);
             if i != list.len() - 2 {
@@ -298,6 +304,10 @@ fn clear_version_value(a: &str) -> (String, String) {
         version.push_str(list[1]);
         version
     };
+    if build_number_split.len() != 1 {
+        version.push_str("+");
+        version.push_str(build_number_split[0]);
+    }
     (clear_name, version)
 }
 
