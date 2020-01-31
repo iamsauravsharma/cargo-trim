@@ -3,9 +3,9 @@ language: rust
 git:
   depth: false
  
-dist: xenial
+dist: bionic
 
-matrix:
+jobs:
   include:
   - os: linux
     env: PUBLISH_PACKAGE=true
