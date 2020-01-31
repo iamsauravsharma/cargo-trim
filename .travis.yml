@@ -3,7 +3,7 @@ language: rust
 git:
   depth: false
  
-dist: bionic
+dist: xenial
 
 jobs:
   include:
