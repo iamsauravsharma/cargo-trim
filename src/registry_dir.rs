@@ -131,24 +131,27 @@ impl RegistryDir {
 
 // Remove crates which name is provided to delete
 fn remove_crate(path: &Path, value: &str, dry_run: bool) {
-    for entry in fs::read_dir(path).expect("failed to read index or cache dir") {
-        let entry = entry.unwrap();
-        let path = entry.path();
-        for entry in fs::read_dir(path).expect("failed to read crates path") {
+    if path.exists() {
+        for entry in fs::read_dir(path).expect("failed to read src or cache dir") {
             let entry = entry.unwrap();
             let path = entry.path();
-            if path.to_str().unwrap().contains(value) {
-                if path.is_file() {
-                    if dry_run {
-                        println!("{} {} {:?}", "Dry run:".yellow(), "removed".red(), path);
-                    } else {
-                        fs::remove_file(&path).expect("failed to remove file");
-                    }
-                } else if path.is_dir() {
-                    if dry_run {
-                        println!("{} {} {:?}", "Dry run:".yellow(), "removed".red(), path);
-                    } else {
-                        fs::remove_dir_all(&path).expect("failed to remove all directory contents");
+            for entry in fs::read_dir(path).expect("failed to read crates path") {
+                let entry = entry.unwrap();
+                let path = entry.path();
+                if path.to_str().unwrap().contains(value) {
+                    if path.is_file() {
+                        if dry_run {
+                            println!("{} {} {:?}", "Dry run:".yellow(), "removed".red(), path);
+                        } else {
+                            fs::remove_file(&path).expect("failed to remove file");
+                        }
+                    } else if path.is_dir() {
+                        if dry_run {
+                            println!("{} {} {:?}", "Dry run:".yellow(), "removed".red(), path);
+                        } else {
+                            fs::remove_dir_all(&path)
+                                .expect("failed to remove all directory contents");
+                        }
                     }
                 }
             }
