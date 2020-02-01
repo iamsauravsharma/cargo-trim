@@ -1,4 +1,4 @@
-cargo-trim-completions 0.5.1
+cargo-trim-completions 0.5.2
 Generate tab-completions scripts for shell
 
 USAGE:
