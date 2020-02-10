@@ -200,8 +200,11 @@ pub(super) fn app() -> App<'static, 'static> {
     App::new(env!("CARGO_PKG_NAME"))
         .bin_name("cargo")
         .version(env!("CARGO_PKG_VERSION"))
-        .settings(&[AppSettings::GlobalVersion, AppSettings::SubcommandRequired])
-        .global_setting(AppSettings::ArgRequiredElseHelp)
+        .settings(&[
+            AppSettings::GlobalVersion,
+            AppSettings::SubcommandRequired,
+            AppSettings::ArgRequiredElseHelp,
+        ])
         .subcommand(
             SubCommand::with_name("trim")
                 .author(env!("CARGO_PKG_AUTHORS"))
@@ -237,11 +240,13 @@ pub(super) fn app() -> App<'static, 'static> {
                 .subcommand(
                     SubCommand::with_name("config")
                         .about("Query config file data")
+                        .setting(AppSettings::ArgRequiredElseHelp)
                         .args(&[directory_config, exclude_config, include_config]),
                 )
                 .subcommand(
                     SubCommand::with_name("git")
                         .about("Perform operation only to git related cache file")
+                        .setting(AppSettings::ArgRequiredElseHelp)
                         .args(&[
                             all_git,
                             dry_run.clone(),
@@ -258,6 +263,7 @@ pub(super) fn app() -> App<'static, 'static> {
                 .subcommand(
                     SubCommand::with_name("registry")
                         .about("Perform operation only to registry related cache file")
+                        .setting(AppSettings::ArgRequiredElseHelp)
                         .args(&[
                             all_registry,
                             dry_run.clone(),
@@ -274,16 +280,19 @@ pub(super) fn app() -> App<'static, 'static> {
                 .subcommand(
                     SubCommand::with_name("list")
                         .about("List out crates")
+                        .setting(AppSettings::ArgRequiredElseHelp)
                         .args(&[all_list, old, old_orphan, orphan, used]),
                 )
                 .subcommand(
                     SubCommand::with_name("remove")
                         .about("Remove values from config file")
+                        .setting(AppSettings::ArgRequiredElseHelp)
                         .args(&[directory_remove, dry_run, exclude_remove, include_remove]),
                 )
                 .subcommand(
                     SubCommand::with_name("completions")
                         .about("Generate tab-completions scripts for shell")
+                        .setting(AppSettings::ArgRequiredElseHelp)
                         .arg(shell_type),
                 ),
         )
