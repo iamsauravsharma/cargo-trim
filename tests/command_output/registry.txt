@@ -1,4 +1,4 @@
-cargo-trim-registry 0.5.2
+cargo-trim-registry 0.5.3
 Perform operation only to registry related cache file
 
 USAGE:

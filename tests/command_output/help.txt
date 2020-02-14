@@ -1,4 +1,4 @@
-cargo-trim 0.5.2
+cargo-trim 0.5.3
 Saurav Sharma <appdroiddeveloper@gmail.com>
 Binary application to cleanup $CARGO_HOME cache
 

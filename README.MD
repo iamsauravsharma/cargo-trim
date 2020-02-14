@@ -35,11 +35,19 @@ By default cargo-trim print out colored output if you want to use a non colored 
     cargo install cargo-trim --features no-color
 ```
 
+### Setup
+Initially you need to setup cargo-trim for some of commands such as orphan clean to work properly.
+To setup cargo-trim to properly work for all projects related to rust lang go to directory where all projects lies and run
+`cargo trim init`. You can even run this command multiple time to add multiple directory.
+or simple run command `cargo trim -s <directory-path>`. All projects inside directory will be used for listing orphan crates. So
+if there is any projects in other directory then their dependencies will be classified as orphan crates. If not used by any
+other crates.
+
 ### Command output
 All cargo-trim can be run using `cargo trim <command>`
 `cargo trim --help` will produce out following output which list out all of available command for cargo-trim
 ```
-cargo-trim 0.5.1
+cargo-trim 0.5.3
 Saurav Sharma <appdroiddeveloper@gmail.com>
 Binary application to cleanup $CARGO_HOME cache
 
