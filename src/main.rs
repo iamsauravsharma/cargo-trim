@@ -21,7 +21,7 @@ use crate::{
     list_crate::CrateList, registry_dir::RegistryDir,
 };
 use clap::{ArgMatches, Shell};
-use colored::*;
+use colored::Colorize;
 use fs_extra::dir::get_size;
 use pretty_bytes::converter::convert;
 use std::{collections::HashMap, fs, path::PathBuf, process::Command};

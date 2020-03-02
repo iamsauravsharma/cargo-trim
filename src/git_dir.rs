@@ -1,5 +1,5 @@
 use crate::{list_crate, ConfigFile, CrateDetail};
-use colored::*;
+use colored::Colorize;
 use std::{fs, path::Path};
 
 // Store git dir folder information
