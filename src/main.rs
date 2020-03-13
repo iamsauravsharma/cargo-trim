@@ -20,7 +20,7 @@ use crate::{
     config_file::ConfigFile, crate_detail::CrateDetail, dir_path::DirPath, git_dir::GitDir,
     list_crate::CrateList, registry_dir::RegistryDir,
 };
-use clap::{ArgMatches, Shell};
+use clap::ArgMatches;
 use colored::Colorize;
 use fs_extra::dir::get_size;
 use pretty_bytes::converter::convert;
@@ -33,7 +33,6 @@ fn main() {
         .expect("failed to open config dir folder");
     let app = create_app::app().get_matches();
     let app = app.subcommand_matches("trim").unwrap();
-    generate_completions(app);
     let mut git_subcommand = &ArgMatches::new();
     let mut registry_subcommand = &ArgMatches::new();
     if app.is_present("git") {
@@ -190,45 +189,6 @@ fn main() {
 
     let cargo_toml_location = list_crate.cargo_toml_location().location_path();
     update_cargo_toml(app, cargo_toml_location);
-}
-
-// Generate out completions script for different shell
-fn generate_completions(app: &ArgMatches) {
-    if app.is_present("completions") {
-        let shell_value = app
-            .subcommand_matches("completions")
-            .unwrap()
-            .value_of("shell")
-            .unwrap();
-        match shell_value {
-            "bash" => create_app::app().gen_completions_to(
-                "cargo-trim",
-                Shell::Bash,
-                &mut std::io::stdout(),
-            ),
-            "fish" => create_app::app().gen_completions_to(
-                "cargo-trim",
-                Shell::Fish,
-                &mut std::io::stdout(),
-            ),
-            "zsh" => create_app::app().gen_completions_to(
-                "cargo-trim",
-                Shell::Zsh,
-                &mut std::io::stdout(),
-            ),
-            "powershell" => create_app::app().gen_completions_to(
-                "cargo-trim",
-                Shell::PowerShell,
-                &mut std::io::stdout(),
-            ),
-            "elvish" => create_app::app().gen_completions_to(
-                "cargo-trim",
-                Shell::Elvish,
-                &mut std::io::stdout(),
-            ),
-            _ => {}
-        }
-    }
 }
 
 // Clear config file data

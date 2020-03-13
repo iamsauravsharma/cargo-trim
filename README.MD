@@ -84,15 +84,14 @@ OPTIONS:
     -w, --wipe <folder>                   Wipe folder [possible values: git, checkouts, db, registry, cache, index, src]
 
 SUBCOMMANDS:
-    clear          Clear current working directory from cargo cache config
-    completions    Generate tab-completions scripts for shell
-    config         Query config file data
-    git            Perform operation only to git related cache file
-    help           Prints this message or the help of the given subcommand(s)
-    init           Initialize current working directory as cargo trim directory
-    list           List out crates
-    registry       Perform operation only to registry related cache file
-    remove         Remove values from config file
+    clear       Clear current working directory from cargo cache config
+    config      Query config file data
+    git         Perform operation only to git related cache file
+    help        Prints this message or the help of the given subcommand(s)
+    init        Initialize current working directory as cargo trim directory
+    list        List out crates
+    registry    Perform operation only to registry related cache file
+    remove      Remove values from config file
 ```
 
 ### Config file location

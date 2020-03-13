@@ -151,12 +151,6 @@ pub(super) fn app() -> App<'static, 'static> {
         )
         .takes_value(true);
 
-    let shell_type = Arg::with_name("shell")
-        .help("Shell name for generation script")
-        .required(true)
-        .index(1)
-        .possible_values(&["bash", "zsh", "fish", "powershell", "elvish"]);
-
     let top_crate = Arg::with_name("top crates")
         .short("t")
         .long("top")
@@ -288,12 +282,6 @@ pub(super) fn app() -> App<'static, 'static> {
                         .about("Remove values from config file")
                         .setting(AppSettings::ArgRequiredElseHelp)
                         .args(&[directory_remove, dry_run, exclude_remove, include_remove]),
-                )
-                .subcommand(
-                    SubCommand::with_name("completions")
-                        .about("Generate tab-completions scripts for shell")
-                        .setting(AppSettings::ArgRequiredElseHelp)
-                        .arg(shell_type),
                 ),
         )
 }
