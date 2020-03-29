@@ -1,6 +1,10 @@
 use colored::Colorize;
 use serde::{Deserialize, Serialize};
-use std::{fs, io::Read, path::PathBuf};
+use std::{
+    fs,
+    io::Read,
+    path::{Path, PathBuf},
+};
 
 // Stores config file information
 #[derive(Serialize, Deserialize)]
@@ -72,7 +76,9 @@ pub(crate) fn modify_config_file(
                 .value_of(name)
                 .expect("No value is present for remove value from config file flag");
             if name == "set directory" {
-                deserialize_config.directory.push(value.to_string());
+                // convert str to path and again to str for better representation in config file
+                let path = Path::new(value).to_str().unwrap();
+                deserialize_config.directory.push(path.to_string());
             }
             if name == "exclude" {
                 deserialize_config.exclude.push(value.to_string());
@@ -105,16 +111,17 @@ pub(crate) fn modify_config_file(
             if subcommand.is_present(name) {
                 let value = subcommand
                     .value_of(name)
-                    .expect("No value is present for remove value from config file flag")
-                    .to_string();
+                    .expect("No value is present for remove value from config file flag");
                 if name == "directory" {
-                    remove_item_crate(&mut deserialize_config.directory, &value, dry_run);
+                    // convert str to path and again to str for better representation in config file
+                    let path = Path::new(value).to_str().unwrap();
+                    remove_item_crate(&mut deserialize_config.directory, path, dry_run);
                 }
                 if name == "exclude" {
-                    remove_item_crate(&mut deserialize_config.exclude, &value, dry_run);
+                    remove_item_crate(&mut deserialize_config.exclude, value, dry_run);
                 }
                 if name == "include" {
-                    remove_item_crate(&mut deserialize_config.include, &value, dry_run);
+                    remove_item_crate(&mut deserialize_config.include, value, dry_run);
                 }
             }
         }

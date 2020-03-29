@@ -29,33 +29,25 @@ impl DirPath {
             fs::File::create(config_dir.to_str().unwrap()).expect("Failed to create config file");
         }
 
-        let home_dir = Path::new(env!("CARGO_HOME"));
+        let home_dir = Path::new(env!("CARGO_HOME")).to_path_buf();
 
         // set bin directory path
-        let mut bin_dir = home_dir.to_path_buf();
-        bin_dir.push("bin");
+        let bin_dir = home_dir.join("bin");
 
         // set git directory path
-        let mut git_dir = home_dir.to_path_buf();
-        git_dir.push("git");
+        let git_dir = home_dir.join("git");
 
         // set git dir sub folder path
-        let mut checkout_dir = git_dir.to_path_buf();
-        checkout_dir.push("checkouts");
-        let mut db_dir = git_dir.to_path_buf();
-        db_dir.push("db");
+        let checkout_dir = git_dir.join("checkouts");
+        let db_dir = git_dir.join("db");
 
         // set registry dir path
-        let mut registry_dir = home_dir.to_path_buf();
-        registry_dir.push("registry");
+        let registry_dir = home_dir.join("registry");
 
         // set registry dir sub folder path
-        let mut cache_dir = registry_dir.to_path_buf();
-        cache_dir.push("cache");
-        let mut src_dir = registry_dir.to_path_buf();
-        src_dir.push("src");
-        let mut index_dir = registry_dir.to_path_buf();
-        index_dir.push("index");
+        let cache_dir = registry_dir.join("cache");
+        let src_dir = registry_dir.join("src");
+        let index_dir = registry_dir.join("index");
 
         Self {
             bin_dir,

@@ -3,7 +3,6 @@ use fs_extra::dir::get_size;
 use serde::Deserialize;
 use std::{
     env, fs,
-    io::prelude::*,
     path::{Path, PathBuf},
 };
 
@@ -345,12 +344,10 @@ fn read_content(list: &[PathBuf], db_dir: &Path) -> (Vec<String>, Vec<String>) {
             let lock_file = lock_folder
                 .to_str()
                 .expect("Failed to convert lock_folder to str");
-            let mut buffer = String::new();
-            let mut file = std::fs::File::open(lock_file).expect("failed to open cargo lock file");
-            file.read_to_string(&mut buffer)
+            let file_content = std::fs::read_to_string(lock_file)
                 .expect("failed to read cargo lock content to string");
             let cargo_lock_data: LockData =
-                toml::from_str(&buffer).expect("Failed to convert to Toml format");
+                toml::from_str(&file_content).expect("Failed to convert to Toml format");
             if let Some(packages) = cargo_lock_data.package() {
                 for package in packages {
                     if let Some(source) = package.source() {
