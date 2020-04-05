@@ -13,6 +13,10 @@ jobs:
   - os: windows
   - rust: beta
   - rust: nightly
+  - os: linux
+    env: TARGET=x86_64-unknown-linux-musl
+  - os: windows
+    env: TARGET=x86_64-pc-windows-gnu
 
 branches:
   only:
@@ -21,28 +25,17 @@ branches:
     - master
     - /^v\d+\.\d+\.\d+(-\S*)?$/
 
+before_install:
+- chmod -R 777 ci
+
 install:
-  - rustup component add rustfmt && RUSTFMT="yes" || RUSTFMT="no"
-  - rustup component add clippy && CLIPPY="yes" || CLIPPY="no"
+- . ci/install.sh
 
 before_script:
-  - if [[ "$RUSTFMT" == "yes" ]]; then
-      rustfmt -V;
-    fi
-  - if [[ "$CLIPPY" == "yes" ]]; then
-      cargo clippy -V;
-    fi
+- . ci/before_script.sh
 
 script:
-  - if [[ "$RUSTFMT" == "yes" ]]; then
-      cargo fmt --all -- --check;
-    fi
-  - if [[ "$CLIPPY" == "yes" ]]; then
-      cargo clippy --all -- -D warnings;
-    fi
-  - cargo build --all
-  - cargo doc --no-deps --all --all-features
-  - cargo test --all --all-features
+- . ci/script.sh
 
 deploy:
   provider: cargo
