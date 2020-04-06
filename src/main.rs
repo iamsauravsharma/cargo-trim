@@ -1,12 +1,8 @@
 #![warn(unreachable_pub, anonymous_parameters, bare_trait_objects)]
 #![deny(unsafe_code)]
 #![deny(clippy::all)]
-#![warn(clippy::pedantic, clippy::nursery)]
-#![allow(
-    clippy::cast_precision_loss,
-    clippy::too_many_lines,
-    clippy::missing_const_for_fn
-)]
+#![warn(clippy::pedantic)]
+#![allow(clippy::cast_precision_loss, clippy::too_many_lines)]
 
 mod config_file;
 mod crate_detail;
