@@ -35,8 +35,8 @@ struct LockData {
 }
 
 impl LockData {
-    fn package(&self) -> Option<Vec<Package>> {
-        self.package.to_owned()
+    fn package(&self) -> &Option<Vec<Package>> {
+        &self.package
     }
 }
 
@@ -56,8 +56,8 @@ impl Package {
         &self.version
     }
 
-    fn source(&self) -> Option<String> {
-        self.source.to_owned()
+    fn source(&self) -> &Option<String> {
+        &self.source
     }
 }
 
