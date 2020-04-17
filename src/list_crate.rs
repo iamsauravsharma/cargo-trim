@@ -320,7 +320,7 @@ fn list_cargo_toml(path: &Path) -> CargoTomlLocation {
         {
             let data_path_buf = entry.unwrap().path();
             let data = data_path_buf.as_path();
-            if data.is_dir() {
+            if data.is_dir() && !data.file_name().unwrap().to_str().unwrap().starts_with(".") {
                 let kids_list = list_cargo_toml(data);
                 list.append(kids_list);
             }
