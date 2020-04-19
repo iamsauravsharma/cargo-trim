@@ -12,11 +12,10 @@
 | :----: | :---: | :-----: | :---: | :---: | :-----: |
 | [![Stable support][stable_supported_badge]][git_link] | [![Beta support][beta_supported_badge]][git_link] | [![Nightly support][nightly_supported_badge]][git_link] | [![Linux support][linux_supported_badge]][git_link] | [![OSX support][osx_supported_badge]][git_link] | [![Windows support][windows_supported_badge]][git_link] |
 
-Binary application for cleaning __\$CARGO_HOME/registry__  & __\$CARGO_HOME/git__ folder support orphan cleaning and old cleaning
+Binary application for cleaning __\$CARGO_HOME/registry__  & __\$CARGO_HOME/git__ folder support orphan and old crates cleaning
 Default \$CARGO_HOME is set as \$HOME/.cargo
 
 ### Install
-Initially you should have rustc and cargo installed for a detail information of how to install rust-lang visit https://rust-lang.org
 
 For installation of cargo-trim:-
 You can install from crates.io registry
