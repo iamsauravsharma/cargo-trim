@@ -20,8 +20,7 @@ use clap::ArgMatches;
 use colored::Colorize;
 use fs_extra::dir::get_size;
 use pretty_bytes::converter::convert;
-use std::{collections::HashMap, fs, path::PathBuf, process::Command};
-
+use std::{collections::HashMap, fs, io, io::Write, path::PathBuf, process::Command};
 fn main() {
     // set all dir path
     let dir_path = DirPath::set_dir_path();
@@ -42,7 +41,8 @@ fn main() {
     let dry_run_git = git_subcommand.is_present("dry run");
     let dry_run_registry = registry_subcommand.is_present("dry run");
 
-    // Perform all modification of config file flag and subcommand operation
+    // Perform all modification of config file flag and subcommand operation and
+    // return config file
     let config_file = config_file::modify_config_file(&mut file, app, dir_path.config_dir());
 
     // Perform action of removing config file with -c flag
@@ -107,7 +107,7 @@ fn main() {
     );
 
     // Perform action on list subcommand
-    list_subcommand(app, &list_crate, &crate_detail);
+    list_subcommand(app, &list_crate, &crate_detail, &config_file);
 
     // Perform action on -o flag matches which remove all old crates
     let old_app = app.is_present("old clean");
@@ -132,6 +132,7 @@ fn main() {
         &mut registry_crates_location,
         &git_crates_location,
         &crate_detail,
+        &config_file,
     );
 
     // Orphan clean a crates which is not present in directory stored in directory
@@ -145,6 +146,7 @@ fn main() {
         &mut registry_crates_location,
         &git_crates_location,
         &crate_detail,
+        &config_file,
     );
 
     // Perform action for -q flag
@@ -378,7 +380,12 @@ fn old_orphan_git_list(list_crate: &CrateList) -> Vec<String> {
 }
 
 // Perform different operation for a list subcommand
-fn list_subcommand(app: &ArgMatches, list_crate: &CrateList, crate_detail: &CrateDetail) {
+fn list_subcommand(
+    app: &ArgMatches,
+    list_crate: &CrateList,
+    crate_detail: &CrateDetail,
+    config_file: &ConfigFile,
+) {
     if app.is_present("list") {
         let list_subcommand = app.subcommand_matches("list").unwrap();
         if list_subcommand.is_present("old") {
@@ -396,6 +403,14 @@ fn list_subcommand(app: &ArgMatches, list_crate: &CrateList, crate_detail: &Crat
                 "REGISTRY ORPHAN CRATE",
             );
             list_crate_type(crate_detail, list_crate.orphan_git(), "GIT ORPHAN CRATE");
+            if config_file.directory().is_empty() {
+                let warning_text = "WARNING: You have not initialized any directory as rust \
+                                    project directory. This will list all crates as orphan crate. \
+                                    Run command 'cargo trim init' to initialize current directory \
+                                    as rust project directory or pass cargo trim -s <directory> \
+                                    for setting rust project directory";
+                println!("{}", warning_text.bright_yellow());
+            }
         }
         if list_subcommand.is_present("used") {
             list_crate_type(
@@ -404,6 +419,14 @@ fn list_subcommand(app: &ArgMatches, list_crate: &CrateList, crate_detail: &Crat
                 "REGISTRY USED CRATE",
             );
             list_crate_type(crate_detail, list_crate.used_git(), "GIT USED CRATE");
+            if config_file.directory().is_empty() {
+                let warning_text = "WARNING: You have not initialized any directory as rust \
+                                    project directory. This will list no crates as used crate. \
+                                    Run command 'cargo trim init' to initialize current directory \
+                                    as rust project directory or pass cargo trim -s <directory> \
+                                    for setting rust project directory";
+                println!("{}", warning_text.bright_yellow());
+            }
         }
         if list_subcommand.is_present("all") {
             list_crate_type(
@@ -428,6 +451,15 @@ fn list_subcommand(app: &ArgMatches, list_crate: &CrateList, crate_detail: &Crat
                 &old_orphan_git_list(list_crate),
                 "GIT OLD+ORPHAN CRATE",
             );
+            if config_file.directory().is_empty() {
+                let warning_text = "WARNING: You have not initialized any directory as rust \
+                                    project directory. This will list all old crates as old \
+                                    orphan crates even if they are not orphan crates. Run command \
+                                    'cargo trim init' to initialize current directory as rust \
+                                    project directory or pass cargo trim -s <directory> for \
+                                    setting rust project directory";
+                println!("{}", warning_text.bright_yellow());
+            }
         }
     }
 }
@@ -509,8 +541,27 @@ fn old_orphan_clean(
     registry_crates_location: &mut RegistryDir,
     git_crates_location: &GitDir,
     crate_detail: &CrateDetail,
+    config_file: &ConfigFile,
 ) {
     if old_orphan_app || old_orphan_registry || old_orphan_git {
+        if config_file.directory().is_empty() {
+            let warning_text = "WARNING: You have not initialized any directory as rust project \
+                                directory. This command will clean all old crates even if they \
+                                are not orphan crates. Run command 'cargo trim init' to \
+                                initialize current directory as rust project directory or pass \
+                                cargo trim -s <directory> for setting rust project directory";
+            println!("{}", warning_text.bright_yellow());
+            let mut input = String::new();
+            print!("Do you want to continue? (y/N) ");
+            let _ = io::stdout().flush();
+            io::stdin()
+                .read_line(&mut input)
+                .expect("error: unable to read user input");
+            let input = input.trim().to_ascii_lowercase();
+            if vec!["n", "no", ""].contains(&input.as_str()) {
+                return;
+            }
+        }
         let mut size_cleaned = 0.0;
         if old_orphan_app || old_orphan_registry {
             let old_orphan_registry = old_orphan_registry_list(list_crate);
@@ -539,8 +590,27 @@ fn orphan_clean(
     registry_crates_location: &mut RegistryDir,
     git_crates_location: &GitDir,
     crate_detail: &CrateDetail,
+    config_file: &ConfigFile,
 ) {
     if orphan_app || orphan_git || orphan_registry {
+        if config_file.directory().is_empty() {
+            let warning_text = "WARNING: You have not initialized any directory as rust project \
+                                directory. This command will clean all crates since all crates \
+                                are classified as orphan crate. Run command 'cargo trim init' to \
+                                initialize current directory as rust project directory or pass \
+                                cargo trim -s <directory> for setting rust project directory";
+            println!("{}", warning_text.bright_yellow());
+            let mut input = String::new();
+            print!("Do you want to continue? (y/N) ");
+            let _ = io::stdout().flush();
+            io::stdin()
+                .read_line(&mut input)
+                .expect("error: unable to read user input");
+            let input = input.trim().to_ascii_lowercase();
+            if vec!["n", "no", ""].contains(&input.as_str()) {
+                return;
+            }
+        }
         let mut size_cleaned = 0.0;
         if orphan_app || orphan_registry {
             size_cleaned += registry_crates_location
