@@ -141,10 +141,10 @@ pub(super) fn app() -> App<'static, 'static> {
         .value_name("crate");
 
     let set_directory = Arg::with_name("set directory")
-        .short("s")
+        .short("d")
         .multiple(true)
-        .long("set-directory")
-        .value_name("Directory")
+        .long("directory")
+        .value_name("directory")
         .help(
             "Set directory of Rust project [use TRIM_DIRECTORY environment variable for creating \
              directory list without editing conf file]",
