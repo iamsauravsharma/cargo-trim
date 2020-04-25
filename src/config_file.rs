@@ -113,8 +113,8 @@ pub(crate) fn modify_config_file(
                     .value_of(name)
                     .expect("No value is present for remove value from config file flag");
                 if name == "directory" {
-                    // convert str to path and again to str for better representation in config file
-                    let path = Path::new(value).to_str().unwrap();
+                    let path_separator = std::path::MAIN_SEPARATOR;
+                    let path = value.trim_end_matches(path_separator);
                     remove_item_crate(&mut deserialize_config.directory, path, dry_run);
                 }
                 if name == "exclude" {
