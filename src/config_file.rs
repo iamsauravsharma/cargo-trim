@@ -1,10 +1,6 @@
 use colored::Colorize;
 use serde::{Deserialize, Serialize};
-use std::{
-    fs,
-    io::Read,
-    path::{Path, PathBuf},
-};
+use std::{fs, io::Read, path::PathBuf};
 
 // Stores config file information
 #[derive(Serialize, Deserialize)]
