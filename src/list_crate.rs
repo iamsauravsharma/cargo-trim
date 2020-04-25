@@ -318,18 +318,23 @@ fn list_cargo_toml(path: &Path) -> CargoTomlLocation {
         for entry in std::fs::read_dir(path)
             .expect("failed to read directory while trying to find cargo.toml")
         {
-            let data_path_buf = entry.unwrap().path();
-            let data = data_path_buf.as_path();
-            if data.is_dir() && !data.file_name().unwrap().to_str().unwrap().starts_with('.') {
-                let kids_list = list_cargo_toml(data);
+            let sub_path_buf = entry.unwrap().path();
+            let sub = sub_path_buf.as_path();
+            if sub.is_dir() && !is_file_hidden(sub) {
+                let kids_list = list_cargo_toml(sub);
                 list.append(kids_list);
             }
-            if data.is_file() && data.ends_with("Cargo.toml") {
+            if sub.is_file() && sub.ends_with("Cargo.toml") {
                 list.add_path(path.to_path_buf());
             }
         }
     }
     list
+}
+
+// check if file is hidden or not
+fn is_file_hidden(path: &Path) -> bool {
+    path.file_name().unwrap().to_str().unwrap().starts_with('.')
 }
 
 // Read out content of cargo.lock file to list out crates present so can be used
