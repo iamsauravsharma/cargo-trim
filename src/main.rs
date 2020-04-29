@@ -41,7 +41,7 @@ fn main() {
 
     // Perform all modification of config file flag and subcommand operation and
     // return config file
-    let config_file = config_file::modify_config_file(app, dir_path.config_dir());
+    let config_file = config_file::modify_config_file(app, dir_path.config_file());
 
     // Perform action of removing config file with -c flag
     clear_config(app, &dir_path);
@@ -193,7 +193,8 @@ fn clear_config(app: &ArgMatches, dir_path: &DirPath) {
         if app.is_present("dry run") {
             println!("{} Cleared config file", "Dry run:".yellow());
         } else {
-            fs::remove_file(dir_path.config_dir().as_path()).expect("failed to delete config file");
+            fs::remove_file(dir_path.config_file().as_path())
+                .expect("failed to delete config file");
             println!("Cleared config file");
         }
     }

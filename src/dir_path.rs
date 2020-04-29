@@ -6,7 +6,7 @@ use std::{
 // Struct for storing Directory path
 pub(crate) struct DirPath {
     bin_dir: PathBuf,
-    config_dir: PathBuf,
+    config_file: PathBuf,
     git_dir: PathBuf,
     checkout_dir: PathBuf,
     db_dir: PathBuf,
@@ -20,13 +20,13 @@ impl DirPath {
     // set directory path
     pub(crate) fn set_dir_path() -> Self {
         // set config file directory path
-        let mut config_dir = dirs::config_dir()
+        let mut config_file = dirs::config_dir()
             .expect("Cannot get config directory location it may be not supported OS");
-        config_dir.push("cargo_trim_config.json");
+        config_file.push("cargo_trim_config.json");
 
         // If config file does not exists create one config file
-        if !config_dir.exists() {
-            fs::File::create(config_dir.to_str().unwrap()).expect("Failed to create config file");
+        if !config_file.exists() {
+            fs::File::create(config_file.to_str().unwrap()).expect("Failed to create config file");
         }
 
         let home_dir = Path::new(env!("CARGO_HOME")).to_path_buf();
@@ -51,7 +51,7 @@ impl DirPath {
 
         Self {
             bin_dir,
-            config_dir,
+            config_file,
             git_dir,
             checkout_dir,
             db_dir,
@@ -67,9 +67,9 @@ impl DirPath {
         &self.bin_dir
     }
 
-    // return path of config dir
-    pub(crate) fn config_dir(&self) -> &PathBuf {
-        &self.config_dir
+    // return path of config file
+    pub(crate) fn config_file(&self) -> &PathBuf {
+        &self.config_file
     }
 
     // return path of git dir
