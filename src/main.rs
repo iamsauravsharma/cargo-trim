@@ -24,8 +24,6 @@ use std::{collections::HashMap, fs, io, io::Write, path::PathBuf, process::Comma
 fn main() {
     // set all dir path
     let dir_path = DirPath::set_dir_path();
-    let mut file = fs::File::open(dir_path.config_dir().to_str().unwrap())
-        .expect("failed to open config dir folder");
     let app = create_app::app().get_matches();
     let app = app.subcommand_matches("trim").unwrap();
     let mut git_subcommand = &ArgMatches::new();
@@ -43,7 +41,7 @@ fn main() {
 
     // Perform all modification of config file flag and subcommand operation and
     // return config file
-    let config_file = config_file::modify_config_file(&mut file, app, dir_path.config_dir());
+    let config_file = config_file::modify_config_file(app, dir_path.config_dir());
 
     // Perform action of removing config file with -c flag
     clear_config(app, &dir_path);
