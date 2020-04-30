@@ -320,7 +320,7 @@ fn list_cargo_toml(path: &Path) -> CargoTomlLocation {
         {
             let sub_path_buf = entry.unwrap().path();
             let sub = sub_path_buf.as_path();
-            if sub.is_dir() && !is_file_hidden(sub) {
+            if sub.is_dir() && !is_file_hidden(sub) && !file_name_is(path, "target") {
                 let kids_list = list_cargo_toml(sub);
                 list.append(kids_list);
             }
@@ -335,6 +335,11 @@ fn list_cargo_toml(path: &Path) -> CargoTomlLocation {
 // check if file is hidden or not
 fn is_file_hidden(path: &Path) -> bool {
     path.file_name().unwrap().to_str().unwrap().starts_with('.')
+}
+
+// check if file name is equal to name or not
+fn file_name_is(path: &Path, name: &str) -> bool {
+    path.file_name().unwrap().to_str().unwrap() == name
 }
 
 // Read out content of cargo.lock file to list out crates present so can be used
