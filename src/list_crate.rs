@@ -166,8 +166,7 @@ impl CrateList {
         env_directory.dedup();
         for path in &env_directory {
             let list_cargo_toml = list_cargo_toml(Path::new(path));
-            let (mut registry_crate, mut git_crate) =
-                read_content(list_cargo_toml.location_path(), db_dir);
+            let (mut registry_crate, mut git_crate) = read_content(list_cargo_toml.location_path());
             cargo_toml_location.append(list_cargo_toml);
             used_crate_registry.append(&mut registry_crate);
             used_crate_git.append(&mut git_crate);
@@ -344,7 +343,7 @@ fn file_name_is(path: &Path, name: &str) -> bool {
 
 // Read out content of cargo.lock file to list out crates present so can be used
 // for orphan clean
-fn read_content(list: &[PathBuf], db_dir: &Path) -> (Vec<String>, Vec<String>) {
+fn read_content(list: &[PathBuf]) -> (Vec<String>, Vec<String>) {
     let mut present_crate_registry = Vec::new();
     let mut present_crate_git = Vec::new();
     for lock in list.iter() {
@@ -368,55 +367,28 @@ fn read_content(list: &[PathBuf], db_dir: &Path) -> (Vec<String>, Vec<String>) {
                             present_crate_registry.push(full_name);
                         }
                         if source.contains("git+") {
-                            let mut path_db_list = Vec::new();
-                            for git_db in fs::read_dir(db_dir).expect("failed to read git db dir") {
-                                let entry = git_db.unwrap().path();
-                                let file_name = entry
-                                    .file_name()
-                                    .expect("failed to get file name")
-                                    .to_str()
-                                    .expect("failed to convert OS str to str");
-                                if file_name.contains(name) {
-                                    let mut path_db = db_dir.to_path_buf();
-                                    path_db.push(&file_name);
-                                    path_db_list.push(path_db);
-                                }
-                            }
-                            for path_db in path_db_list {
-                                if source.contains("?rev=") {
-                                    let rev: Vec<&str> = source.split("?rev=").collect();
-                                    let rev_sha: Vec<&str> = rev[1].split('#').collect();
-                                    let rev_value = rev_sha[1].to_string();
-                                    let rev_short_form = &rev_value[..=6];
-                                    let full_name = format!("{}-{}", name, rev_short_form);
-                                    present_crate_git.push(full_name);
-                                } else if source.contains("?branch=") || source.contains("?tag=") {
-                                    let branch: Vec<&str> = if source.contains("?branch=") {
-                                        source.split("?branch=").collect()
-                                    } else {
-                                        source.split("?tag=").collect()
-                                    };
-                                    let branch: Vec<&str> = branch[1].split('#').collect();
-                                    let branch_value = branch[0];
-                                    let output = std::process::Command::new("git")
-                                        .arg("log")
-                                        .arg("--pretty=format:%h")
-                                        .arg("--max-count=1")
-                                        .arg(branch_value)
-                                        .current_dir(path_db)
-                                        .output()
-                                        .expect(
-                                            "failed to execute command for pretty log of branch",
-                                        );
-                                    let rev_value = std::str::from_utf8(&output.stdout)
-                                        .expect("stdout is not utf8");
-                                    let full_name = format!("{}-{}", name, rev_value);
-                                    present_crate_git.push(full_name);
+                            if source.contains("?rev=")
+                                || source.contains("?branch=")
+                                || source.contains("?tag=")
+                            {
+                                let split_url: Vec<&str> = if source.contains("?rev=") {
+                                    source.split("?rev=").collect()
+                                } else if source.contains("?branch=") {
+                                    source.split("?branch=").collect()
                                 } else {
-                                    let rev_value = latest_rev_value(&path_db);
-                                    let full_name = format!("{}-{}", name, rev_value);
-                                    present_crate_git.push(full_name);
-                                }
+                                    source.split("?tag=").collect()
+                                };
+                                let rev_sha: Vec<&str> = split_url[1].split('#').collect();
+                                let rev_value = rev_sha[1].to_string();
+                                let rev_short_form = &rev_value[..=6];
+                                let full_name = format!("{}-{}", name, rev_short_form);
+                                present_crate_git.push(full_name);
+                            } else {
+                                let rev_sha: Vec<&str> = source.split('#').collect();
+                                let rev_value = rev_sha[1].to_string();
+                                let rev_short_form = &rev_value[..=6];
+                                let full_name = format!("{}-{}", name, rev_short_form);
+                                present_crate_git.push(full_name);
                             }
                         }
                     }
