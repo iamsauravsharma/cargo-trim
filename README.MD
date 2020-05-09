@@ -2,9 +2,9 @@
 
 **Project status & info:**
 
-| Travis Build Status | Dependency Status | License | Crates Version |
-| :-----------------: | :---------------: | :-----: | :------------: |
-| [![Travis Build Status][build_badge]][build_link] | [![Dependency status][deps_badge]][deps_link] | [![License: MIT][license_badge]][license_link] | [![Crate][cratesio_badge]][cratesio_link] |
+| Travis Build Status | License | Crates Version |
+| :-----------------: | :-----: | :------------: |
+| [![Travis Build Status][build_badge]][build_link] | [![License: MIT][license_badge]][license_link] | [![Crate][cratesio_badge]][cratesio_link] |
 
 **Rust & OS support:**
 
@@ -101,9 +101,6 @@ In file cargo-trim stores out information about directory of rust projects and e
 
 [build_badge]: https://img.shields.io/travis/com/iamsauravsharma/cargo-trim.svg?logo=travis
 [build_link]: https://travis-ci.com/iamsauravsharma/cargo-trim
-
-[deps_badge]: https://deps.rs/repo/github/iamsauravsharma/cargo-trim/status.svg
-[deps_link]: https://deps.rs/repo/github/iamsauravsharma/cargo-trim
 
 [license_badge]: https://img.shields.io/github/license/iamsauravsharma/cargo-trim.svg
 [license_link]: LICENSE
