@@ -1027,6 +1027,9 @@ fn get_size(path: &PathBuf) -> std::io::Result<u64> {
 }
 
 fn convert_pretty(num: u64) -> String {
+    if num == 0 {
+        return "0 B".to_string();
+    }
     let num = num as f64;
     let units = ["B", "kB", "MB", "GB", "TB"];
     let factor = (num.log10() / 3_f64).floor();
