@@ -2,7 +2,12 @@
 #![deny(unsafe_code)]
 #![deny(clippy::all)]
 #![warn(clippy::pedantic)]
-#![allow(clippy::cast_precision_loss, clippy::too_many_lines)]
+#![allow(
+    clippy::cast_precision_loss,
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    clippy::too_many_lines
+)]
 
 mod config_file;
 mod crate_detail;
@@ -927,7 +932,7 @@ fn show_top_number_crates(crate_detail: &CrateDetail, crate_type: &str, number: 
 fn print_index_value_crate(vector: &[(&String, &u64)], i: usize) {
     let crate_name = vector[i].0;
     let size = vector[i].1;
-    let size = (*size as f64) / 1000_f64.powf(2.0);
+    let size = (*size as f64) / 1000_f64.powi(2);
     println!("|{:^40}|{:^10.3}|", crate_name, size);
 }
 
@@ -1024,14 +1029,13 @@ fn get_size(path: &PathBuf) -> std::io::Result<u64> {
 fn convert_pretty(num: u64) -> String {
     let num = num as f64;
     let units = ["B", "kB", "MB", "GB", "TB"];
-    let factor = (num.log10() / 3_f64).floor() as usize;
-    let power_factor;
-    if factor >= units.len() {
-        power_factor = units.len() - 1;
+    let factor = (num.log10() / 3_f64).floor();
+    let power_factor = if factor >= units.len() as f64 {
+        (units.len() - 1) as f64
     } else {
-        power_factor = factor
-    }
-    let pretty_bytes = format!("{:.3}", num / 1000_f64.powi(power_factor as i32))
+        factor
+    };
+    let pretty_bytes = format!("{:.3}", num / 1000_f64.powf(power_factor))
         .parse::<f64>()
         .unwrap();
     let unit = units[power_factor as usize];
