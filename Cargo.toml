@@ -12,14 +12,12 @@ keywords = ["cargo","cache","remove","manage","clean"]
 categories = ["command-line-utilities"]
 
 [dependencies]
-clap = "2.33.0"
+clap = "2.33.1"
 colored = "1.9.3"
 dirs = "2.0.2"
-fs_extra = "1.1.0"
-pretty-bytes = "0.2.2"
 semver = "0.9.0"
-serde = { version = "1.0.107", features = ["derive"]}
-serde_json = "1.0.52"
+serde = { version = "1.0.110", features = ["derive"]}
+serde_json = "1.0.53"
 toml = "0.5.6"
 
 [dev-dependencies]

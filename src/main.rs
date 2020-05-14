@@ -18,8 +18,6 @@ use crate::{
 };
 use clap::ArgMatches;
 use colored::Colorize;
-use fs_extra::dir::get_size;
-use pretty_bytes::converter::convert;
 use std::{collections::HashMap, fs, io, io::Write, path::PathBuf, process::Command};
 fn main() {
     // set all dir path
@@ -648,7 +646,7 @@ fn query_size(
                     "Total size of {} .cargo/bin binary:",
                     crate_list.installed_bin().len()
                 ),
-                convert(bin_dir_size as f64)
+                convert_pretty(bin_dir_size)
             );
             print_dash();
         }
@@ -661,7 +659,7 @@ fn query_size(
                     "Total size of {} .cargo/git crates:",
                     crate_list.installed_git().len()
                 ),
-                convert(git_dir_size as f64)
+                convert_pretty(git_dir_size)
             );
             println!(
                 "{:50} {:>10}",
@@ -669,7 +667,7 @@ fn query_size(
                     "   \u{251c} Size of {} .cargo/git/checkout folder",
                     crate_detail.git_crates_archive().len()
                 ),
-                convert(get_size(dir_path.checkout_dir()).unwrap_or(0_u64) as f64)
+                convert_pretty(get_size(dir_path.checkout_dir()).unwrap_or(0_u64))
             );
             println!(
                 "{:50} {:>10}",
@@ -677,7 +675,7 @@ fn query_size(
                     "   \u{2514} Size of {} .cargo/git/db folder",
                     crate_detail.git_crates_source().len()
                 ),
-                convert(get_size(dir_path.db_dir()).unwrap_or(0_u64) as f64)
+                convert_pretty(get_size(dir_path.checkout_dir()).unwrap_or(0_u64))
             );
             print_dash();
         }
@@ -691,7 +689,7 @@ fn query_size(
                     "Total size of {} .cargo/registry crates:",
                     crate_list.installed_registry().len()
                 ),
-                convert(registry_dir_size as f64)
+                convert_pretty(registry_dir_size)
             );
             println!(
                 "{:50} {:>10}",
@@ -699,12 +697,12 @@ fn query_size(
                     "   \u{251c} Size of {} .cargo/registry/cache folder",
                     crate_detail.registry_crates_archive().len()
                 ),
-                convert(get_size(dir_path.cache_dir()).unwrap_or(0_u64) as f64)
+                convert_pretty(get_size(dir_path.cache_dir()).unwrap_or(0_u64))
             );
             println!(
                 "{:50} {:>10}",
                 "   \u{251c} Size of .cargo/registry/index folder",
-                convert(get_size(dir_path.index_dir()).unwrap_or(0_u64) as f64)
+                convert_pretty(get_size(dir_path.index_dir()).unwrap_or(0_u64))
             );
             println!(
                 "{:50} {:>10}",
@@ -712,7 +710,7 @@ fn query_size(
                     "   \u{2514} Size of {} .cargo/git/src folder",
                     crate_detail.registry_crates_source().len()
                 ),
-                convert(get_size(dir_path.src_dir()).unwrap_or(0_u64) as f64)
+                convert_pretty(get_size(dir_path.src_dir()).unwrap_or(0_u64))
             );
             print_dash();
         }
@@ -722,7 +720,7 @@ fn query_size(
                 "Total size occupied by {}",
                 std::env::var("CARGO_HOME").expect("No environmental variable CARGO_HOME present")
             ),
-            convert(final_size as f64)
+            convert_pretty(final_size)
         );
     }
 }
@@ -929,7 +927,7 @@ fn show_top_number_crates(crate_detail: &CrateDetail, crate_type: &str, number: 
 fn print_index_value_crate(vector: &[(&String, &u64)], i: usize) {
     let crate_name = vector[i].0;
     let size = vector[i].1;
-    let size = (*size as f64) / 1024_f64.powf(2.0);
+    let size = (*size as f64) / 1000_f64.powf(2.0);
     println!("|{:^40}|{:^10.3}|", crate_name, size);
 }
 
@@ -1003,4 +1001,39 @@ fn delete_folder(path: &PathBuf, dry_run: bool) {
             println!("{} {:?}", "Removed".red(), path);
         }
     }
+}
+
+//  get size of directory
+fn get_size(path: &PathBuf) -> std::io::Result<u64> {
+    let mut total_size = 0;
+    if path.as_path().is_dir() {
+        for entry in fs::read_dir(path)? {
+            let entry_path = entry?.path();
+            if entry_path.is_dir() {
+                total_size += get_size(&entry_path)?;
+            } else {
+                total_size += entry_path.metadata()?.len();
+            }
+        }
+    } else {
+        total_size += path.metadata()?.len();
+    }
+    Ok(total_size)
+}
+
+fn convert_pretty(num: u64) -> String {
+    let num = num as f64;
+    let units = ["B", "kB", "MB", "GB", "TB"];
+    let factor = (num.log10() / 3_f64).floor() as usize;
+    let power_factor;
+    if factor >= units.len() {
+        power_factor = units.len() - 1;
+    } else {
+        power_factor = factor
+    }
+    let pretty_bytes = format!("{:.3}", num / 1000_f64.powi(power_factor as i32))
+        .parse::<f64>()
+        .unwrap();
+    let unit = units[power_factor as usize];
+    format!("{} {}", pretty_bytes, unit)
 }

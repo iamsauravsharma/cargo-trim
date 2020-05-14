@@ -1,5 +1,4 @@
-use crate::{config_file::ConfigFile, crate_detail::CrateDetail, dir_path::DirPath};
-use fs_extra::dir::get_size;
+use crate::{config_file::ConfigFile, crate_detail::CrateDetail, dir_path::DirPath, get_size};
 use serde::Deserialize;
 use std::{
     env, fs,
@@ -416,9 +415,8 @@ fn get_installed_bin(bin_dir: &Path, crate_detail: &mut CrateDetail) -> Vec<Stri
     if bin_dir.exists() {
         for entry in fs::read_dir(bin_dir).expect("failed to read bin directory") {
             let entry = entry.unwrap().path();
-            let path = entry.as_path();
-            let bin_size = get_size(&path).expect("failed to get size of bin directory");
-            let file_name = path
+            let bin_size = get_size(&entry).expect("failed to get size of bin directory");
+            let file_name = entry
                 .file_name()
                 .expect("failed to get file name from bin directory");
             let bin_name = file_name.to_str().unwrap().to_string();
@@ -442,9 +440,8 @@ fn get_installed_crate_registry(
             let registry = entry.unwrap().path();
             for entry in fs::read_dir(registry).expect("failed to read registry folder") {
                 let entry = entry.unwrap().path();
-                let path = entry.as_path();
-                let crate_size = get_size(&path).expect("failed to get registry crate size");
-                let file_name = path
+                let crate_size = get_size(&entry).expect("failed to get registry crate size");
+                let file_name = entry
                     .file_name()
                     .expect("failed to get file name form main entry");
                 let crate_name = file_name.to_str().unwrap().to_string();
@@ -458,11 +455,10 @@ fn get_installed_crate_registry(
             let registry = entry.unwrap().path();
             for entry in fs::read_dir(registry).expect("failed to read cache dir registry folder") {
                 let entry = entry.unwrap().path();
-                let path = entry.as_path();
-                let file_name = path
+                let file_name = entry
                     .file_name()
                     .expect("failed to get file name from cache dir");
-                let crate_size = get_size(&path).expect("failed to get size");
+                let crate_size = get_size(&entry).expect("failed to get size");
                 let crate_name = file_name.to_str().unwrap().to_string();
                 let splitted_name = crate_name.rsplitn(2, '.').collect::<Vec<&str>>();
                 crate_detail.add_registry_crate_archive(splitted_name[1].to_owned(), crate_size);
@@ -492,9 +488,8 @@ fn get_installed_crate_git(
             for git_sha_entry in fs::read_dir(path).expect("failed to read checkout dir sub folder")
             {
                 let git_sha_entry = git_sha_entry.unwrap().path();
-                let git_sha_path = git_sha_entry.as_path();
-                let crate_size = get_size(git_sha_path).expect("failed to get folder size");
-                let git_sha_file_name = git_sha_path.file_name().expect("failed to get file name");
+                let crate_size = get_size(&git_sha_entry).expect("failed to get folder size");
+                let git_sha_file_name = git_sha_entry.file_name().expect("failed to get file name");
                 let git_sha = git_sha_file_name.to_str().unwrap().to_string();
                 let file_name = file_path.to_str().unwrap().to_string();
                 let splitted_name = file_name.rsplitn(2, '-').collect::<Vec<&str>>();
@@ -507,9 +502,8 @@ fn get_installed_crate_git(
     if db_dir.exists() {
         for entry in fs::read_dir(db_dir).expect("failed to read db dir") {
             let entry = entry.unwrap().path();
-            let path = entry.as_path();
-            let crate_size = get_size(path).expect("failed to get size of db dir folders");
-            let file_name = path.file_name().expect("failed to get file name");
+            let crate_size = get_size(&entry).expect("failed to get size of db dir folders");
+            let file_name = entry.file_name().expect("failed to get file name");
             let file_name = file_name.to_str().unwrap().to_string();
             let splitted_name = file_name.rsplitn(2, '-').collect::<Vec<&str>>();
             let full_name = format!("{}-HEAD", splitted_name[1]);
