@@ -1,4 +1,4 @@
-cargo-trim-git 0.5.3
+cargo-trim-git 0.6.0
 Perform operation only to git related cache file
 
 USAGE:

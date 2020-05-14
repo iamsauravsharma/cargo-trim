@@ -1,4 +1,4 @@
-cargo-trim-list 0.5.3
+cargo-trim-list 0.6.0
 List out crates
 
 USAGE:
