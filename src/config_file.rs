@@ -64,29 +64,21 @@ pub(crate) fn modify_config_file(app: &clap::ArgMatches, config_dir: &PathBuf) -
     }
 
     // Add new value in config file
-    for &name in &["set directory", "exclude", "include"] {
-        if app.is_present(name) {
-            let value = app
-                .value_of(name)
-                .expect("No value is present for remove value from config file flag");
-            if name == "set directory" {
-                let path_separator = std::path::MAIN_SEPARATOR;
-                let path = value.trim_end_matches(path_separator);
-                deserialize_config.directory.push(path.to_string());
-            }
-            if name == "exclude" {
-                deserialize_config.exclude.push(value.to_string());
-            }
-            if name == "include" {
-                deserialize_config.include.push(value.to_string());
-            }
-        }
+    if let Some(value) = app.value_of("set directory") {
+        let path_separator = std::path::MAIN_SEPARATOR;
+        let path = value.trim_end_matches(path_separator);
+        deserialize_config.directory.push(path.to_string());
+    }
+    if let Some(value) = app.value_of("exclude") {
+        deserialize_config.exclude.push(value.to_string());
+    }
+    if let Some(value) = app.value_of("include") {
+        deserialize_config.include.push(value.to_string());
     }
 
     // clear working directory from config file
-    if app.is_present("clear") {
-        let subcommand = app.subcommand_matches("clear").unwrap();
-        let dry_run = app.is_present("dry-run") || subcommand.is_present("dry run");
+    if let Some(subcommand) = app.subcommand_matches("clear") {
+        let dry_run = app.is_present("dry run") || subcommand.is_present("dry run");
         remove_item_crate(
             &mut deserialize_config.directory,
             std::env::current_dir()
@@ -98,26 +90,18 @@ pub(crate) fn modify_config_file(app: &clap::ArgMatches, config_dir: &PathBuf) -
     }
 
     // remove value from config file
-    if app.is_present("remove") {
-        let subcommand = app.subcommand_matches("remove").unwrap();
-        for &name in &["directory", "exclude", "include"] {
-            let dry_run = app.is_present("dry run") || subcommand.is_present("dry run");
-            if subcommand.is_present(name) {
-                let value = subcommand
-                    .value_of(name)
-                    .expect("No value is present for remove value from config file flag");
-                if name == "directory" {
-                    let path_separator = std::path::MAIN_SEPARATOR;
-                    let path = value.trim_end_matches(path_separator);
-                    remove_item_crate(&mut deserialize_config.directory, path, dry_run);
-                }
-                if name == "exclude" {
-                    remove_item_crate(&mut deserialize_config.exclude, value, dry_run);
-                }
-                if name == "include" {
-                    remove_item_crate(&mut deserialize_config.include, value, dry_run);
-                }
-            }
+    if let Some(subcommand) = app.subcommand_matches("remove") {
+        let dry_run = app.is_present("dry run") || subcommand.is_present("dry run");
+        if let Some(value) = subcommand.value_of("directory") {
+            let path_separator = std::path::MAIN_SEPARATOR;
+            let path = value.trim_end_matches(path_separator);
+            remove_item_crate(&mut deserialize_config.directory, path, dry_run);
+        }
+        if let Some(value) = subcommand.value_of("exclude") {
+            remove_item_crate(&mut deserialize_config.exclude, value, dry_run);
+        }
+        if let Some(value) = subcommand.value_of("include") {
+            remove_item_crate(&mut deserialize_config.include, value, dry_run);
         }
     }
 

@@ -24,19 +24,15 @@ use crate::{
 use clap::ArgMatches;
 use colored::Colorize;
 use std::{collections::HashMap, fs, io, io::Write, path::PathBuf, process::Command};
+
 fn main() {
     // set all dir path
     let dir_path = DirPath::set_dir_path();
     let app = create_app::app().get_matches();
     let app = app.subcommand_matches("trim").unwrap();
-    let mut git_subcommand = &ArgMatches::new();
-    let mut registry_subcommand = &ArgMatches::new();
-    if app.is_present("git") {
-        git_subcommand = app.subcommand_matches("git").unwrap();
-    }
-    if app.is_present("registry") {
-        registry_subcommand = app.subcommand_matches("registry").unwrap();
-    }
+    let arg_matches = ArgMatches::new();
+    let git_subcommand = app.subcommand_matches("git").unwrap_or(&arg_matches);
+    let registry_subcommand = app.subcommand_matches("registry").unwrap_or(&arg_matches);
 
     let dry_run_app = app.is_present("dry run");
     let dry_run_git = git_subcommand.is_present("dry run");
@@ -205,9 +201,8 @@ fn clear_config(app: &ArgMatches, dir_path: &DirPath) {
 
 // Git compress git files
 fn git_compress(app: &ArgMatches, index_dir: &PathBuf, checkout_dir: &PathBuf, db_dir: &PathBuf) {
-    if app.is_present("git compress") {
+    if let Some(value) = app.value_of("git compress") {
         let dry_run = app.is_present("dry run");
-        let value = app.value_of("git compress").unwrap();
         if (value == "index" || value == "all") && index_dir.exists() {
             for entry in fs::read_dir(index_dir).expect("failed to read registry index folder") {
                 let repo_path = entry.unwrap().path();
@@ -388,8 +383,7 @@ fn list_subcommand(
     crate_detail: &CrateDetail,
     config_file: &ConfigFile,
 ) {
-    if app.is_present("list") {
-        let list_subcommand = app.subcommand_matches("list").unwrap();
+    if let Some(list_subcommand) = app.subcommand_matches("list") {
         if list_subcommand.is_present("old") {
             list_crate_type(
                 crate_detail,
@@ -732,22 +726,21 @@ fn query_size(
 
 // Perform query about config file data
 fn config_subcommand(app: &ArgMatches, config_file: &ConfigFile) {
-    if app.is_present("config") {
-        let matches = app.subcommand_matches("config").unwrap();
-        let read_include = config_file.include();
-        let read_exclude = config_file.exclude();
-        let read_directory = config_file.directory();
+    if let Some(matches) = app.subcommand_matches("config") {
         if matches.is_present("directory") {
+            let read_directory = config_file.directory();
             for name in read_directory {
                 println!("{}", name);
             }
         }
         if matches.is_present("include") {
+            let read_include = config_file.include();
             for name in read_include {
                 println!("{}", name);
             }
         }
         if matches.is_present("exclude") {
+            let read_exclude = config_file.exclude();
             for name in read_exclude {
                 println!("{}", name);
             }
@@ -980,8 +973,7 @@ fn update_cargo_toml(app: &ArgMatches, cargo_toml_location: &[PathBuf]) {
 
 // Wipe certain directory
 fn wipe_directory(app: &ArgMatches, dir_path: &DirPath) {
-    if app.is_present("wipe") {
-        let value = app.value_of("wipe").unwrap();
+    if let Some(value) = app.value_of("wipe") {
         let dry_run = app.is_present("dry run");
         match value {
             "git" => delete_folder(dir_path.git_dir(), dry_run),
