@@ -25,14 +25,29 @@ impl ConfigFile {
         &self.directory
     }
 
+    // return vector of exclude value in config file
+    pub(crate) fn exclude(&self) -> &Vec<String> {
+        &self.exclude
+    }
+
     // return vector of include value in config file
     pub(crate) fn include(&self) -> &Vec<String> {
         &self.include
     }
 
-    // return vector of exclude value in config file
-    pub(crate) fn exclude(&self) -> &Vec<String> {
-        &self.exclude
+    // return mutable reference of directory value
+    pub(crate) fn mut_directory(&mut self) -> &mut Vec<String> {
+        &mut self.directory
+    }
+
+    // return mutable reference of exclude value
+    pub(crate) fn mut_exclude(&mut self) -> &mut Vec<String> {
+        &mut self.exclude
+    }
+
+    // return mutable reference of include value
+    pub(crate) fn mut_include(&mut self) -> &mut Vec<String> {
+        &mut self.include
     }
 }
 
@@ -54,7 +69,7 @@ pub(crate) fn modify_config_file(app: &clap::ArgMatches, config_dir: &PathBuf) -
 
     // add working directory to config
     if app.is_present("init") {
-        deserialize_config.directory.push(
+        deserialize_config.mut_directory().push(
             std::env::current_dir()
                 .expect("Current working directory is invalid")
                 .to_str()
@@ -67,20 +82,20 @@ pub(crate) fn modify_config_file(app: &clap::ArgMatches, config_dir: &PathBuf) -
     if let Some(value) = app.value_of("set directory") {
         let path_separator = std::path::MAIN_SEPARATOR;
         let path = value.trim_end_matches(path_separator);
-        deserialize_config.directory.push(path.to_string());
+        deserialize_config.mut_directory().push(path.to_string());
     }
     if let Some(value) = app.value_of("exclude") {
-        deserialize_config.exclude.push(value.to_string());
+        deserialize_config.mut_exclude().push(value.to_string());
     }
     if let Some(value) = app.value_of("include") {
-        deserialize_config.include.push(value.to_string());
+        deserialize_config.mut_include().push(value.to_string());
     }
 
     // clear working directory from config file
     if let Some(subcommand) = app.subcommand_matches("clear") {
         let dry_run = app.is_present("dry run") || subcommand.is_present("dry run");
         remove_item_crate(
-            &mut deserialize_config.directory,
+            deserialize_config.mut_directory(),
             std::env::current_dir()
                 .expect("Current working directory is invalid")
                 .to_str()
@@ -95,13 +110,13 @@ pub(crate) fn modify_config_file(app: &clap::ArgMatches, config_dir: &PathBuf) -
         if let Some(value) = subcommand.value_of("directory") {
             let path_separator = std::path::MAIN_SEPARATOR;
             let path = value.trim_end_matches(path_separator);
-            remove_item_crate(&mut deserialize_config.directory, path, dry_run);
+            remove_item_crate(deserialize_config.mut_directory(), path, dry_run);
         }
         if let Some(value) = subcommand.value_of("exclude") {
-            remove_item_crate(&mut deserialize_config.exclude, value, dry_run);
+            remove_item_crate(deserialize_config.mut_exclude(), value, dry_run);
         }
         if let Some(value) = subcommand.value_of("include") {
-            remove_item_crate(&mut deserialize_config.include, value, dry_run);
+            remove_item_crate(deserialize_config.mut_include(), value, dry_run);
         }
     }
 
