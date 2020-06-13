@@ -5,8 +5,11 @@ use std::{fs, io::Read, path::PathBuf};
 // Stores config file information
 #[derive(Serialize, Deserialize)]
 pub(crate) struct ConfigFile {
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
     directory: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
     include: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
     exclude: Vec<String>,
 }
 
