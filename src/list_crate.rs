@@ -402,10 +402,10 @@ fn read_content(list: &[PathBuf]) -> (Vec<String>, Vec<String>) {
 // used for old clean flag
 fn remove_version(installed_crate_registry: &[String]) -> Vec<(String, String)> {
     let mut removed_version = Vec::new();
-    for i in installed_crate_registry.iter() {
-        let data = clear_version_value(i);
+    installed_crate_registry.iter().for_each(|crate_full_name| {
+        let data = clear_version_value(crate_full_name);
         removed_version.push(data);
-    }
+    });
     removed_version
 }
 
@@ -521,9 +521,9 @@ pub(crate) fn env_list(variable: &str) -> Vec<String> {
     let list = env::var(variable);
     let mut vec_list = Vec::new();
     if let Ok(name_list) = list {
-        for name in name_list.split_whitespace() {
-            vec_list.push(name.to_string());
-        }
+        name_list
+            .split_whitespace()
+            .for_each(|name| vec_list.push(name.to_string()));
     }
     vec_list
 }

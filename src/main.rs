@@ -910,13 +910,9 @@ fn show_top_number_crates(crate_detail: &CrateDetail, crate_type: &str, number: 
     if vector.is_empty() {
         println!("|{:^40}|{:^10}|", "NONE".red(), "0.000".red());
     } else if vector.len() < number {
-        for i in 0..vector.len() {
-            print_index_value_crate(&vector, i);
-        }
+        (0..vector.len()).for_each(|i| print_index_value_crate(&vector, i));
     } else {
-        for i in 0..number {
-            print_index_value_crate(&vector, i);
-        }
+        (0..number).for_each(|i| print_index_value_crate(&vector, i));
     }
     print_dash();
 }

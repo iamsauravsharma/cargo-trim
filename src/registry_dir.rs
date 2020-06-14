@@ -99,13 +99,11 @@ impl RegistryDir {
 
         let read_include = config_file.include();
         let read_exclude = config_file.exclude();
-        let crate_split = crate_name.rsplitn(2, '-');
-        let mut simple_name = String::new();
-        for (i, val) in crate_split.enumerate() {
-            if i == 1 {
-                simple_name = val.to_string()
-            }
-        }
+        let simple_name = crate_name
+            .rsplitn(2, '-')
+            .nth(1)
+            .unwrap_or_default()
+            .to_string();
         let env_include = list_crate::env_list("TRIM_INCLUDE");
         let env_exclude = list_crate::env_list("TRIM_EXCLUDE");
 
