@@ -278,12 +278,12 @@ impl CrateList {
 // function
 fn clear_version_value(full_name: &str) -> (String, String) {
     let build_number_split: Vec<&str> = full_name.rsplitn(2, '+').collect();
-    let splitted_name = if build_number_split.len() == 1 {
+    let split_name = if build_number_split.len() == 1 {
         build_number_split[0]
     } else {
         build_number_split[1]
     };
-    let list: Vec<&str> = splitted_name.rsplitn(3, '-').collect();
+    let list: Vec<&str> = split_name.rsplitn(3, '-').collect();
     let mut clear_name = String::new();
     let mut version = if semver::Version::parse(list[0]).is_ok() {
         for (i, a) in list[1..].iter().rev().enumerate() {
@@ -460,9 +460,9 @@ fn get_installed_crate_registry(
                     .expect("failed to get file name from cache dir");
                 let crate_size = get_size(&entry).expect("failed to get size");
                 let crate_name = file_name.to_str().unwrap().to_string();
-                let splitted_name = crate_name.rsplitn(2, '.').collect::<Vec<&str>>();
-                crate_detail.add_registry_crate_archive(splitted_name[1].to_owned(), crate_size);
-                installed_crate_registry.push(splitted_name[1].to_owned());
+                let split_name = crate_name.rsplitn(2, '.').collect::<Vec<&str>>();
+                crate_detail.add_registry_crate_archive(split_name[1].to_owned(), crate_size);
+                installed_crate_registry.push(split_name[1].to_owned());
             }
         }
     }
@@ -492,8 +492,8 @@ fn get_installed_crate_git(
                 let git_sha_file_name = git_sha_entry.file_name().expect("failed to get file name");
                 let git_sha = git_sha_file_name.to_str().unwrap().to_string();
                 let file_name = file_path.to_str().unwrap().to_string();
-                let splitted_name = file_name.rsplitn(2, '-').collect::<Vec<&str>>();
-                let full_name = format!("{}-{}", splitted_name[1], git_sha);
+                let split_name = file_name.rsplitn(2, '-').collect::<Vec<&str>>();
+                let full_name = format!("{}-{}", split_name[1], git_sha);
                 crate_detail.add_git_crate_archive(full_name.to_owned(), crate_size);
                 installed_crate_git.push(full_name)
             }
@@ -505,8 +505,8 @@ fn get_installed_crate_git(
             let crate_size = get_size(&entry).expect("failed to get size of db dir folders");
             let file_name = entry.file_name().expect("failed to get file name");
             let file_name = file_name.to_str().unwrap().to_string();
-            let splitted_name = file_name.rsplitn(2, '-').collect::<Vec<&str>>();
-            let full_name = format!("{}-HEAD", splitted_name[1]);
+            let split_name = file_name.rsplitn(2, '-').collect::<Vec<&str>>();
+            let full_name = format!("{}-HEAD", split_name[1]);
             crate_detail.add_git_crate_source(full_name.to_owned(), crate_size);
             installed_crate_git.push(full_name);
         }

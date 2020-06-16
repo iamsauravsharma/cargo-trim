@@ -50,8 +50,8 @@ impl RegistryDir {
     pub(crate) fn remove_crate(&mut self, crate_name: &str) {
         remove_crate(Path::new(&self.cache_dir), crate_name, self.dry_run);
         remove_crate(Path::new(&self.src_dir), crate_name, self.dry_run);
-        let splitted_value: Vec<&str> = crate_name.rsplitn(2, '-').collect();
-        let name = splitted_value[1];
+        let split_value: Vec<&str> = crate_name.rsplitn(2, '-').collect();
+        let name = split_value[1];
         let index_cache = self.index_cache_dir.to_owned();
         index_cache.iter().for_each(|index_cache_dir| {
             let same_name_list: Vec<&String> = self
@@ -159,8 +159,8 @@ fn remove_crate(path: &Path, value: &str, dry_run: bool) {
 
 fn remove_index_cache(path: &Path, value: &str) {
     let mut remove_file_location = path.to_path_buf();
-    let splitted_value: Vec<&str> = value.rsplitn(2, '-').collect();
-    let name = splitted_value[1];
+    let split_value: Vec<&str> = value.rsplitn(2, '-').collect();
+    let name = split_value[1];
     match name.len() {
         1 => {
             remove_file_location.push("1");
