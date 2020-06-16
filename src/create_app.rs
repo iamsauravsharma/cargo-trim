@@ -284,7 +284,6 @@ pub(super) fn app() -> App<'static, 'static> {
                         .args(&[directory_remove, dry_run, exclude_remove, include_remove]),
                 )
                 .group(ArgGroup::with_name("config file modifier").args(&[
-                    "clear config",
                     "exclude",
                     "include",
                     "set directory",

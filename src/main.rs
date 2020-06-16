@@ -403,7 +403,7 @@ fn list_subcommand(
                 let warning_text = "WARNING: You have not initialized any directory as rust \
                                     project directory. This will list all crates as orphan crate. \
                                     Run command 'cargo trim init' to initialize current directory \
-                                    as rust project directory or pass cargo trim -s <directory> \
+                                    as rust project directory or pass cargo trim -d <directory> \
                                     for setting rust project directory";
                 println!("{}", warning_text.bright_yellow());
             }
@@ -419,7 +419,7 @@ fn list_subcommand(
                 let warning_text = "WARNING: You have not initialized any directory as rust \
                                     project directory. This will list no crates as used crate. \
                                     Run command 'cargo trim init' to initialize current directory \
-                                    as rust project directory or pass cargo trim -s <directory> \
+                                    as rust project directory or pass cargo trim -d <directory> \
                                     for setting rust project directory";
                 println!("{}", warning_text.bright_yellow());
             }
@@ -452,7 +452,7 @@ fn list_subcommand(
                                     project directory. This will list all old crates as old \
                                     orphan crates even if they are not orphan crates. Run command \
                                     'cargo trim init' to initialize current directory as rust \
-                                    project directory or pass cargo trim -s <directory> for \
+                                    project directory or pass cargo trim -d <directory> for \
                                     setting rust project directory";
                 println!("{}", warning_text.bright_yellow());
             }
@@ -545,7 +545,7 @@ fn old_orphan_clean(
                                 directory. This command will clean all old crates even if they \
                                 are not orphan crates. Run command 'cargo trim init' to \
                                 initialize current directory as rust project directory or pass \
-                                cargo trim -s <directory> for setting rust project directory";
+                                cargo trim -d <directory> for setting rust project directory";
             println!("{}", warning_text.bright_yellow());
             let mut input = String::new();
             print!("Do you want to continue? (y/N) ");
@@ -594,7 +594,7 @@ fn orphan_clean(
                                 directory. This command will clean all crates since all crates \
                                 are classified as orphan crate. Run command 'cargo trim init' to \
                                 initialize current directory as rust project directory or pass \
-                                cargo trim -s <directory> for setting rust project directory";
+                                cargo trim -d <directory> for setting rust project directory";
             println!("{}", warning_text.bright_yellow());
             let mut input = String::new();
             print!("Do you want to continue? (y/N) ");
