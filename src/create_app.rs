@@ -1,4 +1,4 @@
-use clap::{App, AppSettings, Arg, SubCommand};
+use clap::{App, AppSettings, Arg, ArgGroup, SubCommand};
 
 // Create all list of subcommand options flag using clap
 pub(super) fn app() -> App<'static, 'static> {
@@ -282,6 +282,12 @@ pub(super) fn app() -> App<'static, 'static> {
                         .about("Remove values from config file")
                         .setting(AppSettings::ArgRequiredElseHelp)
                         .args(&[directory_remove, dry_run, exclude_remove, include_remove]),
-                ),
+                )
+                .group(ArgGroup::with_name("config file modifier").args(&[
+                    "clear config",
+                    "exclude",
+                    "include",
+                    "set directory",
+                ])),
         )
 }

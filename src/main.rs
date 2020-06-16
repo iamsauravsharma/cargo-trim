@@ -83,7 +83,7 @@ fn main() {
     wipe_directory(app, &dir_path);
 
     // create new CrateDetail struct
-    let mut crate_detail = CrateDetail::new();
+    let mut crate_detail = CrateDetail::default();
 
     // List out crates
     let list_crate = list_crate::CrateList::create_list(&dir_path, &config_file, &mut crate_detail);

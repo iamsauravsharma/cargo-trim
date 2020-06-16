@@ -69,65 +69,70 @@ pub(crate) fn modify_config_file(app: &clap::ArgMatches, config_dir: &PathBuf) -
     }
     let mut deserialize_config: ConfigFile =
         serde_json::from_str(&buffer).expect("failed to convert string to ConfigFile");
+    if app.is_present("config file modifier")
+        || app.is_present("init")
+        || app.is_present("clear")
+        || app.is_present("remove")
+    {
+        // add working directory to config
+        if app.is_present("init") {
+            deserialize_config.mut_directory().push(
+                std::env::current_dir()
+                    .expect("Current working directory is invalid")
+                    .to_str()
+                    .expect("failed to convert current directory Path to str")
+                    .to_string(),
+            );
+        }
 
-    // add working directory to config
-    if app.is_present("init") {
-        deserialize_config.mut_directory().push(
-            std::env::current_dir()
-                .expect("Current working directory is invalid")
-                .to_str()
-                .expect("failed to convert current directory Path to str")
-                .to_string(),
-        );
-    }
-
-    // Add new value in config file
-    if let Some(value) = app.value_of("set directory") {
-        let path_separator = std::path::MAIN_SEPARATOR;
-        let path = value.trim_end_matches(path_separator);
-        deserialize_config.mut_directory().push(path.to_string());
-    }
-    if let Some(value) = app.value_of("exclude") {
-        deserialize_config.mut_exclude().push(value.to_string());
-    }
-    if let Some(value) = app.value_of("include") {
-        deserialize_config.mut_include().push(value.to_string());
-    }
-
-    // clear working directory from config file
-    if let Some(subcommand) = app.subcommand_matches("clear") {
-        let dry_run = app.is_present("dry run") || subcommand.is_present("dry run");
-        remove_item_crate(
-            deserialize_config.mut_directory(),
-            std::env::current_dir()
-                .expect("Current working directory is invalid")
-                .to_str()
-                .expect("failed to convert current directory Path to str"),
-            dry_run,
-        );
-    }
-
-    // remove value from config file
-    if let Some(subcommand) = app.subcommand_matches("remove") {
-        let dry_run = app.is_present("dry run") || subcommand.is_present("dry run");
-        if let Some(value) = subcommand.value_of("directory") {
+        // Add new value in config file
+        if let Some(value) = app.value_of("set directory") {
             let path_separator = std::path::MAIN_SEPARATOR;
             let path = value.trim_end_matches(path_separator);
-            remove_item_crate(deserialize_config.mut_directory(), path, dry_run);
+            deserialize_config.mut_directory().push(path.to_string());
         }
-        if let Some(value) = subcommand.value_of("exclude") {
-            remove_item_crate(deserialize_config.mut_exclude(), value, dry_run);
+        if let Some(value) = app.value_of("exclude") {
+            deserialize_config.mut_exclude().push(value.to_string());
         }
-        if let Some(value) = subcommand.value_of("include") {
-            remove_item_crate(deserialize_config.mut_include(), value, dry_run);
+        if let Some(value) = app.value_of("include") {
+            deserialize_config.mut_include().push(value.to_string());
         }
-    }
 
-    let serialized = serde_json::to_string_pretty(&deserialize_config)
-        .expect("ConfigFile cannot to converted to pretty json");
-    buffer.clear();
-    buffer.push_str(&serialized);
-    fs::write(config_dir, buffer).expect("Failed to write a value to config file");
+        // clear working directory from config file
+        if let Some(subcommand) = app.subcommand_matches("clear") {
+            let dry_run = app.is_present("dry run") || subcommand.is_present("dry run");
+            remove_item_crate(
+                deserialize_config.mut_directory(),
+                std::env::current_dir()
+                    .expect("Current working directory is invalid")
+                    .to_str()
+                    .expect("failed to convert current directory Path to str"),
+                dry_run,
+            );
+        }
+
+        // remove value from config file
+        if let Some(subcommand) = app.subcommand_matches("remove") {
+            let dry_run = app.is_present("dry run") || subcommand.is_present("dry run");
+            if let Some(value) = subcommand.value_of("directory") {
+                let path_separator = std::path::MAIN_SEPARATOR;
+                let path = value.trim_end_matches(path_separator);
+                remove_item_crate(deserialize_config.mut_directory(), path, dry_run);
+            }
+            if let Some(value) = subcommand.value_of("exclude") {
+                remove_item_crate(deserialize_config.mut_exclude(), value, dry_run);
+            }
+            if let Some(value) = subcommand.value_of("include") {
+                remove_item_crate(deserialize_config.mut_include(), value, dry_run);
+            }
+        }
+
+        let serialized = serde_json::to_string_pretty(&deserialize_config)
+            .expect("ConfigFile cannot to converted to pretty json");
+        buffer.clear();
+        buffer.push_str(&serialized);
+        fs::write(config_dir, buffer).expect("Failed to write a value to config file");
+    }
     deserialize_config
 }
 

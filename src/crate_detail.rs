@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 // stores different crate size and name information
+#[derive(Default)]
 pub(crate) struct CrateDetail {
     bin: HashMap<String, u64>,
     git_crates_source: HashMap<String, u64>,
@@ -10,17 +11,6 @@ pub(crate) struct CrateDetail {
 }
 
 impl CrateDetail {
-    // create new crate detail struct
-    pub(crate) fn new() -> Self {
-        Self {
-            bin: HashMap::new(),
-            git_crates_source: HashMap::new(),
-            registry_crates_source: HashMap::new(),
-            git_crates_archive: HashMap::new(),
-            registry_crates_archive: HashMap::new(),
-        }
-    }
-
     // return bin crates size information
     pub(crate) fn bin(&self) -> &HashMap<String, u64> {
         &self.bin
