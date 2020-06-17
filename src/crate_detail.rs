@@ -43,25 +43,41 @@ impl CrateDetail {
 
     // add git crate source information to CrateDetail
     pub(crate) fn add_git_crate_source(&mut self, crate_name: String, size: u64) {
-        self.git_crates_source.insert(crate_name, size);
+        if let Some(crate_size) = self.git_crates_source.get_mut(&crate_name) {
+            *crate_size += size;
+        } else {
+            self.git_crates_source.insert(crate_name, size);
+        }
     }
 
     // add registry crate source information to CrateDetail
     pub(crate) fn add_registry_crate_source(&mut self, crate_name: String, size: u64) {
-        self.registry_crates_source.insert(crate_name, size);
+        if let Some(crate_size) = self.registry_crates_source.get_mut(&crate_name) {
+            *crate_size += size;
+        } else {
+            self.registry_crates_source.insert(crate_name, size);
+        }
     }
 
     // add git crate archive information to CrateDetail
     pub(crate) fn add_git_crate_archive(&mut self, crate_name: String, size: u64) {
-        self.git_crates_archive.insert(crate_name, size);
+        if let Some(crate_size) = self.git_crates_archive.get_mut(&crate_name) {
+            *crate_size += size;
+        } else {
+            self.git_crates_archive.insert(crate_name, size);
+        }
     }
 
     // add registry crate archive information to CrateDetail
     pub(crate) fn add_registry_crate_archive(&mut self, crate_name: String, size: u64) {
-        self.registry_crates_archive.insert(crate_name, size);
+        if let Some(crate_size) = self.registry_crates_archive.get_mut(&crate_name) {
+            *crate_size += size;
+        } else {
+            self.registry_crates_archive.insert(crate_name, size);
+        }
     }
 
-    // find size of certain git crate source
+    // find size of certain git crate source in KB
     pub(crate) fn find_size_git_source(&self, crate_name: &str) -> f64 {
         if let Some(size) = self.git_crates_source.get(crate_name) {
             (*size as f64) / 1000_f64.powi(2)
@@ -70,7 +86,7 @@ impl CrateDetail {
         }
     }
 
-    // find size of certain registry source
+    // find size of certain registry source in KB
     pub(crate) fn find_size_registry_source(&self, crate_name: &str) -> f64 {
         if let Some(size) = self.registry_crates_source.get(crate_name) {
             (*size as f64) / 1000_f64.powi(2)
@@ -79,7 +95,7 @@ impl CrateDetail {
         }
     }
 
-    // find size of certain git crate archive
+    // find size of certain git crate archive in KB
     pub(crate) fn find_size_git_archive(&self, crate_name: &str) -> f64 {
         if let Some(size) = self.git_crates_archive.get(crate_name) {
             (*size as f64) / 1000_f64.powi(2)
@@ -88,7 +104,7 @@ impl CrateDetail {
         }
     }
 
-    // find size of certain registry archive
+    // find size of certain registry archive in KB
     pub(crate) fn find_size_registry_archive(&self, crate_name: &str) -> f64 {
         if let Some(size) = self.registry_crates_archive.get(crate_name) {
             (*size as f64) / 1000_f64.powi(2)
@@ -97,17 +113,17 @@ impl CrateDetail {
         }
     }
 
-    // return certain git crate total size
+    // return certain git crate total size in KB
     pub(crate) fn find_size_git_all(&self, crate_name: &str) -> f64 {
         self.find_size_git_archive(crate_name) + self.find_size_git_source(crate_name)
     }
 
-    // return certain registry crate total size
+    // return certain registry crate total size in KB
     pub(crate) fn find_size_registry_all(&self, crate_name: &str) -> f64 {
         self.find_size_registry_archive(crate_name) + self.find_size_registry_source(crate_name)
     }
 
-    // find crate size if location/title is given
+    // find crate size if location/title is given in KB
     pub(crate) fn find(&self, crate_name: &str, location: &str) -> f64 {
         if location.contains("REGISTRY") {
             self.find_size_registry_all(crate_name)
