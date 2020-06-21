@@ -55,7 +55,7 @@ impl ConfigFile {
 }
 
 // Function to modify config file or read config file
-pub(crate) fn modify_config_file(app: &clap::ArgMatches, config_dir: &PathBuf) -> ConfigFile {
+pub(crate) fn config_file(app: &clap::ArgMatches, config_dir: &PathBuf) -> ConfigFile {
     let mut buffer = String::new();
     let mut file =
         fs::File::open(config_dir.to_str().unwrap()).expect("failed to open config dir folder");

@@ -5,6 +5,7 @@ USAGE:
     cargo trim config [FLAGS]
 
 FLAGS:
+    -f, --file         Return config file location
     -d, --directory    Query about directory data
     -e, --exclude      Query about exclude data
     -h, --help         Prints help information

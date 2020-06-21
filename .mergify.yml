@@ -15,21 +15,6 @@ pull_request_rules:
           - bors-trying-phase
       comment:
         message: bors try
-  
-  - name: merge renovate bot PR when approved review
-    conditions:
-      - approved-reviews-by=iamsauravsharma
-      - author=renovate[bot]
-      - label=dependencies
-      - status-success=Travis CI - Pull Request
-    actions:
-      label:
-        remove:
-          - bors-trying-phase
-        add:
-          - bors-staging-phase
-      comment:
-        message: bors merge
 
   - name: merge reviewed and status success PR
     conditions:

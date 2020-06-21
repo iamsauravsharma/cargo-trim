@@ -38,15 +38,15 @@ fn main() {
     let dry_run_git = git_subcommand.is_present("dry run");
     let dry_run_registry = registry_subcommand.is_present("dry run");
 
-    // Perform all modification of config file flag and subcommand operation and
-    // return config file
-    let config_file = config_file::modify_config_file(app, dir_path.config_file());
+    // Perform all read and write operation of config file flag and subcommand
+    // operation and return config file
+    let config_file = config_file::config_file(app, dir_path.config_file());
 
     // Perform action of removing config file with -c flag
     clear_config(app, &dir_path);
 
     // Query about config file information
-    config_subcommand(app, &config_file);
+    config_subcommand(app, &config_file, &dir_path.config_file());
 
     // Force remove all crates without reading config file also remove index .cache
     // folder
@@ -725,7 +725,7 @@ fn query_size(
 }
 
 // Perform query about config file data
-fn config_subcommand(app: &ArgMatches, config_file: &ConfigFile) {
+fn config_subcommand(app: &ArgMatches, config_file: &ConfigFile, config_file_location: &PathBuf) {
     if let Some(matches) = app.subcommand_matches("config") {
         if matches.is_present("directory") {
             let read_directory = config_file.directory();
@@ -744,6 +744,9 @@ fn config_subcommand(app: &ArgMatches, config_file: &ConfigFile) {
             for name in read_exclude {
                 println!("{}", name);
             }
+        }
+        if matches.is_present("config file") {
+            println!("Config file location: {:?}", config_file_location);
         }
     }
 }

@@ -48,6 +48,11 @@ pub(super) fn app() -> App<'static, 'static> {
         .takes_value(true)
         .value_name("crate");
 
+    let file = Arg::with_name("config file")
+        .short("f")
+        .long("file")
+        .help("Return config file location");
+
     let force_remove = Arg::with_name("force remove")
         .short("f")
         .long("force")
@@ -235,7 +240,7 @@ pub(super) fn app() -> App<'static, 'static> {
                     SubCommand::with_name("config")
                         .about("Query config file data")
                         .setting(AppSettings::ArgRequiredElseHelp)
-                        .args(&[directory_config, exclude_config, include_config]),
+                        .args(&[directory_config, exclude_config, include_config, file]),
                 )
                 .subcommand(
                     SubCommand::with_name("git")
