@@ -20,9 +20,20 @@ impl DirPath {
     // set directory path
     pub(crate) fn set_dir_path() -> Self {
         // set config file directory path
-        let mut config_file = dirs::config_dir()
-            .expect("Cannot get config directory location it may be not supported OS");
+        let mut config_file = dirs::config_dir().expect("Cannot get config directory location");
         config_file.push("cargo_trim_config.json");
+
+        // change old config file to new config file location for mac os if it exists
+        // TODO: remove this code block after >(^0.7.0) release
+        if cfg!(target_os = "macos") {
+            let mut old_config_file =
+                dirs::preference_dir().expect("Cannot get preference directory location");
+            old_config_file.push("cargo_trim_config.json");
+            if old_config_file.exists() && !config_file.exists() {
+                fs::rename(old_config_file, config_file.to_owned())
+                    .expect("Cannot move old config file to new config file location");
+            }
+        }
 
         // If config file does not exists create one config file
         if !config_file.exists() {
