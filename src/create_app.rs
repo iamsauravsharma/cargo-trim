@@ -1,6 +1,7 @@
 use clap::{App, AppSettings, Arg, ArgGroup, SubCommand};
 
 // Create all list of subcommand options flag using clap
+#[allow(clippy::too_many_lines)]
 pub(super) fn app() -> App<'static, 'static> {
     let all = Arg::with_name("all").short("a").long("all");
     let all_trim = all

@@ -76,6 +76,7 @@ pub(crate) struct CrateList {
 
 impl CrateList {
     // create list of all types of crate present in directory
+    #[allow(clippy::too_many_lines)]
     pub(crate) fn create_list(
         dir_path: &DirPath,
         config_file: &ConfigFile,
@@ -86,6 +87,7 @@ impl CrateList {
         let src_dir = dir_path.src_dir();
         let checkout_dir = dir_path.checkout_dir().as_path();
         let db_dir = dir_path.db_dir().as_path();
+
         // list out installed crates
         let installed_bin = get_installed_bin(bin_dir, crate_detail);
         let installed_crate_registry =

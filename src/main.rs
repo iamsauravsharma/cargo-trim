@@ -2,12 +2,6 @@
 #![deny(unsafe_code)]
 #![deny(clippy::all)]
 #![warn(clippy::pedantic)]
-#![allow(
-    clippy::cast_precision_loss,
-    clippy::cast_possible_truncation,
-    clippy::cast_sign_loss,
-    clippy::too_many_lines
-)]
 
 mod config_file;
 mod crate_detail;
@@ -25,6 +19,7 @@ use clap::ArgMatches;
 use colored::Colorize;
 use std::{collections::HashMap, fs, io, io::Write, path::PathBuf, process::Command};
 
+#[allow(clippy::too_many_lines)]
 fn main() {
     // set all dir path
     let dir_path = DirPath::set_dir_path();
@@ -921,6 +916,7 @@ fn show_top_number_crates(crate_detail: &CrateDetail, crate_type: &str, number: 
 }
 
 // print crate name
+#[allow(clippy::cast_precision_loss)]
 fn print_index_value_crate(vector: &[(&String, &u64)], i: usize) {
     let crate_name = vector[i].0;
     let size = vector[i].1;
@@ -1017,6 +1013,11 @@ fn get_size(path: &PathBuf) -> std::io::Result<u64> {
     Ok(total_size)
 }
 
+#[allow(
+    clippy::cast_precision_loss,
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss
+)]
 fn convert_pretty(num: u64) -> String {
     if num == 0 {
         return "0 B".to_string();
