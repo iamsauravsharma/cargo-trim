@@ -3,25 +3,25 @@ use colored::Colorize;
 use std::{fs, path::Path};
 
 // Stores .cargo/registry cache & src information
-pub(crate) struct RegistryDir {
-    cache_dir: String,
-    src_dir: String,
+pub(crate) struct RegistryDir<'a> {
+    cache_dir: &'a str,
+    src_dir: &'a str,
     index_cache_dir: Vec<String>,
     installed_crate: Vec<String>,
     dry_run: bool,
 }
 
-impl RegistryDir {
+impl<'a> RegistryDir<'a> {
     // Create new RegistryDir
     pub(crate) fn new(
-        cache_dir: &Path,
-        src_dir: &Path,
+        cache_dir: &'a Path,
+        src_dir: &'a Path,
         index_dir: &Path,
         installed_crate: &[String],
         dry_run: bool,
     ) -> Self {
-        let cache_dir = cache_dir.to_str().unwrap().to_string();
-        let src_dir = src_dir.to_str().unwrap().to_string();
+        let cache_dir = cache_dir.to_str().unwrap();
+        let src_dir = src_dir.to_str().unwrap();
         let mut index_cache_dir = Vec::new();
         for entry in fs::read_dir(index_dir).expect("failed to read index directory") {
             let entry = entry.unwrap().path();

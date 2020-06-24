@@ -3,17 +3,17 @@ use colored::Colorize;
 use std::{fs, path::Path};
 
 // Store git dir folder information
-pub(crate) struct GitDir {
-    checkout_dir: String,
-    db_dir: String,
+pub(crate) struct GitDir<'a> {
+    checkout_dir: &'a str,
+    db_dir: &'a str,
     dry_run: bool,
 }
 
-impl GitDir {
+impl<'a> GitDir<'a> {
     // create new GitDir
-    pub(crate) fn new(checkout_dir: &Path, db_dir: &Path, dry_run: bool) -> Self {
-        let checkout_dir = checkout_dir.to_str().unwrap().to_string();
-        let db_dir = db_dir.to_str().unwrap().to_string();
+    pub(crate) fn new(checkout_dir: &'a Path, db_dir: &'a Path, dry_run: bool) -> Self {
+        let checkout_dir = checkout_dir.to_str().unwrap();
+        let db_dir = db_dir.to_str().unwrap();
         Self {
             checkout_dir,
             db_dir,
