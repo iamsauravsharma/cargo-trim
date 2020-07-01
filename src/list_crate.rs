@@ -1,7 +1,9 @@
 use crate::{config_file::ConfigFile, crate_detail::CrateDetail, dir_path::DirPath, get_size};
 use serde::Deserialize;
 use std::{
-    env, fs,
+    env,
+    ffi::OsStr,
+    fs,
     path::{Path, PathBuf},
 };
 
@@ -313,23 +315,27 @@ fn clear_version_value(full_name: &str) -> (String, String) {
 // List out cargo.toml file present directory inside directory listed inside
 // config file
 fn list_cargo_toml(path: &Path) -> CargoTomlLocation {
-    let mut list = CargoTomlLocation::new();
+    let mut cargo_trim_list = CargoTomlLocation::new();
     if path.exists() {
-        for entry in std::fs::read_dir(path)
-            .expect("failed to read directory while trying to find cargo.toml")
-        {
-            let sub_path_buf = entry.unwrap().path();
-            let sub = sub_path_buf.as_path();
-            if sub.is_dir() && !is_file_hidden(sub) && !file_name_is(path, "target") {
-                let kids_list = list_cargo_toml(sub);
-                list.append(kids_list);
+        if path.is_dir() {
+            for entry in std::fs::read_dir(path)
+                .expect("failed to read directory while trying to find cargo.toml")
+            {
+                let sub_path_buf = entry.unwrap().path();
+                let sub = sub_path_buf.as_path();
+                if sub.is_dir() && !is_file_hidden(sub) && !file_name_is(path, "target") {
+                    let kids_list = list_cargo_toml(sub);
+                    cargo_trim_list.append(kids_list);
+                }
+                if sub.is_file() && path.file_name() == Some(OsStr::new("Cargo.toml")) {
+                    cargo_trim_list.add_path(path.to_path_buf());
+                }
             }
-            if sub.is_file() && sub.ends_with("Cargo.toml") {
-                list.add_path(path.to_path_buf());
-            }
+        } else if path.is_file() && path.file_name() == Some(OsStr::new("Cargo.toml")) {
+            cargo_trim_list.add_path(path.to_path_buf());
         }
     }
-    list
+    cargo_trim_list
 }
 
 // check if file is hidden or not
