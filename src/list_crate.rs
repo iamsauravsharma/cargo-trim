@@ -327,7 +327,7 @@ fn list_cargo_toml(path: &Path) -> CargoTomlLocation {
                     let kids_list = list_cargo_toml(sub);
                     cargo_trim_list.append(kids_list);
                 }
-                if sub.is_file() && path.file_name() == Some(OsStr::new("Cargo.toml")) {
+                if sub.is_file() && sub.file_name() == Some(OsStr::new("Cargo.toml")) {
                     cargo_trim_list.add_path(path.to_path_buf());
                 }
             }
