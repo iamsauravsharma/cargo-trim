@@ -10,18 +10,15 @@ jobs:
     steps:
 
     - name: Set up Go
-      uses: actions/setup-go@v1
+      uses: actions/setup-go@v2
       with:
-        go-version: "1.13"
-      id: go
+        go-version: "1.14"
 
     - name: Checkout
       uses: actions/checkout@v1
 
     - name: Generate Release note
       run: |
-          # Temporary fix for https://github.com/actions/setup-go/issues/14
-          export PATH=$PATH:$(go env GOPATH)/bin
           go get -u github.com/git-chglog/git-chglog/cmd/git-chglog
           git-chglog $(git describe --tags) > RELEASE_NOTE.md
 
