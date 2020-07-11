@@ -100,7 +100,12 @@ fn remove_crate(location: &Path, crate_name: &str, dry_run: bool) {
         if path.to_str().unwrap().contains(crate_name) {
             if rev_sha.contains("HEAD") {
                 if dry_run {
-                    println!("{} {} {:?}", "Dry run:".color("yellow"), "removed".color("red"), path);
+                    println!(
+                        "{} {} {:?}",
+                        "Dry run:".color("yellow"),
+                        "removed".color("red"),
+                        path
+                    );
                 } else {
                     fs::remove_dir_all(&path).expect("failed to remove all directory");
                 }
@@ -115,7 +120,12 @@ fn remove_crate(location: &Path, crate_name: &str, dry_run: bool) {
                         .unwrap();
                     if file_name == rev_sha {
                         if dry_run {
-                            println!("{} {} {:?}", "Dry run:".color("yellow"), "removed".color("red"), path);
+                            println!(
+                                "{} {} {:?}",
+                                "Dry run:".color("yellow"),
+                                "removed".color("red"),
+                                path
+                            );
                         } else {
                             fs::remove_dir_all(&path)
                                 .expect("failed to remove all directory from Path");

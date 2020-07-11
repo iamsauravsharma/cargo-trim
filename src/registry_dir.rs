@@ -139,13 +139,23 @@ fn remove_crate(path: &Path, value: &str, dry_run: bool) {
                 if path.to_str().unwrap().contains(value) {
                     if path.is_file() {
                         if dry_run {
-                            println!("{} {} {:?}", "Dry run:".color("yellow"), "removed".color("red"), path);
+                            println!(
+                                "{} {} {:?}",
+                                "Dry run:".color("yellow"),
+                                "removed".color("red"),
+                                path
+                            );
                         } else {
                             fs::remove_file(&path).expect("failed to remove file");
                         }
                     } else if path.is_dir() {
                         if dry_run {
-                            println!("{} {} {:?}", "Dry run:".color("yellow"), "removed".color("red"), path);
+                            println!(
+                                "{} {} {:?}",
+                                "Dry run:".color("yellow"),
+                                "removed".color("red"),
+                                path
+                            );
                         } else {
                             fs::remove_dir_all(&path)
                                 .expect("failed to remove all directory contents");
