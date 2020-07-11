@@ -139,9 +139,9 @@ pub(crate) fn config_file(app: &clap::ArgMatches, config_dir: &PathBuf) -> Confi
 // helper function to help in removing certain value from a config file
 fn remove_item_crate(data: &mut Vec<String>, value: &str, dry_run: bool) {
     if dry_run {
-        println!("{} {} {:?}", "Dry run:".yellow(), "removed".red(), value);
+        println!("{} {} {:?}", "Dry run:".color("yellow"), "removed".color("red"), value);
     } else {
         data.retain(|data| data != value);
-        println!("{} {:?}", "Removed".red(), value);
+        println!("{} {:?}", "Removed".color("red"), value);
     }
 }

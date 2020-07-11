@@ -185,7 +185,7 @@ fn main() {
 fn clear_config(app: &ArgMatches, dir_path: &DirPath) {
     if app.is_present("clear config") {
         if app.is_present("dry run") {
-            println!("{} Cleared config file", "Dry run:".yellow());
+            println!("{} Cleared config file", "Dry run:".color("yellow"));
         } else {
             fs::remove_file(dir_path.config_file().as_path())
                 .expect("failed to delete config file");
@@ -208,7 +208,7 @@ fn git_compress(app: &ArgMatches, index_dir: &PathBuf, checkout_dir: &PathBuf, d
                     println!(
                         "{}",
                         format!("Compressing {} registry index", file_name.to_str().unwrap())
-                            .bright_blue()
+                            .color("blue")
                     );
                 }
                 run_git_compress_commands(&repo_path, dry_run);
@@ -224,7 +224,7 @@ fn git_compress(app: &ArgMatches, index_dir: &PathBuf, checkout_dir: &PathBuf, d
                     {
                         let rev_path = rev.unwrap().path();
                         if !dry_run {
-                            println!("{}", "Compressing git checkout".bright_blue());
+                            println!("{}", "Compressing git checkout".color("blue"));
                         }
                         run_git_compress_commands(&rev_path, dry_run)
                     }
@@ -234,20 +234,24 @@ fn git_compress(app: &ArgMatches, index_dir: &PathBuf, checkout_dir: &PathBuf, d
                 for entry in fs::read_dir(db_dir).expect("failed to read db dir") {
                     let repo_path = entry.unwrap().path();
                     if !dry_run {
-                        println!("{}", "Compressing git db".bright_blue());
+                        println!("{}", "Compressing git db".color("blue"));
                     }
                     run_git_compress_commands(&repo_path, dry_run);
                 }
             }
         }
-        println!("{}", "Git compress task completed".bright_blue());
+        println!("{}", "Git compress task completed".color("blue"));
     }
 }
 
 // run combination of commands which git compress a index of registry
 fn run_git_compress_commands(repo_path: &PathBuf, dry_run: bool) {
     if dry_run {
-        println!("{} git compressing {:?}", "Dry run:".yellow(), repo_path);
+        println!(
+            "{} git compressing {:?}",
+            "Dry run:".color("yellow"),
+            repo_path
+        );
     } else {
         // Remove history of all checkout which will help in remove dangling commits
         if let Err(e) = Command::new("git")
@@ -260,7 +264,7 @@ fn run_git_compress_commands(repo_path: &PathBuf, dry_run: bool) {
         {
             eprintln!(
                 "{}",
-                format!("  \u{2514} git reflog failed to execute due to error {}", e).red()
+                format!("  \u{2514} git reflog failed to execute due to error {}", e).color("red")
             );
         } else {
             println!("{:70}.......Step 1/3", "  \u{251c} Completed git reflog");
@@ -281,7 +285,7 @@ fn run_git_compress_commands(repo_path: &PathBuf, dry_run: bool) {
                     "  \u{2514} git pack-refs failed to execute due to error {}",
                     e
                 )
-                .red()
+                .color("red")
             );
         } else {
             println!(
@@ -300,7 +304,7 @@ fn run_git_compress_commands(repo_path: &PathBuf, dry_run: bool) {
         {
             eprintln!(
                 "{}",
-                format!("  \u{2514} git gc failed to execute due to error {}", e).red()
+                format!("  \u{2514} git gc failed to execute due to error {}", e).color("red")
             );
         } else {
             println!(
@@ -400,7 +404,7 @@ fn list_subcommand(
                                     Run command 'cargo trim init' to initialize current directory \
                                     as rust project directory or pass cargo trim -d <directory> \
                                     for setting rust project directory";
-                println!("{}", warning_text.bright_yellow());
+                println!("{}", warning_text.color("yellow"));
             }
         }
         if list_subcommand.is_present("used") {
@@ -416,7 +420,7 @@ fn list_subcommand(
                                     Run command 'cargo trim init' to initialize current directory \
                                     as rust project directory or pass cargo trim -d <directory> \
                                     for setting rust project directory";
-                println!("{}", warning_text.bright_yellow());
+                println!("{}", warning_text.color("yellow"));
             }
         }
         if list_subcommand.is_present("all") {
@@ -449,7 +453,7 @@ fn list_subcommand(
                                     'cargo trim init' to initialize current directory as rust \
                                     project directory or pass cargo trim -d <directory> for \
                                     setting rust project directory";
-                println!("{}", warning_text.bright_yellow());
+                println!("{}", warning_text.color("yellow"));
             }
         }
     }
@@ -457,47 +461,79 @@ fn list_subcommand(
 
 // list certain crate type to terminal
 fn list_crate_type(crate_detail: &CrateDetail, crate_type: &[String], title: &str) {
-    show_title(title);
+    let first_path_len = 40;
+    let second_path_len = 10;
+    let second_path_precision = 3;
+    let dash_len = first_path_len + second_path_len + 3;
+    show_title(title, first_path_len, second_path_len, dash_len);
 
     let mut total_size = 0.0;
     for crates in crate_type {
         let size = crate_detail.find(crates, title);
         total_size += size;
-        println!("|{:^40}|{:^10.3}|", crates, size);
+        println!(
+            "|{:^first_width$}|{:^second_width$.precision$}|",
+            crates,
+            size,
+            first_width = first_path_len,
+            second_width = second_path_len,
+            precision = second_path_precision
+        );
     }
 
-    show_total_count(crate_type, total_size);
+    show_total_count(
+        crate_type,
+        total_size,
+        first_path_len,
+        second_path_len,
+        dash_len,
+    );
 }
 
 // show title
-fn show_title(title: &str) {
-    print_dash();
-    println!("|{:^40}|{:^10}|", title.bold(), "SIZE(MB)");
-    print_dash();
+fn show_title(title: &str, first_path_len: usize, second_path_len: usize, dash_len: usize) {
+    print_dash(dash_len);
+    println!(
+        "|{:^first_width$}|{:second_width$}|",
+        title.bold(),
+        "SIZE(MB)".bold(),
+        first_width = first_path_len,
+        second_width = second_path_len
+    );
+    print_dash(dash_len);
 }
 
 // show total count using data and size
-fn show_total_count(data: &[String], size: f64) {
+fn show_total_count(
+    data: &[String],
+    size: f64,
+    first_path_len: usize,
+    second_path_len: usize,
+    dash_len: usize,
+) {
     if data.is_empty() {
-        println!("|{:^40}|{:^10}|", "NONE".red(), "0.000".red());
+        println!(
+            "|{:^first_width$}|{:second_width$}|",
+            "NONE".color("red"),
+            "0.000".color("red"),
+            first_width = first_path_len,
+            second_width = second_path_len,
+        );
     }
-    print_dash();
+    print_dash(dash_len);
     println!(
-        "|{:^40}|{:^10}|",
-        format!("Total no of crates:- {}", data.len()).bright_blue(),
-        format!("{:.3}", size).bright_blue()
+        "|{:^first_width$}|{:second_width$}|",
+        format!("Total no of crates:- {}", data.len()).color("blue"),
+        format!("{:.3}", size).color("blue"),
+        first_width = first_path_len,
+        second_width = second_path_len,
     );
-    print_dash();
+    print_dash(dash_len);
 }
 
 // print dash
-fn print_dash() {
-    println!(
-        "{}",
-        "-----------------------------------------------------"
-            .green()
-            .bold()
-    );
+fn print_dash(len: usize) {
+    println!("{}", "-".repeat(len).color("green"));
 }
 
 // Clean old crates
@@ -520,7 +556,7 @@ fn old_clean(
         }
         println!(
             "{}",
-            format!("Total size of old crates removed :- {:.3} MB", size_cleaned).bright_blue()
+            format!("Total size of old crates removed :- {:.3} MB", size_cleaned).color("blue")
         );
     }
 }
@@ -541,7 +577,7 @@ fn old_orphan_clean(
                                 are not orphan crates. Run command 'cargo trim init' to \
                                 initialize current directory as rust project directory or pass \
                                 cargo trim -d <directory> for setting rust project directory";
-            println!("{}", warning_text.bright_yellow());
+            println!("{}", warning_text.color("yellow"));
             let mut input = String::new();
             print!("Do you want to continue? (y/N) ");
             let _ = io::stdout().flush();
@@ -569,7 +605,7 @@ fn old_orphan_clean(
                 "Total size of crates which is both old and orphan crate removed :- {:.3} MB",
                 size_cleaned
             )
-            .bright_blue()
+            .color("blue")
         );
     }
 }
@@ -590,7 +626,7 @@ fn orphan_clean(
                                 are classified as orphan crate. Run command 'cargo trim init' to \
                                 initialize current directory as rust project directory or pass \
                                 cargo trim -d <directory> for setting rust project directory";
-            println!("{}", warning_text.bright_yellow());
+            println!("{}", warning_text.color("yellow"));
             let mut input = String::new();
             print!("Do you want to continue? (y/N) ");
             let _ = io::stdout().flush();
@@ -617,12 +653,13 @@ fn orphan_clean(
                 "Total size of orphan crates removed :- {:.3} MB",
                 size_cleaned
             )
-            .bright_blue()
+            .color("blue")
         );
     }
 }
 
 // query size of directory
+#[allow(clippy::too_many_lines)]
 fn query_size(
     dir_path: &DirPath,
     (query_size_app, query_size_git, query_size_registry): (bool, bool, bool),
@@ -631,90 +668,111 @@ fn query_size(
 ) {
     let mut final_size = 0_u64;
     if query_size_app || query_size_git || query_size_registry {
+        let first_path_width = 50;
+        let second_path_width = 10;
+        let query_dash_len = first_path_width + second_path_width + 1;
         if query_size_app {
             let bin_dir_size = get_size(dir_path.bin_dir()).unwrap_or(0_u64);
             final_size += bin_dir_size;
             println!(
-                "{:50} {:>10}",
+                "{:first_width$} {:>second_width$}",
                 format!(
                     "Total size of {} .cargo/bin binary:",
                     crate_list.installed_bin().len()
                 ),
-                convert_pretty(bin_dir_size)
+                convert_pretty(bin_dir_size),
+                first_width = first_path_width,
+                second_width = second_path_width
             );
-            print_dash();
+            print_dash(query_dash_len);
         }
         if query_size_app || query_size_git {
             let git_dir_size = get_size(dir_path.git_dir()).unwrap_or(0_u64);
             final_size += git_dir_size;
             println!(
-                "{:50} {:>10}",
+                "{:first_width$} {:>second_width$}",
                 format!(
                     "Total size of {} .cargo/git crates:",
                     crate_list.installed_git().len()
                 ),
-                convert_pretty(git_dir_size)
+                convert_pretty(git_dir_size),
+                first_width = first_path_width,
+                second_width = second_path_width
             );
             println!(
-                "{:50} {:>10}",
+                "{:first_width$} {:>second_width$}",
                 format!(
                     "   \u{251c} Size of {} .cargo/git/checkout folder",
                     crate_detail.git_crates_archive().len()
                 ),
-                convert_pretty(get_size(dir_path.checkout_dir()).unwrap_or(0_u64))
+                convert_pretty(get_size(dir_path.checkout_dir()).unwrap_or(0_u64)),
+                first_width = first_path_width,
+                second_width = second_path_width
             );
             println!(
-                "{:50} {:>10}",
+                "{:first_width$} {:>second_width$}",
                 format!(
                     "   \u{2514} Size of {} .cargo/git/db folder",
                     crate_detail.git_crates_source().len()
                 ),
-                convert_pretty(get_size(dir_path.checkout_dir()).unwrap_or(0_u64))
+                convert_pretty(get_size(dir_path.checkout_dir()).unwrap_or(0_u64)),
+                first_width = first_path_width,
+                second_width = second_path_width
             );
-            print_dash();
+            print_dash(query_dash_len);
         }
         if query_size_app || query_size_registry {
             let registry_dir_size =
                 get_size(dir_path.registry_dir()).expect("failed to get size of registry dir");
             final_size += registry_dir_size;
             println!(
-                "{:50} {:>10}",
+                "{:first_width$} {:>second_width$}",
                 format!(
                     "Total size of {} .cargo/registry crates:",
                     crate_list.installed_registry().len()
                 ),
-                convert_pretty(registry_dir_size)
+                convert_pretty(registry_dir_size),
+                first_width = first_path_width,
+                second_width = second_path_width
             );
             println!(
-                "{:50} {:>10}",
+                "{:first_width$} {:>second_width$}",
                 format!(
                     "   \u{251c} Size of {} .cargo/registry/cache folder",
                     crate_detail.registry_crates_archive().len()
                 ),
-                convert_pretty(get_size(dir_path.cache_dir()).unwrap_or(0_u64))
+                convert_pretty(get_size(dir_path.cache_dir()).unwrap_or(0_u64)),
+                first_width = first_path_width,
+                second_width = second_path_width
             );
             println!(
-                "{:50} {:>10}",
+                "{:first_width$} {:>second_width$}",
                 "   \u{251c} Size of .cargo/registry/index folder",
-                convert_pretty(get_size(dir_path.index_dir()).unwrap_or(0_u64))
+                convert_pretty(get_size(dir_path.index_dir()).unwrap_or(0_u64)),
+                first_width = first_path_width,
+                second_width = second_path_width
             );
             println!(
-                "{:50} {:>10}",
+                "{:first_width$} {:>second_width$}",
                 format!(
                     "   \u{2514} Size of {} .cargo/git/src folder",
                     crate_detail.registry_crates_source().len()
                 ),
-                convert_pretty(get_size(dir_path.src_dir()).unwrap_or(0_u64))
+                convert_pretty(get_size(dir_path.src_dir()).unwrap_or(0_u64)),
+                first_width = first_path_width,
+                second_width = second_path_width
             );
-            print_dash();
+            print_dash(query_dash_len);
         }
         println!(
-            "{:50} {:>10}",
+            "{:first_width$} {:>second_width$}",
             format!(
                 "Total size occupied by {}",
                 std::env::var("CARGO_HOME").expect("No environmental variable CARGO_HOME present")
             ),
-            convert_pretty(final_size)
+            convert_pretty(final_size),
+            first_width = first_path_width,
+            second_width = second_path_width
         );
     }
 }
@@ -780,7 +838,7 @@ fn force_remove(
             delete_folder(dir_path.checkout_dir(), dry_run);
             delete_folder(dir_path.db_dir(), dry_run);
         }
-        println!("{}", "Successfully removed all crates".red());
+        println!("{}", "Successfully removed all crates".color("red"));
     }
 }
 
@@ -813,7 +871,7 @@ fn remove_all(
                 "Total size of crates removed :- {:.3} MB",
                 total_size_cleaned
             )
-            .bright_blue()
+            .color("blue")
         );
     }
 }
@@ -851,7 +909,7 @@ fn remove_crate(
         }
         println!(
             "{}",
-            format!("Total size removed :- {:.3} MB", size_cleaned).bright_blue()
+            format!("Total size removed :- {:.3} MB", size_cleaned).color("blue")
         );
     }
 }
@@ -904,15 +962,18 @@ fn show_top_number_crates(crate_detail: &CrateDetail, crate_type: &str, number: 
     let mut vector = size_detail.iter().collect::<Vec<_>>();
     vector.sort_by(|a, b| (b.1).cmp(a.1));
     let title = format!("Top {} {}", number, crate_type);
-    show_title(title.as_str());
+    let first_path_len = 40;
+    let second_path_len = 10;
+    let dash_len = first_path_len + second_path_len + 3;
+    show_title(title.as_str(), first_path_len, second_path_len, dash_len);
     if vector.is_empty() {
-        println!("|{:^40}|{:^10}|", "NONE".red(), "0.000".red());
+        println!("|{:^40}|{:^10}|", "NONE".color("red"), "0.000".color("red"));
     } else if vector.len() < number {
         (0..vector.len()).for_each(|i| print_index_value_crate(&vector, i));
     } else {
         (0..number).for_each(|i| print_index_value_crate(&vector, i));
     }
-    print_dash();
+    print_dash(53);
 }
 
 // print crate name
@@ -945,12 +1006,12 @@ fn update_cargo_toml(app: &ArgMatches, cargo_toml_location: &[PathBuf]) {
                 if app.is_present("dry run") {
                     println!(
                         "{} Updating lockfile at path {:?}",
-                        "Dry run:".yellow(),
+                        "Dry run:".color("yellow"),
                         location
                     )
                 } else {
                     let message =
-                        format!("Updating {}", cargo_lock.to_str().unwrap().bright_blue());
+                        format!("Updating {}", cargo_lock.to_str().unwrap().color("blue"));
                     println!("{}", message);
                     Command::new("cargo")
                         .arg("update")
@@ -962,7 +1023,7 @@ fn update_cargo_toml(app: &ArgMatches, cargo_toml_location: &[PathBuf]) {
                 }
             }
         }
-        println!("{}", "Successfully update all Cargo.lock".bright_blue());
+        println!("{}", "Successfully update all Cargo.lock".color("blue"));
     }
 }
 
@@ -987,10 +1048,15 @@ fn wipe_directory(app: &ArgMatches, dir_path: &DirPath) {
 fn delete_folder(path: &PathBuf, dry_run: bool) {
     if path.exists() {
         if dry_run {
-            println!("{} {} {:?}", "Dry run:".yellow(), "removed".red(), path);
+            println!(
+                "{} {} {:?}",
+                "Dry run:".color("yellow"),
+                "removed".color("red"),
+                path
+            );
         } else {
             fs::remove_dir_all(path).expect("failed to remove all directory content");
-            println!("{} {:?}", "Removed".red(), path);
+            println!("{} {:?}", "Removed".color("red"), path);
         }
     }
 }
