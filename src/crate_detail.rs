@@ -80,41 +80,33 @@ impl CrateDetail {
     // find size of certain git crate source in KB
     #[allow(clippy::cast_precision_loss)]
     pub(crate) fn find_size_git_source(&self, crate_name: &str) -> f64 {
-        if let Some(size) = self.git_crates_source.get(crate_name) {
-            (*size as f64) / 1000_f64.powi(2)
-        } else {
-            0.0
-        }
+        self.git_crates_source
+            .get(crate_name)
+            .map_or(0.0, |size| (*size as f64) / 1000_f64.powi(2))
     }
 
     // find size of certain registry source in KB
     #[allow(clippy::cast_precision_loss)]
     pub(crate) fn find_size_registry_source(&self, crate_name: &str) -> f64 {
-        if let Some(size) = self.registry_crates_source.get(crate_name) {
-            (*size as f64) / 1000_f64.powi(2)
-        } else {
-            0.0
-        }
+        self.registry_crates_source
+            .get(crate_name)
+            .map_or(0.0, |size| (*size as f64) / 1000_f64.powi(2))
     }
 
     // find size of certain git crate archive in KB
     #[allow(clippy::cast_precision_loss)]
     pub(crate) fn find_size_git_archive(&self, crate_name: &str) -> f64 {
-        if let Some(size) = self.git_crates_archive.get(crate_name) {
-            (*size as f64) / 1000_f64.powi(2)
-        } else {
-            0.0
-        }
+        self.git_crates_archive
+            .get(crate_name)
+            .map_or(0.0, |size| (*size as f64) / 1000_f64.powi(2))
     }
 
     // find size of certain registry archive in KB
     #[allow(clippy::cast_precision_loss)]
     pub(crate) fn find_size_registry_archive(&self, crate_name: &str) -> f64 {
-        if let Some(size) = self.registry_crates_archive.get(crate_name) {
-            (*size as f64) / 1000_f64.powi(2)
-        } else {
-            0.0
-        }
+        self.registry_crates_archive
+            .get(crate_name)
+            .map_or(0.0, |size| (*size as f64) / 1000_f64.powi(2))
     }
 
     // return certain git crate total size in KB

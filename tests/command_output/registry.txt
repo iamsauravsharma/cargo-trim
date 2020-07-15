@@ -19,5 +19,5 @@ FLAGS:
     -V, --version             Prints version information
 
 OPTIONS:
-    -r, --remove <crate>...    Remove provided crates from registry or git
-    -t, --top <number>         Show certain number of top registry crates which have highest size
+    -r, --remove <crate>    Remove provided crates from registry or git
+    -t, --top <number>      Show certain number of top registry crates which have highest size

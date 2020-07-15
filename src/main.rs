@@ -464,7 +464,6 @@ fn list_crate_type(crate_detail: &CrateDetail, crate_type: &[String], title: &st
             precision = second_path_precision
         );
     }
-
     show_total_count(
         crate_type,
         total_size,
@@ -478,7 +477,7 @@ fn list_crate_type(crate_detail: &CrateDetail, crate_type: &[String], title: &st
 fn show_title(title: &str, first_path_len: usize, second_path_len: usize, dash_len: usize) {
     print_dash(dash_len);
     println!(
-        "|{:^first_width$}|{:second_width$}|",
+        "|{:^first_width$}|{:^second_width$}|",
         title.bold(),
         "SIZE(MB)".bold(),
         first_width = first_path_len,
@@ -497,7 +496,7 @@ fn show_total_count(
 ) {
     if data.is_empty() {
         println!(
-            "|{:^first_width$}|{:second_width$}|",
+            "|{:^first_width$}|{:^second_width$}|",
             "NONE".color("red"),
             "0.000".color("red"),
             first_width = first_path_len,
@@ -506,7 +505,7 @@ fn show_total_count(
     }
     print_dash(dash_len);
     println!(
-        "|{:^first_width$}|{:second_width$}|",
+        "|{:^first_width$}|{:^second_width$}|",
         format!("Total no of crates:- {}", data.len()).color("blue"),
         format!("{:.3}", size).color("blue"),
         first_width = first_path_len,

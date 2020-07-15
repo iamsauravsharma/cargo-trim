@@ -40,7 +40,6 @@ pub(super) fn app() -> App<'static, 'static> {
             "Add listed crates to default conf file exclude list [use TRIM_EXCLUDE environment \
              variable for creating exclude list without editing conf file]",
         )
-        .multiple(true)
         .takes_value(true)
         .value_name("crate");
 
@@ -74,7 +73,6 @@ pub(super) fn app() -> App<'static, 'static> {
             "Add listed crates to default conf file include list [use TRIM_INCLUDE environment \
              variable for creating include list without editing conf file]",
         )
-        .multiple(true)
         .takes_value(true)
         .value_name("crate");
 
@@ -137,13 +135,11 @@ pub(super) fn app() -> App<'static, 'static> {
         .short("r")
         .long("remove")
         .help("Remove provided crates from registry or git")
-        .multiple(true)
         .takes_value(true)
         .value_name("crate");
 
     let set_directory = Arg::with_name("set directory")
         .short("d")
-        .multiple(true)
         .long("directory")
         .value_name("directory")
         .help(
