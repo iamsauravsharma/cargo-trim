@@ -55,7 +55,6 @@ USAGE:
 
 FLAGS:
     -a, --all                 Clean up all .cargo/registry & .cargo/git follow config file data
-    -c, --clear               Clear config file data
     -n, --dry-run             Run command in dry run mode to see what would be removed
     -f, --force               Force clear cache without reading conf file
     -h, --help                Prints help information

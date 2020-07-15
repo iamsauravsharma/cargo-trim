@@ -15,11 +15,6 @@ pub(super) fn app() -> App<'static, 'static> {
         .help("Clean up all .cargo/registry follow config file data");
     let all_list = all.help("list out all installed crate");
 
-    let clear_config = Arg::with_name("clear config")
-        .short("c")
-        .long("clear")
-        .help("Clear config file data");
-
     let directory = Arg::with_name("directory").short("d").long("directory");
     let directory_config = directory.clone().help("Query about directory data");
     let directory_remove = directory
@@ -211,7 +206,6 @@ pub(super) fn app() -> App<'static, 'static> {
                 .about(env!("CARGO_PKG_DESCRIPTION"))
                 .args(&[
                     all_trim,
-                    clear_config,
                     exclude_conf,
                     dry_run.clone(),
                     force_remove.clone(),

@@ -37,9 +37,6 @@ fn main() {
     // operation and return config file
     let config_file = config_file::config_file(app, dir_path.config_file());
 
-    // Perform action of removing config file with -c flag
-    clear_config(app, &dir_path);
-
     // Query about config file information
     config_subcommand(app, &config_file, &dir_path.config_file());
 
@@ -179,19 +176,6 @@ fn main() {
 
     let cargo_toml_location = list_crate.cargo_toml_location().location_path();
     update_cargo_toml(app, cargo_toml_location);
-}
-
-// Clear config file data
-fn clear_config(app: &ArgMatches, dir_path: &DirPath) {
-    if app.is_present("clear config") {
-        if app.is_present("dry run") {
-            println!("{} Cleared config file", "Dry run:".color("yellow"));
-        } else {
-            fs::remove_file(dir_path.config_file().as_path())
-                .expect("failed to delete config file");
-            println!("Cleared config file");
-        }
-    }
 }
 
 // Git compress git files

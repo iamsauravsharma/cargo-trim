@@ -13,7 +13,7 @@ categories = ["command-line-utilities"]
 
 [dependencies]
 clap = "2.33.1"
-colored = "1.9.3"
+colored = "2.0.0"
 dirs = "3.0.1"
 semver = "0.10.0"
 serde = { version = "1.0.114", features = ["derive"]}
