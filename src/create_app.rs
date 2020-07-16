@@ -48,11 +48,6 @@ pub(super) fn app() -> App<'static, 'static> {
         .long("file")
         .help("Return config file location");
 
-    let force_remove = Arg::with_name("force remove")
-        .short("f")
-        .long("force")
-        .help("Force clear cache without reading conf file");
-
     let git_compress = Arg::with_name("git compress")
         .short("g")
         .long("gc")
@@ -183,6 +178,7 @@ pub(super) fn app() -> App<'static, 'static> {
             "registry",
             "cache",
             "index",
+            "index-cache",
             "src",
         ])
         .takes_value(true)
@@ -204,7 +200,6 @@ pub(super) fn app() -> App<'static, 'static> {
                     all_trim,
                     exclude_conf,
                     dry_run.clone(),
-                    force_remove.clone(),
                     git_compress,
                     include_conf,
                     light_cleanup_trim,
@@ -240,7 +235,6 @@ pub(super) fn app() -> App<'static, 'static> {
                         .args(&[
                             all_git,
                             dry_run.clone(),
-                            force_remove.clone(),
                             light_cleanup_git,
                             old_clean.clone(),
                             old_orphan_clean.clone(),
@@ -257,7 +251,6 @@ pub(super) fn app() -> App<'static, 'static> {
                         .args(&[
                             all_registry,
                             dry_run.clone(),
-                            force_remove,
                             light_cleanup_registry,
                             old_clean,
                             old_orphan_clean,

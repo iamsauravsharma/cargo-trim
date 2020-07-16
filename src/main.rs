@@ -40,17 +40,6 @@ fn main() {
     // Query about config file information
     config_subcommand(app, &config_file, &dir_path.config_file());
 
-    // Force remove all crates without reading config file also remove index .cache
-    // folder
-    let force_remove_app = app.is_present("force remove");
-    let force_remove_git = git_subcommand.is_present("force remove");
-    let force_remove_registry = registry_subcommand.is_present("force remove");
-    force_remove(
-        &dir_path,
-        (force_remove_app, force_remove_git, force_remove_registry),
-        (dry_run_app, dry_run_git, dry_run_registry),
-    );
-
     // Perform git compress
     git_compress(
         app,
@@ -312,21 +301,7 @@ fn light_cleanup(
             let dry_run = dry_run_app || dry_run_registry;
             delete_folder(checkout_dir, dry_run);
             // Delete out .cache folder also
-            for entry in fs::read_dir(index_dir).expect("failed to read out index directory") {
-                let entry = entry.unwrap().path();
-                let registry_dir = entry.as_path();
-                for folder in
-                    fs::read_dir(registry_dir).expect("failed to read out registry directory")
-                {
-                    let folder = folder.unwrap().path();
-                    let folder_name = folder
-                        .file_name()
-                        .expect("failed to get file name form registry directory sub folder");
-                    if folder_name == ".cache" {
-                        delete_folder(&folder, dry_run);
-                    }
-                }
-            }
+            delete_index_cache(index_dir, dry_run);
         }
         if light_cleanup_app || light_cleanup_git {
             let dry_run = dry_run_app || dry_run_git;
@@ -787,44 +762,6 @@ fn config_subcommand(app: &ArgMatches, config_file: &ConfigFile, config_file_loc
     }
 }
 
-// force remove all crates
-fn force_remove(
-    dir_path: &DirPath,
-    (force_remove_app, force_remove_git, force_remove_registry): (bool, bool, bool),
-    (dry_run_app, dry_run_git, dry_run_registry): (bool, bool, bool),
-) {
-    if force_remove_app || force_remove_git || force_remove_registry {
-        if force_remove_app || force_remove_registry {
-            let dry_run = dry_run_app || dry_run_registry;
-            delete_folder(dir_path.cache_dir(), dry_run);
-            delete_folder(dir_path.src_dir(), dry_run);
-            // Delete out .cache folder also
-            let index_path = dir_path.index_dir();
-            for entry in fs::read_dir(index_path)
-                .expect("Failed to read index directory during force remove")
-            {
-                let entry = entry.unwrap().path();
-                let registry_dir = entry.as_path();
-                for folder in fs::read_dir(registry_dir)
-                    .expect("Failed to read registry directory in force remove")
-                {
-                    let folder = folder.unwrap().path();
-                    let folder_name = folder.file_name().unwrap();
-                    if folder_name == ".cache" {
-                        delete_folder(&folder, dry_run);
-                    }
-                }
-            }
-        }
-        if force_remove_app || force_remove_git {
-            let dry_run = dry_run_app || dry_run_git;
-            delete_folder(dir_path.checkout_dir(), dry_run);
-            delete_folder(dir_path.db_dir(), dry_run);
-        }
-        println!("{}", "Successfully removed all crates".color("red"));
-    }
-}
-
 // remove all crates by following config file information
 fn remove_all(
     list_crate: &CrateList,
@@ -1021,8 +958,27 @@ fn wipe_directory(app: &ArgMatches, dir_path: &DirPath) {
             "registry" => delete_folder(dir_path.registry_dir(), dry_run),
             "cache" => delete_folder(dir_path.cache_dir(), dry_run),
             "index" => delete_folder(dir_path.index_dir(), dry_run),
+            "index-cache" => delete_index_cache(dir_path.index_dir(), dry_run),
             "src" => delete_folder(dir_path.src_dir(), dry_run),
             _ => (),
+        }
+    }
+}
+
+// delete index .cache file
+fn delete_index_cache(index_dir: &PathBuf, dry_run: bool) {
+    for entry in
+        fs::read_dir(index_dir).expect("Failed to read index directory during force remove")
+    {
+        let registry_dir = entry.unwrap().path();
+        for folder in
+            fs::read_dir(registry_dir).expect("Failed to read registry directory in force remove")
+        {
+            let folder = folder.unwrap().path();
+            let folder_name = folder.file_name().unwrap();
+            if folder_name == ".cache" {
+                delete_folder(&folder, dry_run);
+            }
         }
     }
 }
