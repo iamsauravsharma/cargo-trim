@@ -142,7 +142,7 @@ impl CrateList {
                     let file_name = path
                         .file_name()
                         .expect("failed to get file name form db directory sub folder");
-                    let file_name = file_name.to_str().unwrap().to_string();
+                    let file_name = file_name.to_str().unwrap();
                     if file_name.contains(name[1]) {
                         let mut rev_value = latest_rev_value(path);
                         rev_value.retain(|c| c != '\'');
@@ -386,13 +386,13 @@ fn read_content(list: &[PathBuf]) -> (Vec<String>, Vec<String>) {
                                     source.split("?tag=").collect()
                                 };
                                 let rev_sha: Vec<&str> = split_url[1].split('#').collect();
-                                let rev_value = rev_sha[1].to_string();
+                                let rev_value = rev_sha[1];
                                 let rev_short_form = &rev_value[..=6];
                                 let full_name = format!("{}-{}", name, rev_short_form);
                                 present_crate_git.push(full_name);
                             } else {
                                 let rev_sha: Vec<&str> = source.split('#').collect();
-                                let rev_value = rev_sha[1].to_string();
+                                let rev_value = rev_sha[1];
                                 let rev_short_form = &rev_value[..=6];
                                 let full_name = format!("{}-{}", name, rev_short_form);
                                 present_crate_git.push(full_name);
@@ -452,9 +452,9 @@ fn get_installed_crate_registry(
                 let file_name = entry
                     .file_name()
                     .expect("failed to get file name form main entry");
-                let crate_name = file_name.to_str().unwrap().to_string();
+                let crate_name = file_name.to_str().unwrap();
                 crate_detail.add_registry_crate_source(crate_name.to_owned(), crate_size);
-                installed_crate_registry.push(crate_name)
+                installed_crate_registry.push(crate_name.to_owned())
             }
         }
     }
@@ -467,7 +467,7 @@ fn get_installed_crate_registry(
                     .file_name()
                     .expect("failed to get file name from cache dir");
                 let crate_size = get_size(&entry).expect("failed to get size");
-                let crate_name = file_name.to_str().unwrap().to_string();
+                let crate_name = file_name.to_str().unwrap();
                 let split_name = crate_name.rsplitn(2, '.').collect::<Vec<&str>>();
                 crate_detail.add_registry_crate_archive(split_name[1].to_owned(), crate_size);
                 installed_crate_registry.push(split_name[1].to_owned());
@@ -498,8 +498,8 @@ fn get_installed_crate_git(
                 let git_sha_entry = git_sha_entry.unwrap().path();
                 let crate_size = get_size(&git_sha_entry).expect("failed to get folder size");
                 let git_sha_file_name = git_sha_entry.file_name().expect("failed to get file name");
-                let git_sha = git_sha_file_name.to_str().unwrap().to_string();
-                let file_name = file_path.to_str().unwrap().to_string();
+                let git_sha = git_sha_file_name.to_str().unwrap();
+                let file_name = file_path.to_str().unwrap();
                 let split_name = file_name.rsplitn(2, '-').collect::<Vec<&str>>();
                 let full_name = format!("{}-{}", split_name[1], git_sha);
                 crate_detail.add_git_crate_archive(full_name.to_owned(), crate_size);
@@ -512,7 +512,7 @@ fn get_installed_crate_git(
             let entry = entry.unwrap().path();
             let crate_size = get_size(&entry).expect("failed to get size of db dir folders");
             let file_name = entry.file_name().expect("failed to get file name");
-            let file_name = file_name.to_str().unwrap().to_string();
+            let file_name = file_name.to_str().unwrap();
             let split_name = file_name.rsplitn(2, '-').collect::<Vec<&str>>();
             let full_name = format!("{}-HEAD", split_name[1]);
             crate_detail.add_git_crate_source(full_name.to_owned(), crate_size);
