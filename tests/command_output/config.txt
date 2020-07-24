@@ -10,4 +10,5 @@ FLAGS:
     -e, --exclude      Query about exclude data
     -h, --help         Prints help information
     -i, --include      Query about include data
+    -p, --print        Print/Display config file content
     -V, --version      Prints version information

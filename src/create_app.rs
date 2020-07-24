@@ -116,6 +116,11 @@ pub(super) fn app() -> App<'static, 'static> {
              generated till now use cargo trim -u to guarantee your all project generate lock file",
         );
 
+    let print_config = Arg::with_name("print config")
+        .short("p")
+        .long("print")
+        .help("Print/Display config file content");
+
     let query_size = Arg::with_name("query size").short("q").long("query");
     let query_size_trim = query_size
         .clone()
@@ -226,7 +231,13 @@ pub(super) fn app() -> App<'static, 'static> {
                     SubCommand::with_name("config")
                         .about("Query config file data")
                         .setting(AppSettings::ArgRequiredElseHelp)
-                        .args(&[directory_config, exclude_config, include_config, file]),
+                        .args(&[
+                            directory_config,
+                            exclude_config,
+                            include_config,
+                            file,
+                            print_config,
+                        ]),
                 )
                 .subcommand(
                     SubCommand::with_name("git")

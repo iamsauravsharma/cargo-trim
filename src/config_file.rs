@@ -63,8 +63,8 @@ pub(crate) fn config_file(app: &clap::ArgMatches, config_dir: &PathBuf) -> Confi
         .expect("failed to read config file string");
     if buffer.is_empty() {
         let initial_config = ConfigFile::new();
-        let serialize =
-            serde_json::to_string(&initial_config).expect("failed to convert ConfigFile to string");
+        let serialize = serde_json::to_string_pretty(&initial_config)
+            .expect("failed to convert ConfigFile to string");
         buffer.push_str(&serialize)
     }
     let mut deserialize_config: ConfigFile =
