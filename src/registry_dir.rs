@@ -1,4 +1,4 @@
-use crate::{list_crate, ConfigFile, CrateDetail};
+use crate::{list_crate, utils::delete_folder, ConfigFile, CrateDetail};
 use colored::Colorize;
 use std::{fs, path::Path};
 
@@ -60,9 +60,9 @@ impl<'a> RegistryDir<'a> {
                 .filter(|x| x.contains(name))
                 .collect();
             if same_name_list.len() == 1 {
-                remove_index_cache(Path::new(&index_cache_dir), crate_name);
+                remove_index_cache(Path::new(&index_cache_dir), crate_name, self.dry_run);
             }
-            remove_empty_index_cache_dir(Path::new(&index_cache_dir));
+            remove_empty_index_cache_dir(Path::new(&index_cache_dir), self.dry_run);
             self.installed_crate.retain(|x| x != crate_name);
         });
         if self.dry_run {
@@ -137,37 +137,14 @@ fn remove_crate(path: &Path, value: &str, dry_run: bool) {
                 let entry = entry.unwrap();
                 let path = entry.path();
                 if path.to_str().unwrap().contains(value) {
-                    if path.is_file() {
-                        if dry_run {
-                            println!(
-                                "{} {} {:?}",
-                                "Dry run:".color("yellow"),
-                                "removed".color("red"),
-                                path
-                            );
-                        } else {
-                            fs::remove_file(&path).expect("failed to remove file");
-                        }
-                    } else if path.is_dir() {
-                        if dry_run {
-                            println!(
-                                "{} {} {:?}",
-                                "Dry run:".color("yellow"),
-                                "removed".color("red"),
-                                path
-                            );
-                        } else {
-                            fs::remove_dir_all(&path)
-                                .expect("failed to remove all directory contents");
-                        }
-                    }
+                    delete_folder(&path, dry_run);
                 }
             }
         }
     }
 }
 
-fn remove_index_cache(path: &Path, value: &str) {
+fn remove_index_cache(path: &Path, value: &str, dry_run: bool) {
     let mut remove_file_location = path.to_path_buf();
     let split_value: Vec<&str> = value.rsplitn(2, '-').collect();
     let name = split_value[1];
@@ -191,23 +168,21 @@ fn remove_index_cache(path: &Path, value: &str) {
             remove_file_location.push(name);
         }
     };
-    if remove_file_location.exists() && remove_file_location.is_file() {
-        fs::remove_file(remove_file_location).expect("Failed to remove .cache file");
-    }
+    delete_folder(&remove_file_location, dry_run)
 }
 
-fn remove_empty_index_cache_dir(path: &Path) {
+fn remove_empty_index_cache_dir(path: &Path, dry_run: bool) {
     if path
         .read_dir()
         .map(|mut i| i.next().is_none())
         .unwrap_or(false)
     {
-        fs::remove_dir(path).expect("Failed to remove empty index cache");
+        delete_folder(&path, dry_run)
     } else {
         for entry in path.read_dir().expect("Failed to read .cache sub folder") {
             let path = entry.unwrap().path();
             if path.is_dir() {
-                remove_empty_index_cache_dir(path.as_path())
+                remove_empty_index_cache_dir(path.as_path(), dry_run);
             }
         }
     }

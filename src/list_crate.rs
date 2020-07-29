@@ -1,4 +1,6 @@
-use crate::{config_file::ConfigFile, crate_detail::CrateDetail, dir_path::DirPath, get_size};
+use crate::{
+    config_file::ConfigFile, crate_detail::CrateDetail, dir_path::DirPath, utils::get_size,
+};
 use serde::Deserialize;
 use std::{
     env,
