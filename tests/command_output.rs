@@ -1,127 +1,84 @@
-use pretty_assertions::assert_eq;
-use std::{io::Read, process::Command};
+use std::process::Command;
 
 // test check trim subcommand help
 #[test]
 fn test_help() {
-    let output = Command::new("cargo")
+    let status = Command::new("cargo")
         .arg("run")
         .arg("--")
         .arg("trim")
         .arg("help")
-        .output()
+        .status()
         .expect("failed to execute process");
-    let output = String::from_utf8(output.stdout).unwrap();
-    let mut buffer = String::new();
-    let mut file = std::fs::File::open("tests/command_output/help.txt").unwrap();
-    file.read_to_string(&mut buffer).unwrap();
-    assert_eq!(
-        output.replace("\r", "").replace("\n", ""),
-        buffer.replace("\r", "").replace("\n", "")
-    );
+    assert!(status.success());
 }
 
 // test check list subcommand help
 #[test]
 fn test_list_help() {
-    let output = Command::new("cargo")
+    let status = Command::new("cargo")
         .arg("run")
         .arg("--")
         .arg("trim")
         .arg("help")
         .arg("list")
-        .output()
+        .status()
         .expect("failed to execute process");
-    let output = String::from_utf8(output.stdout).unwrap();
-    let mut buffer = String::new();
-    let mut file = std::fs::File::open("tests/command_output/list.txt").unwrap();
-    file.read_to_string(&mut buffer).unwrap();
-    assert_eq!(
-        output.replace("\r", "").replace("\n", ""),
-        buffer.replace("\r", "").replace("\n", "")
-    );
+    assert!(status.success());
 }
 
 // test check remove subcommand help
 #[test]
 fn test_remove_help() {
-    let output = Command::new("cargo")
+    let status = Command::new("cargo")
         .arg("run")
         .arg("--")
         .arg("trim")
         .arg("help")
         .arg("remove")
-        .output()
+        .status()
         .expect("failed to execute process");
-    let output = String::from_utf8(output.stdout).unwrap();
-    let mut buffer = String::new();
-    let mut file = std::fs::File::open("tests/command_output/remove.txt").unwrap();
-    file.read_to_string(&mut buffer).unwrap();
-    assert_eq!(
-        output.replace("\r", "").replace("\n", ""),
-        buffer.replace("\r", "").replace("\n", "")
-    );
+    assert!(status.success());
 }
 
 // test check config subcommand help
 #[test]
 fn test_config_help() {
-    let output = Command::new("cargo")
+    let status = Command::new("cargo")
         .arg("run")
         .arg("--")
         .arg("trim")
         .arg("help")
         .arg("config")
-        .output()
+        .status()
         .expect("failed to execute process");
-    let output = String::from_utf8(output.stdout).unwrap();
-    let mut buffer = String::new();
-    let mut file = std::fs::File::open("tests/command_output/config.txt").unwrap();
-    file.read_to_string(&mut buffer).unwrap();
-    assert_eq!(
-        output.replace("\r", "").replace("\n", ""),
-        buffer.replace("\r", "").replace("\n", "")
-    );
+    assert!(status.success());
 }
 
 // test check git subcommand help
 #[test]
 fn test_git_help() {
-    let output = Command::new("cargo")
+    let status = Command::new("cargo")
         .arg("run")
         .arg("--")
         .arg("trim")
         .arg("help")
         .arg("git")
-        .output()
+        .status()
         .expect("failed to execute process");
-    let output = String::from_utf8(output.stdout).unwrap();
-    let mut buffer = String::new();
-    let mut file = std::fs::File::open("tests/command_output/git.txt").unwrap();
-    file.read_to_string(&mut buffer).unwrap();
-    assert_eq!(
-        output.replace("\r", "").replace("\n", ""),
-        buffer.replace("\r", "").replace("\n", "")
-    );
+    assert!(status.success());
 }
 
 // test check registry subcommand help
 #[test]
 fn test_registry_help() {
-    let output = Command::new("cargo")
+    let status = Command::new("cargo")
         .arg("run")
         .arg("--")
         .arg("trim")
         .arg("help")
         .arg("registry")
-        .output()
+        .status()
         .expect("failed to execute process");
-    let output = String::from_utf8(output.stdout).unwrap();
-    let mut buffer = String::new();
-    let mut file = std::fs::File::open("tests/command_output/registry.txt").unwrap();
-    file.read_to_string(&mut buffer).unwrap();
-    assert_eq!(
-        output.replace("\r", "").replace("\n", ""),
-        buffer.replace("\r", "").replace("\n", "")
-    );
+    assert!(status.success());
 }
