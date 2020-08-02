@@ -283,34 +283,17 @@ impl CrateList {
 // remove version tag from crates full tag mini function of remove_version
 // function
 fn clear_version_value(full_name: &str) -> (String, String) {
-    let build_number_split: Vec<&str> = full_name.rsplitn(2, '+').collect();
-    let split_name = if build_number_split.len() == 1 {
-        build_number_split[0]
-    } else {
-        build_number_split[1]
-    };
-    let list: Vec<&str> = split_name.rsplitn(3, '-').collect();
-    let mut clear_name = String::new();
-    let mut version = if semver::Version::parse(list[0]).is_ok() {
-        for (i, a) in list[1..].iter().rev().enumerate() {
-            clear_name.push_str(a);
-            if i != list.len() - 2 {
-                clear_name.push_str("-");
-            }
+    let version_split: Vec<&str> = full_name.split('-').collect();
+    let mut version_start_position = version_split.len();
+    for (pos, split_part) in version_split.iter().enumerate() {
+        if semver::Version::parse(split_part).is_ok() {
+            version_start_position = pos;
+            break;
         }
-        list[0].to_string()
-    } else {
-        clear_name = list[2].to_string();
-        let mut version = String::new();
-        version.push_str(list[0]);
-        version.push_str("-");
-        version.push_str(list[1]);
-        version
-    };
-    if build_number_split.len() != 1 {
-        version.push_str("+");
-        version.push_str(build_number_split[0]);
     }
+    let (clear_name_vec, version_vec) = version_split.split_at(version_start_position);
+    let clear_name = clear_name_vec.join("-");
+    let version = version_vec.join("-");
     (clear_name, version)
 }
 
