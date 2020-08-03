@@ -762,8 +762,12 @@ fn config_subcommand(app: &ArgMatches, config_file: &ConfigFile, config_file_loc
                 println!("{}", name);
             }
         }
-        if matches.is_present("config file") {
-            println!("Config file location: {:?}", config_file_location);
+        if matches.is_present("location") {
+            println!(
+                "{}: {:?}",
+                "Config file location".color("blue"),
+                config_file_location
+            );
         }
         if matches.is_present("print config") {
             let content = serde_json::to_string_pretty(config_file).unwrap();

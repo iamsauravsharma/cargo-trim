@@ -43,11 +43,6 @@ pub(super) fn app() -> App<'static, 'static> {
         .takes_value(true)
         .value_name("crate");
 
-    let file = Arg::with_name("config file")
-        .short("f")
-        .long("file")
-        .help("Return config file location");
-
     let git_compress = Arg::with_name("git compress")
         .short("g")
         .long("gc")
@@ -84,6 +79,11 @@ pub(super) fn app() -> App<'static, 'static> {
         "Light cleanup repos by removing registry source but stores registry archive for future \
          compilation",
     );
+
+    let location = Arg::with_name("location")
+        .short("l")
+        .long("location")
+        .help("Return config file location");
 
     let old = Arg::with_name("old")
         .short("o")
@@ -235,7 +235,7 @@ pub(super) fn app() -> App<'static, 'static> {
                             directory_config,
                             exclude_config,
                             include_config,
-                            file,
+                            location,
                             print_config,
                         ]),
                 )

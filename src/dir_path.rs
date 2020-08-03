@@ -20,8 +20,12 @@ impl DirPath {
     // set directory path
     pub(crate) fn set_dir_path() -> Self {
         // set config file directory path
-        let mut config_file = dirs::config_dir().expect("Cannot get config directory location");
-        config_file.push("cargo_trim_config.json");
+        let config_dir = dirs::config_dir().expect("Cannot get config directory location");
+        // if config dir not exists create
+        if !config_dir.exists() {
+            fs::create_dir_all(&config_dir).expect("Failed to create config dir");
+        }
+        let config_file = config_dir.join("cargo_trim_config.json");
 
         // change old config file to new config file location for mac os if it exists
         // TODO: remove this code block after >(^0.7.0) release
