@@ -762,6 +762,12 @@ fn config_subcommand(app: &ArgMatches, config_file: &ConfigFile, config_file_loc
                 println!("{}", name);
             }
         }
+        if matches.is_present("ignore_file_name") {
+            let read_ignore_file_name = config_file.ignore_file_name();
+            for name in read_ignore_file_name {
+                println!("{}", name);
+            }
+        }
         if matches.is_present("location") {
             println!(
                 "{}: {:?}",

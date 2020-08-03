@@ -11,6 +11,8 @@ pub(crate) struct ConfigFile {
     include: Vec<String>,
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     exclude: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    ignore_file_name: Vec<String>,
 }
 
 impl ConfigFile {
@@ -20,6 +22,7 @@ impl ConfigFile {
             directory: Vec::new(),
             include: Vec::new(),
             exclude: Vec::new(),
+            ignore_file_name: Vec::new(),
         }
     }
 
@@ -38,6 +41,11 @@ impl ConfigFile {
         &self.include
     }
 
+    // return vector of ignore file name value in config file
+    pub(crate) fn ignore_file_name(&self) -> &Vec<String> {
+        &self.ignore_file_name
+    }
+
     // return mutable reference of directory value
     pub(crate) fn mut_directory(&mut self) -> &mut Vec<String> {
         &mut self.directory
@@ -51,6 +59,11 @@ impl ConfigFile {
     // return mutable reference of include value
     pub(crate) fn mut_include(&mut self) -> &mut Vec<String> {
         &mut self.include
+    }
+
+    // return mutable reference of ignore file name value
+    pub(crate) fn mut_ignore_file_name(&mut self) -> &mut Vec<String> {
+        &mut self.ignore_file_name
     }
 }
 
@@ -97,6 +110,11 @@ pub(crate) fn config_file(app: &clap::ArgMatches, config_dir: &PathBuf) -> Confi
         if let Some(value) = app.value_of("include") {
             deserialize_config.mut_include().push(value.to_string());
         }
+        if let Some(value) = app.value_of("ignore_file_name") {
+            deserialize_config
+                .mut_ignore_file_name()
+                .push(value.to_string());
+        }
 
         // clear working directory from config file
         if let Some(subcommand) = app.subcommand_matches("clear") {
@@ -124,6 +142,9 @@ pub(crate) fn config_file(app: &clap::ArgMatches, config_dir: &PathBuf) -> Confi
             }
             if let Some(value) = subcommand.value_of("include") {
                 remove_item_crate(deserialize_config.mut_include(), value, dry_run);
+            }
+            if let Some(value) = subcommand.value_of("ignore_file_name") {
+                remove_item_crate(deserialize_config.mut_ignore_file_name(), value, dry_run);
             }
         }
 

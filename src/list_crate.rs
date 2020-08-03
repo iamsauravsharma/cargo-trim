@@ -170,7 +170,7 @@ impl CrateList {
         env_directory.sort();
         env_directory.dedup();
         for path in &env_directory {
-            let list_cargo_toml = list_cargo_toml(Path::new(path));
+            let list_cargo_toml = list_cargo_toml(Path::new(path), config_file.ignore_file_name());
             let (mut registry_crate, mut git_crate) = read_content(list_cargo_toml.location_path());
             cargo_toml_location.append(list_cargo_toml);
             used_crate_registry.append(&mut registry_crate);
@@ -299,7 +299,7 @@ fn clear_version_value(full_name: &str) -> (String, String) {
 
 // List out cargo.toml file present directory inside directory listed inside
 // config file
-fn list_cargo_toml(path: &Path) -> CargoTomlLocation {
+fn list_cargo_toml(path: &Path, ignore_file_name: &[String]) -> CargoTomlLocation {
     let mut cargo_trim_list = CargoTomlLocation::new();
     if path.exists() {
         if path.is_dir() {
@@ -308,8 +308,8 @@ fn list_cargo_toml(path: &Path) -> CargoTomlLocation {
             {
                 let sub_path_buf = entry.unwrap().path();
                 let sub = sub_path_buf.as_path();
-                if sub.is_dir() && !is_file_hidden(sub) && !file_name_is(path, "target") {
-                    let kids_list = list_cargo_toml(sub);
+                if sub.is_dir() && !file_name_in(path, ignore_file_name) {
+                    let kids_list = list_cargo_toml(sub, ignore_file_name);
                     cargo_trim_list.append(kids_list);
                 }
                 if sub.is_file() && sub.file_name() == Some(OsStr::new("Cargo.toml")) {
@@ -323,14 +323,9 @@ fn list_cargo_toml(path: &Path) -> CargoTomlLocation {
     cargo_trim_list
 }
 
-// check if file is hidden or not
-fn is_file_hidden(path: &Path) -> bool {
-    path.file_name().unwrap().to_str().unwrap().starts_with('.')
-}
-
 // check if file name is equal to name or not
-fn file_name_is(path: &Path, name: &str) -> bool {
-    path.file_name().unwrap().to_str().unwrap() == name
+fn file_name_in(path: &Path, file_name_list: &[String]) -> bool {
+    file_name_list.contains(&path.file_name().unwrap().to_str().unwrap().to_string())
 }
 
 // Read out content of cargo.lock file to list out crates present so can be used

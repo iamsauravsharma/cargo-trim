@@ -50,6 +50,20 @@ pub(super) fn app() -> App<'static, 'static> {
         .takes_value(true)
         .possible_values(&["all", "index", "git", "git-checkout", "git-db"]);
 
+    let ignore_file_name_initial = Arg::with_name("ignore_file_name")
+        .short("f")
+        .long("ignore-file-name");
+    let ignore_file_name = ignore_file_name_initial
+        .clone()
+        .takes_value(true)
+        .value_name("file-name")
+        .help(
+            "Add file name/directory name to ignore list in conf file while scanning for \
+             Cargo.toml within given rust project directory",
+        );
+    let ignore_file_name_config =
+        ignore_file_name_initial.help("Query about ignored file name data");
+
     let include = Arg::with_name("include").short("i").long("include");
     let include_config = include.clone().help("Query about include data");
     let include_remove = include
@@ -206,6 +220,7 @@ pub(super) fn app() -> App<'static, 'static> {
                     exclude_conf,
                     dry_run.clone(),
                     git_compress,
+                    ignore_file_name,
                     include_conf,
                     light_cleanup_trim,
                     old_clean.clone(),
@@ -235,6 +250,7 @@ pub(super) fn app() -> App<'static, 'static> {
                             directory_config,
                             exclude_config,
                             include_config,
+                            ignore_file_name_config,
                             location,
                             print_config,
                         ]),
@@ -287,6 +303,7 @@ pub(super) fn app() -> App<'static, 'static> {
                     "exclude",
                     "include",
                     "set directory",
+                    "ignore_file_name",
                 ])),
         )
 }

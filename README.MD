@@ -6,12 +6,6 @@
 | :-----------------: | :-----: | :------------: |
 | [![Travis Build Status][build_badge]][build_link] | [![License: MIT][license_badge]][license_link] | [![Crate][cratesio_badge]][cratesio_link] |
 
-**Rust & OS support:**
-
-| Stable |  Beta | Nightly | Linux |  OSX  | Windows |
-| :----: | :---: | :-----: | :---: | :---: | :-----: |
-| [![Stable support][stable_supported_badge]][git_link] | [![Beta support][beta_supported_badge]][git_link] | [![Nightly support][nightly_supported_badge]][git_link] | [![Linux support][linux_supported_badge]][git_link] | [![OSX support][osx_supported_badge]][git_link] | [![Windows support][windows_supported_badge]][git_link] |
-
 Binary application for cleaning __\$CARGO_HOME/registry__  & __\$CARGO_HOME/git__ folder support orphan and old crates cleaning
 Default \$CARGO_HOME is set as \$HOME/.cargo
 
@@ -68,18 +62,20 @@ FLAGS:
     -V, --version             Prints version information
 
 OPTIONS:
-    -e, --exclude <crate>          Add listed crates to default conf file exclude list [use TRIM_EXCLUDE environment
-                                   variable for creating exclude list without editing conf file]
-    -g, --gc <git compress>        Git compress to reduce size of .cargo [possible values: all, index, git, git-
-                                   checkout, git-db]
-    -i, --include <crate>          Add listed crates to default conf file include list [use TRIM_INCLUDE environment
-                                   variable for creating include list without editing conf file]
-    -r, --remove <crate>           Remove provided crates from registry or git
-    -d, --directory <directory>    Set directory of Rust project [use TRIM_DIRECTORY environment variable for creating
-                                   directory list without editing conf file]
-    -t, --top <number>             Show certain number of top crates which have highest size
-    -w, --wipe <folder>            Wipe folder [possible values: git, checkouts, db, registry, cache, index, index-
-                                   cache, src]
+    -e, --exclude <crate>                 Add listed crates to default conf file exclude list [use TRIM_EXCLUDE
+                                          environment variable for creating exclude list without editing conf file]
+    -g, --gc <git compress>               Git compress to reduce size of .cargo [possible values: all, index, git, git-
+                                          checkout, git-db]
+    -f, --ignore-file-name <file-name>    Add file name/directory name to ignore list in conf file while scanning for
+                                          Cargo.toml within given rust project directory
+    -i, --include <crate>                 Add listed crates to default conf file include list [use TRIM_INCLUDE
+                                          environment variable for creating include list without editing conf file]
+    -r, --remove <crate>                  Remove provided crates from registry or git
+    -d, --directory <directory>           Set directory of Rust project [use TRIM_DIRECTORY environment variable for
+                                          creating directory list without editing conf file]
+    -t, --top <number>                    Show certain number of top crates which have highest size
+    -w, --wipe <folder>                   Wipe folder [possible values: git, checkouts, db, registry, cache, index,
+                                          index-cache, src]
 
 SUBCOMMANDS:
     clear       Clear current working directory from cargo cache config
@@ -94,7 +90,8 @@ SUBCOMMANDS:
 
 ### Config file location
 cargo-trim store its config file to config directory of OS and name config file as `cargo_trim_config.json`.
-In file cargo-trim stores out information about directory of rust projects and exclude and include crates list for cargo trim.
+In file cargo-trim stores out different information for scanning projects as well as listing out crates.
+
 
 [git_link]: https://github.com/iamsauravsharma/cargo-trim
 
@@ -106,17 +103,3 @@ In file cargo-trim stores out information about directory of rust projects and e
 
 [cratesio_badge]: https://img.shields.io/crates/v/cargo-trim.svg
 [cratesio_link]: https://crates.io/crates/cargo-trim
-
-[stable_supported_badge]: https://img.shields.io/badge/stable-supported-brightgreen.svg?logo=rust
-[beta_supported_badge]: https://img.shields.io/badge/beta-supported-brightgreen.svg?logo=rust
-[nightly_supported_badge]: https://img.shields.io/badge/nightly-supported-brightgreen.svg?logo=rust
-[stable_not_supported_badge]: https://img.shields.io/badge/stable-not%20supported-red.svg?logo=rust
-[beta_not_supported_badge]: https://img.shields.io/badge/beta-not%20supported-red.svg?logo=rust
-[nightly_not_supported_badge]: https://img.shields.io/badge/nightly-not%20supported-red.svg?logo=rust
-
-[linux_supported_badge]: https://img.shields.io/badge/linux-supported-brightgreen.svg?logo=linux
-[osx_supported_badge]: https://img.shields.io/badge/osx-supported-brightgreen.svg?logo=apple
-[windows_supported_badge]: https://img.shields.io/badge/windows-supported-brightgreen.svg?logo=windows
-[linux_not_supported_badge]: https://img.shields.io/badge/linux-not%20supported-red.svg?logo=linux
-[osx_not_supported_badge]: https://img.shields.io/badge/osx-not%20supported-red.svg?logo=apple
-[nightly_not_supported_badge]: https://img.shields.io/badge/windows-not%20supported-red.svg?logo=windows
