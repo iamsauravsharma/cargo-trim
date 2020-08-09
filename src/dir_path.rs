@@ -39,7 +39,7 @@ impl DirPath {
             }
         }
 
-        // If config file does not exists create one config file
+        // If config file does not exists create config file
         if !config_file.exists() {
             fs::File::create(config_file.to_str().unwrap()).expect("Failed to create config file");
         }

@@ -14,7 +14,6 @@ pub(crate) fn delete_folder(path: &Path, dry_run: bool) {
                 );
             } else {
                 fs::remove_file(&path).expect("failed to remove file");
-                println!("{} {:?}", "Removed".color("red"), path);
             }
         } else if path.is_dir() {
             if dry_run {
@@ -26,7 +25,6 @@ pub(crate) fn delete_folder(path: &Path, dry_run: bool) {
                 );
             } else {
                 fs::remove_dir_all(path).expect("failed to remove all directory content");
-                println!("{} {:?}", "Removed".color("red"), path);
             }
         }
     }
