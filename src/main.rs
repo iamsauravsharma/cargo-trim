@@ -719,7 +719,7 @@ fn query_size(
             println!(
                 "{:first_width$} {:>second_width$}",
                 format!(
-                    "   \u{2514} Size of {} .cargo/git/src folder",
+                    "   \u{2514} Size of {} .cargo/registry/src folder",
                     crate_detail.registry_crates_source().len()
                 ),
                 convert_pretty(get_size(dir_path.src_dir()).unwrap_or(0_u64)),

@@ -9,7 +9,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-// struct store Cargo.lock file location
+// struct store Cargo.toml file location
 pub(crate) struct CargoTomlLocation {
     path: Vec<PathBuf>,
 }
@@ -297,8 +297,7 @@ fn clear_version_value(full_name: &str) -> (String, String) {
     (clear_name, version)
 }
 
-// List out cargo.toml file present directory inside directory listed inside
-// config file
+// List out cargo.toml file present directories
 fn list_cargo_toml(path: &Path, ignore_file_name: &[String]) -> CargoTomlLocation {
     let mut cargo_trim_list = CargoTomlLocation::new();
     if path.exists() {

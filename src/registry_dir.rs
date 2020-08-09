@@ -69,7 +69,7 @@ impl<'a> RegistryDir<'a> {
             println!(
                 "{} {} {:?}",
                 "Dry run:".color("yellow"),
-                "removed".color("red"),
+                "Removed".color("red"),
                 crate_name
             );
         } else {

@@ -163,7 +163,7 @@ fn remove_item_crate(data: &mut Vec<String>, value: &str, dry_run: bool) {
         println!(
             "{} {} {:?}",
             "Dry run:".color("yellow"),
-            "removed".color("red"),
+            "Removed".color("red"),
             value
         );
     } else {

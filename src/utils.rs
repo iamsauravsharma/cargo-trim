@@ -9,7 +9,7 @@ pub(crate) fn delete_folder(path: &Path, dry_run: bool) {
                 println!(
                     "{} {} {:?}",
                     "Dry run:".color("yellow"),
-                    "removed".color("red"),
+                    "Removed".color("red"),
                     path
                 );
             } else {
@@ -20,7 +20,7 @@ pub(crate) fn delete_folder(path: &Path, dry_run: bool) {
                 println!(
                     "{} {} {:?}",
                     "Dry run:".color("yellow"),
-                    "removed".color("red"),
+                    "Removed".color("red"),
                     path
                 );
             } else {
