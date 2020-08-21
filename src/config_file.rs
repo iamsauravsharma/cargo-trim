@@ -68,20 +68,20 @@ impl ConfigFile {
 }
 
 // Function to modify config file or read config file
-pub(crate) fn config_file(app: &clap::ArgMatches, config_dir: &PathBuf) -> ConfigFile {
+pub(crate) fn config_file(app: &clap::ArgMatches, config_file: &PathBuf) -> ConfigFile {
     let mut buffer = String::new();
     let mut file =
-        fs::File::open(config_dir.to_str().unwrap()).expect("failed to open config dir folder");
+        fs::File::open(config_file.to_str().unwrap()).expect("failed to open config dir folder");
     file.read_to_string(&mut buffer)
         .expect("failed to read config file string");
     if buffer.is_empty() {
         let initial_config = ConfigFile::new();
-        let serialize = serde_json::to_string_pretty(&initial_config)
+        let serialize = toml::to_string_pretty(&initial_config)
             .expect("failed to convert ConfigFile to string");
         buffer.push_str(&serialize)
     }
     let mut deserialize_config: ConfigFile =
-        serde_json::from_str(&buffer).expect("failed to convert string to ConfigFile");
+        toml::from_str(&buffer).expect("failed to convert string to ConfigFile");
     if app.is_present("config file modifier")
         || app.is_present("init")
         || app.is_present("clear")
@@ -148,11 +148,11 @@ pub(crate) fn config_file(app: &clap::ArgMatches, config_dir: &PathBuf) -> Confi
             }
         }
 
-        let serialized = serde_json::to_string_pretty(&deserialize_config)
+        let serialized = toml::to_string_pretty(&deserialize_config)
             .expect("ConfigFile cannot to converted to pretty json");
         buffer.clear();
         buffer.push_str(&serialized);
-        fs::write(config_dir, buffer).expect("Failed to write a value to config file");
+        fs::write(config_file, buffer).expect("Failed to write a value to config file");
     }
     deserialize_config
 }

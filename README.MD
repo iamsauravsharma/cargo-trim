@@ -89,7 +89,7 @@ SUBCOMMANDS:
 ```
 
 ### Config file location
-cargo-trim store its config file to config directory of OS and name config file as `cargo_trim_config.json`.
+cargo-trim store its config file to config directory of OS and name config file as `cargo_trim_config.toml`.
 In file cargo-trim stores out different information for scanning projects as well as listing out crates.
 
 

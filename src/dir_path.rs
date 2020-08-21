@@ -25,19 +25,7 @@ impl DirPath {
         if !config_dir.exists() {
             fs::create_dir_all(&config_dir).expect("Failed to create config dir");
         }
-        let config_file = config_dir.join("cargo_trim_config.json");
-
-        // change old config file to new config file location for mac os if it exists
-        // TODO: remove this code block after >(^0.7.0) release
-        if cfg!(target_os = "macos") {
-            let mut old_config_file =
-                dirs::preference_dir().expect("Cannot get preference directory location");
-            old_config_file.push("cargo_trim_config.json");
-            if old_config_file.exists() && !config_file.exists() {
-                fs::rename(old_config_file, config_file.to_owned())
-                    .expect("Cannot move old config file to new config file location");
-            }
-        }
+        let config_file = config_dir.join("cargo_trim_config.toml");
 
         // If config file does not exists create config file
         if !config_file.exists() {
