@@ -62,20 +62,20 @@ FLAGS:
     -V, --version             Prints version information
 
 OPTIONS:
-    -e, --exclude <crate>                 Add listed crates to default conf file exclude list [use TRIM_EXCLUDE
-                                          environment variable for creating exclude list without editing conf file]
-    -g, --gc <git compress>               Git compress to reduce size of .cargo [possible values: all, index, git, git-
-                                          checkout, git-db]
-    -f, --ignore-file-name <file-name>    Add file name/directory name to ignore list in conf file while scanning for
-                                          Cargo.toml within given rust project directory
-    -i, --include <crate>                 Add listed crates to default conf file include list [use TRIM_INCLUDE
-                                          environment variable for creating include list without editing conf file]
-    -r, --remove <crate>                  Remove provided crates from registry or git
-    -d, --directory <directory>           Set directory of Rust project [use TRIM_DIRECTORY environment variable for
-                                          creating directory list without editing conf file]
-    -t, --top <number>                    Show certain number of top crates which have highest size
-    -w, --wipe <folder>                   Wipe folder [possible values: git, checkouts, db, registry, cache, index,
-                                          index-cache, src]
+    -d, --directory <directory>...           Set directory of Rust project [use TRIM_DIRECTORY environment variable for
+                                             creating directory list without editing conf file]
+    -e, --exclude <crate>...                 Add listed crates to default conf file exclude list [use TRIM_EXCLUDE
+                                             environment variable for creating exclude list without editing conf file]
+    -g, --gc <git compress>                  Git compress to reduce size of .cargo [possible values: all, index, git,
+                                             git-checkout, git-db]
+    -f, --ignore-file-name <file-name>...    Add file name/directory name to ignore list in conf file while scanning for
+                                             Cargo.toml within given rust project directory
+    -i, --include <crate>...                 Add listed crates to default conf file include list [use TRIM_INCLUDE
+                                             environment variable for creating include list without editing conf file]
+    -r, --remove <crate>...                  Remove provided crates from registry or git
+    -t, --top <number>                       Show certain number of top crates which have highest size
+    -w, --wipe <folder>...                   Wipe folder [possible values: git, checkouts, db, registry, cache, index,
+                                             index-cache, src]
 
 SUBCOMMANDS:
     clear       Clear current working directory from cargo cache config

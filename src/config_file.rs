@@ -68,6 +68,7 @@ impl ConfigFile {
 }
 
 // Function to modify config file or read config file
+#[allow(clippy::too_many_lines)]
 pub(crate) fn config_file(app: &clap::ArgMatches, config_file: &PathBuf) -> ConfigFile {
     let mut buffer = String::new();
     let mut file =
@@ -99,21 +100,36 @@ pub(crate) fn config_file(app: &clap::ArgMatches, config_file: &PathBuf) -> Conf
         }
 
         // Add new value in config file
-        if let Some(value) = app.value_of("set directory") {
+        if let Some(values) = app.values_of("directory") {
             let path_separator = std::path::MAIN_SEPARATOR;
-            let path = value.trim_end_matches(path_separator);
-            deserialize_config.mut_directory().push(path.to_string());
+            for value in values {
+                let path = value.trim_end_matches(path_separator);
+                deserialize_config.mut_directory().push(path.to_string());
+            }
         }
-        if let Some(value) = app.value_of("exclude") {
-            deserialize_config.mut_exclude().push(value.to_string());
+        if let Some(values) = app.values_of("exclude") {
+            let values: Vec<String> = values
+                .collect::<Vec<&str>>()
+                .iter()
+                .map(|&s| s.to_string())
+                .collect();
+            deserialize_config.mut_exclude().extend(values);
         }
-        if let Some(value) = app.value_of("include") {
-            deserialize_config.mut_include().push(value.to_string());
+        if let Some(values) = app.values_of("include") {
+            let values: Vec<String> = values
+                .collect::<Vec<&str>>()
+                .iter()
+                .map(|&s| s.to_string())
+                .collect();
+            deserialize_config.mut_include().extend(values);
         }
-        if let Some(value) = app.value_of("ignore_file_name") {
-            deserialize_config
-                .mut_ignore_file_name()
-                .push(value.to_string());
+        if let Some(values) = app.values_of("ignore_file_name") {
+            let values: Vec<String> = values
+                .collect::<Vec<&str>>()
+                .iter()
+                .map(|&s| s.to_string())
+                .collect();
+            deserialize_config.mut_ignore_file_name().extend(values);
         }
 
         // clear working directory from config file
@@ -132,19 +148,27 @@ pub(crate) fn config_file(app: &clap::ArgMatches, config_file: &PathBuf) -> Conf
         // remove value from config file
         if let Some(subcommand) = app.subcommand_matches("remove") {
             let dry_run = app.is_present("dry run") || subcommand.is_present("dry run");
-            if let Some(value) = subcommand.value_of("directory") {
-                let path_separator = std::path::MAIN_SEPARATOR;
-                let path = value.trim_end_matches(path_separator);
-                remove_item_crate(deserialize_config.mut_directory(), path, dry_run);
+            if let Some(values) = subcommand.values_of("directory") {
+                for value in values {
+                    let path_separator = std::path::MAIN_SEPARATOR;
+                    let path = value.trim_end_matches(path_separator);
+                    remove_item_crate(deserialize_config.mut_directory(), path, dry_run);
+                }
             }
-            if let Some(value) = subcommand.value_of("exclude") {
-                remove_item_crate(deserialize_config.mut_exclude(), value, dry_run);
+            if let Some(values) = subcommand.values_of("exclude") {
+                for value in values {
+                    remove_item_crate(deserialize_config.mut_exclude(), value, dry_run);
+                }
             }
-            if let Some(value) = subcommand.value_of("include") {
-                remove_item_crate(deserialize_config.mut_include(), value, dry_run);
+            if let Some(values) = subcommand.values_of("include") {
+                for value in values {
+                    remove_item_crate(deserialize_config.mut_include(), value, dry_run);
+                }
             }
-            if let Some(value) = subcommand.value_of("ignore_file_name") {
-                remove_item_crate(deserialize_config.mut_ignore_file_name(), value, dry_run);
+            if let Some(values) = subcommand.values_of("ignore_file_name") {
+                for value in values {
+                    remove_item_crate(deserialize_config.mut_ignore_file_name(), value, dry_run);
+                }
             }
         }
 

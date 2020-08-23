@@ -18,9 +18,19 @@ pub(super) fn app() -> App<'static, 'static> {
     let directory = Arg::with_name("directory").short("d").long("directory");
     let directory_config = directory.clone().help("Query about directory data");
     let directory_remove = directory
+        .clone()
         .help("Directory to be removed")
         .takes_value(true)
+        .multiple(true)
         .value_name("directory");
+    let directory_set = directory
+        .value_name("directory")
+        .help(
+            "Set directory of Rust project [use TRIM_DIRECTORY environment variable for creating \
+             directory list without editing conf file]",
+        )
+        .multiple(true)
+        .takes_value(true);
 
     let dry_run = Arg::with_name("dry run")
         .short("n")
@@ -33,14 +43,15 @@ pub(super) fn app() -> App<'static, 'static> {
         .clone()
         .help("Remove crate from exclude")
         .takes_value(true)
+        .multiple(true)
         .value_name("crate");
-
-    let exclude_conf = exclude
+    let exclude_set = exclude
         .help(
             "Add listed crates to default conf file exclude list [use TRIM_EXCLUDE environment \
              variable for creating exclude list without editing conf file]",
         )
         .takes_value(true)
+        .multiple(true)
         .value_name("crate");
 
     let git_compress = Arg::with_name("git compress")
@@ -50,19 +61,26 @@ pub(super) fn app() -> App<'static, 'static> {
         .takes_value(true)
         .possible_values(&["all", "index", "git", "git-checkout", "git-db"]);
 
-    let ignore_file_name_initial = Arg::with_name("ignore_file_name")
+    let ignore_file_name = Arg::with_name("ignore_file_name")
         .short("f")
         .long("ignore-file-name");
-    let ignore_file_name = ignore_file_name_initial
+    let ignore_file_name_config = ignore_file_name
         .clone()
+        .help("Query about ignored file name data");
+    let ignore_file_name_remove = ignore_file_name
+        .clone()
+        .help("Remove file name from ignore file name list")
         .takes_value(true)
+        .multiple(true)
+        .value_name("file-name");
+    let ignore_file_name_set = ignore_file_name
+        .takes_value(true)
+        .multiple(true)
         .value_name("file-name")
         .help(
             "Add file name/directory name to ignore list in conf file while scanning for \
              Cargo.toml within given rust project directory",
         );
-    let ignore_file_name_config =
-        ignore_file_name_initial.help("Query about ignored file name data");
 
     let include = Arg::with_name("include").short("i").long("include");
     let include_config = include.clone().help("Query about include data");
@@ -70,14 +88,15 @@ pub(super) fn app() -> App<'static, 'static> {
         .clone()
         .help("Remove crate from include")
         .takes_value(true)
+        .multiple(true)
         .value_name("crate");
-
-    let include_conf = include
+    let include_set = include
         .help(
             "Add listed crates to default conf file include list [use TRIM_INCLUDE environment \
              variable for creating include list without editing conf file]",
         )
         .takes_value(true)
+        .multiple(true)
         .value_name("crate");
 
     let light_cleanup = Arg::with_name("light cleanup").short("l").long("light");
@@ -150,17 +169,8 @@ pub(super) fn app() -> App<'static, 'static> {
         .long("remove")
         .help("Remove provided crates from registry or git")
         .takes_value(true)
+        .multiple(true)
         .value_name("crate");
-
-    let set_directory = Arg::with_name("set directory")
-        .short("d")
-        .long("directory")
-        .value_name("directory")
-        .help(
-            "Set directory of Rust project [use TRIM_DIRECTORY environment variable for creating \
-             directory list without editing conf file]",
-        )
-        .takes_value(true);
 
     let top_crate = Arg::with_name("top crates")
         .short("t")
@@ -201,6 +211,7 @@ pub(super) fn app() -> App<'static, 'static> {
             "src",
         ])
         .takes_value(true)
+        .multiple(true)
         .value_name("folder");
 
     App::new(env!("CARGO_PKG_NAME"))
@@ -217,18 +228,18 @@ pub(super) fn app() -> App<'static, 'static> {
                 .about(env!("CARGO_PKG_DESCRIPTION"))
                 .args(&[
                     all_trim,
-                    exclude_conf,
                     dry_run.clone(),
                     git_compress,
-                    ignore_file_name,
-                    include_conf,
                     light_cleanup_trim,
                     old_clean.clone(),
                     old_orphan_clean.clone(),
                     orphan_clean.clone(),
                     query_size_trim,
                     remove_crate.clone(),
-                    set_directory,
+                    directory_set,
+                    exclude_set,
+                    ignore_file_name_set,
+                    include_set,
                     top_crate_trim,
                     update,
                     wipe,
@@ -297,12 +308,18 @@ pub(super) fn app() -> App<'static, 'static> {
                     SubCommand::with_name("remove")
                         .about("Remove values from config file")
                         .setting(AppSettings::ArgRequiredElseHelp)
-                        .args(&[directory_remove, dry_run, exclude_remove, include_remove]),
+                        .args(&[
+                            directory_remove,
+                            dry_run,
+                            exclude_remove,
+                            ignore_file_name_remove,
+                            include_remove,
+                        ]),
                 )
                 .group(ArgGroup::with_name("config file modifier").args(&[
                     "exclude",
                     "include",
-                    "set directory",
+                    "directory",
                     "ignore_file_name",
                 ])),
         )

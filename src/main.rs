@@ -829,23 +829,28 @@ fn remove_crate(
     let remove_crate_registry = registry_subcommand.is_present("remove-crate");
     if remove_crate_app || remove_crate_git || remove_crate_registry {
         let mut size_cleaned = 0.0;
-        let value = app.value_of("remove-crate").unwrap_or_else(|| {
-            git_subcommand
-                .value_of("remove-crate")
-                .unwrap_or_else(|| registry_subcommand.value_of("remove-crate").unwrap())
-        });
-        if list_crate.installed_registry().contains(&value.to_string())
-            && (remove_crate_app || remove_crate_registry)
-        {
-            registry_crates_location.remove_crate(value);
-            size_cleaned += crate_detail.find_size_registry_all(value);
-        }
+        let values = app
+            .values_of("remove-crate")
+            .unwrap_or_else(|| {
+                git_subcommand
+                    .values_of("remove-crate")
+                    .unwrap_or_else(|| registry_subcommand.values_of("remove-crate").unwrap())
+            })
+            .collect::<Vec<&str>>();
+        for value in values {
+            if list_crate.installed_registry().contains(&value.to_string())
+                && (remove_crate_app || remove_crate_registry)
+            {
+                registry_crates_location.remove_crate(value);
+                size_cleaned += crate_detail.find_size_registry_all(value);
+            }
 
-        if list_crate.installed_git().contains(&value.to_string())
-            && (remove_crate_app || remove_crate_git)
-        {
-            git_crates_location.remove_crate(value);
-            size_cleaned += crate_detail.find_size_git_all(value);
+            if list_crate.installed_git().contains(&value.to_string())
+                && (remove_crate_app || remove_crate_git)
+            {
+                git_crates_location.remove_crate(value);
+                size_cleaned += crate_detail.find_size_git_all(value);
+            }
         }
         println!(
             "{}",
@@ -969,18 +974,20 @@ fn update_cargo_toml(app: &ArgMatches, cargo_toml_location: &[PathBuf]) {
 
 // Wipe certain directory
 fn wipe_directory(app: &ArgMatches, dir_path: &DirPath) {
-    if let Some(value) = app.value_of("wipe") {
+    if let Some(values) = app.values_of("wipe") {
         let dry_run = app.is_present("dry run");
-        match value {
-            "git" => delete_folder(dir_path.git_dir(), dry_run),
-            "checkouts" => delete_folder(dir_path.checkout_dir(), dry_run),
-            "db" => delete_folder(dir_path.db_dir(), dry_run),
-            "registry" => delete_folder(dir_path.registry_dir(), dry_run),
-            "cache" => delete_folder(dir_path.cache_dir(), dry_run),
-            "index" => delete_folder(dir_path.index_dir(), dry_run),
-            "index-cache" => delete_index_cache(dir_path.index_dir(), dry_run),
-            "src" => delete_folder(dir_path.src_dir(), dry_run),
-            _ => (),
+        for value in values {
+            match value {
+                "git" => delete_folder(dir_path.git_dir(), dry_run),
+                "checkouts" => delete_folder(dir_path.checkout_dir(), dry_run),
+                "db" => delete_folder(dir_path.db_dir(), dry_run),
+                "registry" => delete_folder(dir_path.registry_dir(), dry_run),
+                "cache" => delete_folder(dir_path.cache_dir(), dry_run),
+                "index" => delete_folder(dir_path.index_dir(), dry_run),
+                "index-cache" => delete_index_cache(dir_path.index_dir(), dry_run),
+                "src" => delete_folder(dir_path.src_dir(), dry_run),
+                _ => (),
+            }
         }
     }
 }
