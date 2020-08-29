@@ -167,10 +167,16 @@ pub(super) fn app() -> App<'static, 'static> {
     let remove_crate = Arg::with_name("remove-crate")
         .short("r")
         .long("remove")
-        .help("Remove provided crates from registry or git")
         .takes_value(true)
         .multiple(true)
         .value_name("crate");
+    let remove_crate_trim = remove_crate
+        .clone()
+        .help("Remove provided crates from registry or git");
+    let remove_crate_registry = remove_crate
+        .clone()
+        .help("Remove provided crates from registry");
+    let remove_crate_git = remove_crate.help("Remove provided crates from git");
 
     let top_crate = Arg::with_name("top crates")
         .short("t")
@@ -235,7 +241,7 @@ pub(super) fn app() -> App<'static, 'static> {
                     old_orphan_clean.clone(),
                     orphan_clean.clone(),
                     query_size_trim,
-                    remove_crate.clone(),
+                    remove_crate_trim,
                     directory_set,
                     exclude_set,
                     ignore_file_name_set,
@@ -278,9 +284,18 @@ pub(super) fn app() -> App<'static, 'static> {
                             old_orphan_clean.clone(),
                             orphan_clean.clone(),
                             query_size_git,
-                            remove_crate.clone(),
+                            remove_crate_git,
                             top_crate_git,
-                        ]),
+                        ])
+                        .group(ArgGroup::with_name("crate detail required").args(&[
+                            "all",
+                            "query size",
+                            "old clean",
+                            "old-orphan-clean",
+                            "orphan clean",
+                            "remove-crate",
+                            "top crates",
+                        ])),
                 )
                 .subcommand(
                     SubCommand::with_name("registry")
@@ -294,9 +309,18 @@ pub(super) fn app() -> App<'static, 'static> {
                             old_orphan_clean,
                             orphan_clean,
                             query_size_registry,
-                            remove_crate,
+                            remove_crate_registry,
                             top_crates_registry,
-                        ]),
+                        ])
+                        .group(ArgGroup::with_name("crate detail required").args(&[
+                            "all",
+                            "query size",
+                            "old clean",
+                            "old-orphan-clean",
+                            "orphan clean",
+                            "remove-crate",
+                            "top crates",
+                        ])),
                 )
                 .subcommand(
                     SubCommand::with_name("list")
@@ -316,11 +340,23 @@ pub(super) fn app() -> App<'static, 'static> {
                             include_remove,
                         ]),
                 )
-                .group(ArgGroup::with_name("config file modifier").args(&[
-                    "exclude",
-                    "include",
-                    "directory",
-                    "ignore_file_name",
-                ])),
+                .groups(&[
+                    ArgGroup::with_name("config file modifier").args(&[
+                        "exclude",
+                        "include",
+                        "directory",
+                        "ignore_file_name",
+                    ]),
+                    ArgGroup::with_name("crate detail required").args(&[
+                        "all",
+                        "query size",
+                        "old clean",
+                        "old-orphan-clean",
+                        "orphan clean",
+                        "remove-crate",
+                        "top crates",
+                        "update",
+                    ]),
+                ]),
         )
 }
