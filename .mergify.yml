@@ -1,6 +1,6 @@
 pull_request_rules:
 
-  - name: trigger bors try when PR is created out
+  - name: trigger bors try when PR is created
     conditions:
       - "-closed"
       - "-conflict"

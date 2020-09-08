@@ -2,7 +2,7 @@ use colored::Colorize;
 use std::{fs, path::Path};
 
 // delete folder with folder path provided
-pub(crate) fn delete_folder(path: &Path, dry_run: bool) {
+pub(crate) fn delete_folder(path: &Path, dry_run: bool) -> std::io::Result<()> {
     if path.exists() {
         if path.is_file() {
             if dry_run {
@@ -13,7 +13,7 @@ pub(crate) fn delete_folder(path: &Path, dry_run: bool) {
                     path
                 );
             } else {
-                fs::remove_file(&path).expect("failed to remove file");
+                fs::remove_file(&path)?;
             }
         } else if path.is_dir() {
             if dry_run {
@@ -24,10 +24,11 @@ pub(crate) fn delete_folder(path: &Path, dry_run: bool) {
                     path
                 );
             } else {
-                fs::remove_dir_all(path).expect("failed to remove all directory content");
+                fs::remove_dir_all(path)?;
             }
         }
     }
+    Ok(())
 }
 
 //  get size of directory

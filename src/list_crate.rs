@@ -92,7 +92,7 @@ impl CrateList {
         let checkout_dir = dir_path.checkout_dir().as_path();
         let db_dir = dir_path.db_dir().as_path();
 
-        // list out installed crates
+        // list installed crates
         let installed_bin = get_installed_bin(bin_dir, crate_detail);
         let installed_crate_registry =
             get_installed_crate_registry(src_dir, cache_dir, crate_detail);
@@ -396,7 +396,7 @@ fn remove_version(installed_crate_registry: &[String]) -> Vec<(String, String)> 
     removed_version
 }
 
-// list out installed bin
+// list installed bin
 fn get_installed_bin(bin_dir: &Path, crate_detail: &mut CrateDetail) -> Vec<String> {
     let mut installed_bin = Vec::new();
     if bin_dir.exists() {
@@ -415,7 +415,7 @@ fn get_installed_bin(bin_dir: &Path, crate_detail: &mut CrateDetail) -> Vec<Stri
     installed_bin
 }
 
-// list out installed registry crates
+// list all installed registry crates
 fn get_installed_crate_registry(
     src_dir: &Path,
     cache_dir: &Path,
@@ -458,7 +458,7 @@ fn get_installed_crate_registry(
     installed_crate_registry
 }
 
-// list out installed git crates
+// list all installed git crates
 fn get_installed_crate_git(
     checkout_dir: &Path,
     db_dir: &Path,
@@ -503,7 +503,7 @@ fn get_installed_crate_git(
     installed_crate_git
 }
 
-// list out a env variables list in vector form
+// list all a env variables list in vector form
 pub(crate) fn env_list(variable: &str) -> Vec<String> {
     let list = env::var(variable);
     let mut vec_list = Vec::new();
@@ -515,7 +515,7 @@ pub(crate) fn env_list(variable: &str) -> Vec<String> {
     vec_list
 }
 
-// get out latest commit rev value
+// get latest commit rev value
 fn latest_rev_value(path: &Path) -> String {
     let output = std::process::Command::new("git")
         .arg("log")

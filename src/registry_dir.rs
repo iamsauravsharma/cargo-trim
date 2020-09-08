@@ -48,8 +48,10 @@ impl<'a> RegistryDir<'a> {
 
     // Remove crate from src & cache directory
     pub(crate) fn remove_crate(&mut self, crate_name: &str) {
-        remove_crate(Path::new(&self.cache_dir), crate_name, self.dry_run);
-        remove_crate(Path::new(&self.src_dir), crate_name, self.dry_run);
+        let mut is_success;
+        is_success = remove_crate(Path::new(&self.cache_dir), crate_name, self.dry_run).is_ok();
+        is_success =
+            remove_crate(Path::new(&self.src_dir), crate_name, self.dry_run).is_ok() && is_success;
         let split_value: Vec<&str> = crate_name.rsplitn(2, '-').collect();
         let name = split_value[1];
         let index_cache = self.index_cache_dir.to_owned();
@@ -60,9 +62,14 @@ impl<'a> RegistryDir<'a> {
                 .filter(|x| x.contains(name))
                 .collect();
             if same_name_list.len() == 1 {
-                remove_index_cache(Path::new(&index_cache_dir), crate_name, self.dry_run);
+                is_success =
+                    remove_index_cache(Path::new(&index_cache_dir), crate_name, self.dry_run)
+                        .is_ok()
+                        && is_success;
             }
-            remove_empty_index_cache_dir(Path::new(&index_cache_dir), self.dry_run);
+            is_success = remove_empty_index_cache_dir(Path::new(&index_cache_dir), self.dry_run)
+                .is_ok()
+                && is_success;
             self.installed_crate.retain(|x| x != crate_name);
         });
         if self.dry_run {
@@ -72,8 +79,13 @@ impl<'a> RegistryDir<'a> {
                 "Removed".color("red"),
                 crate_name
             );
-        } else {
+        } else if is_success {
             println!("{} {:?}", "Removed".color("red"), crate_name);
+        } else {
+            println!(
+                "Partially Removed some directory and file of {:?}",
+                crate_name
+            )
         }
     }
 
@@ -128,23 +140,22 @@ impl<'a> RegistryDir<'a> {
 }
 
 // Remove crates which name is provided to delete
-fn remove_crate(path: &Path, value: &str, dry_run: bool) {
+fn remove_crate(path: &Path, value: &str, dry_run: bool) -> std::io::Result<()> {
     if path.exists() {
-        for entry in fs::read_dir(path).expect("failed to read src or cache dir") {
-            let entry = entry.unwrap();
-            let path = entry.path();
-            for entry in fs::read_dir(path).expect("failed to read crates path") {
-                let entry = entry.unwrap();
-                let path = entry.path();
+        for entry in fs::read_dir(path)? {
+            let path = entry?.path();
+            for entry in fs::read_dir(path)? {
+                let path = entry?.path();
                 if path.to_str().unwrap().contains(value) {
-                    delete_folder(&path, dry_run);
+                    delete_folder(&path, dry_run)?;
                 }
             }
         }
     }
+    Ok(())
 }
 
-fn remove_index_cache(path: &Path, value: &str, dry_run: bool) {
+fn remove_index_cache(path: &Path, value: &str, dry_run: bool) -> std::io::Result<()> {
     let mut remove_file_location = path.to_path_buf();
     let split_value: Vec<&str> = value.rsplitn(2, '-').collect();
     let name = split_value[1];
@@ -168,22 +179,24 @@ fn remove_index_cache(path: &Path, value: &str, dry_run: bool) {
             remove_file_location.push(name);
         }
     };
-    delete_folder(&remove_file_location, dry_run)
+    delete_folder(&remove_file_location, dry_run)?;
+    Ok(())
 }
 
-fn remove_empty_index_cache_dir(path: &Path, dry_run: bool) {
+fn remove_empty_index_cache_dir(path: &Path, dry_run: bool) -> std::io::Result<()> {
     if path
         .read_dir()
         .map(|mut i| i.next().is_none())
         .unwrap_or(false)
     {
-        delete_folder(&path, dry_run)
+        delete_folder(&path, dry_run)?
     } else {
-        for entry in path.read_dir().expect("Failed to read .cache sub folder") {
-            let path = entry.unwrap().path();
+        for entry in path.read_dir()? {
+            let path = entry?.path();
             if path.is_dir() {
-                remove_empty_index_cache_dir(path.as_path(), dry_run);
+                remove_empty_index_cache_dir(path.as_path(), dry_run)?;
             }
         }
     }
+    Ok(())
 }

@@ -311,20 +311,27 @@ fn light_cleanup(
     (dry_run_app, dry_run_git, dry_run_registry): (bool, bool, bool),
 ) {
     if light_cleanup_app || light_cleanup_git || light_cleanup_registry {
+        let mut light_cleanup_success = true;
         if light_cleanup_app || light_cleanup_registry {
             let dry_run = dry_run_app || dry_run_registry;
-            delete_folder(checkout_dir, dry_run);
+            light_cleanup_success =
+                delete_folder(checkout_dir, dry_run).is_ok() && light_cleanup_success;
             // Delete out .cache folder also
-            delete_index_cache(index_dir, dry_run);
+            light_cleanup_success =
+                delete_index_cache(index_dir, dry_run).is_ok() && light_cleanup_success;
         }
         if light_cleanup_app || light_cleanup_git {
             let dry_run = dry_run_app || dry_run_git;
-            delete_folder(src_dir, dry_run);
+            light_cleanup_success =
+                delete_folder(src_dir, dry_run).is_ok() && light_cleanup_success;
+        }
+        if !light_cleanup_success {
+            println!("Warning Failed to delete some folder during light cleanup")
         }
     }
 }
 
-// list out crates which is both old and orphan
+// list crates which is both old and orphan
 fn old_orphan_registry_list(crate_list: &CrateList) -> Vec<String> {
     let mut old_orphan_registry = Vec::new();
     let orphan_list = crate_list.orphan_registry();
@@ -867,7 +874,7 @@ fn remove_crate(
     }
 }
 
-// show out top n crates
+// show top n crates
 fn top_crates(
     app: &ArgMatches,
     git_subcommand: &ArgMatches,
@@ -985,7 +992,7 @@ fn wipe_directory(app: &ArgMatches, dir_path: &DirPath) {
     if let Some(values) = app.values_of("wipe") {
         let dry_run = app.is_present("dry run");
         for value in values {
-            match value {
+            let has_failed = match value {
                 "git" => delete_folder(dir_path.git_dir(), dry_run),
                 "checkouts" => delete_folder(dir_path.checkout_dir(), dry_run),
                 "db" => delete_folder(dir_path.db_dir(), dry_run),
@@ -994,26 +1001,29 @@ fn wipe_directory(app: &ArgMatches, dir_path: &DirPath) {
                 "index" => delete_folder(dir_path.index_dir(), dry_run),
                 "index-cache" => delete_index_cache(dir_path.index_dir(), dry_run),
                 "src" => delete_folder(dir_path.src_dir(), dry_run),
-                _ => (),
+                _ => Ok(()),
+            }
+            .is_err();
+            if has_failed {
+                println!("Failed to remove {:?} directory", value);
+            } else {
+                println!("{} {:?} directory", "Removed".color("red"), value);
             }
         }
     }
 }
 
 // delete index .cache file
-fn delete_index_cache(index_dir: &PathBuf, dry_run: bool) {
-    for entry in
-        fs::read_dir(index_dir).expect("Failed to read index directory during force remove")
-    {
+fn delete_index_cache(index_dir: &PathBuf, dry_run: bool) -> std::io::Result<()> {
+    for entry in fs::read_dir(index_dir)? {
         let registry_dir = entry.unwrap().path();
-        for folder in
-            fs::read_dir(registry_dir).expect("Failed to read registry directory in force remove")
-        {
+        for folder in fs::read_dir(registry_dir)? {
             let folder = folder.unwrap().path();
             let folder_name = folder.file_name().unwrap();
             if folder_name == ".cache" {
-                delete_folder(&folder, dry_run);
+                delete_folder(&folder, dry_run)?;
             }
         }
     }
+    Ok(())
 }

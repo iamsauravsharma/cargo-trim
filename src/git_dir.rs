@@ -23,10 +23,12 @@ impl<'a> GitDir<'a> {
 
     // remove crates
     pub(crate) fn remove_crate(&self, crate_name: &str) {
+        let is_success;
         if crate_name.contains("-HEAD") {
-            remove_crate(Path::new(&self.db_dir), crate_name, self.dry_run);
+            is_success = remove_crate(Path::new(&self.db_dir), crate_name, self.dry_run).is_ok();
         } else {
-            remove_crate(Path::new(&self.checkout_dir), crate_name, self.dry_run);
+            is_success =
+                remove_crate(Path::new(&self.checkout_dir), crate_name, self.dry_run).is_ok();
         }
         if self.dry_run {
             println!(
@@ -35,8 +37,10 @@ impl<'a> GitDir<'a> {
                 "Removed".color("red"),
                 crate_name
             );
-        } else {
+        } else if is_success {
             println!("{} {:?}", "Removed".color("red"), crate_name);
+        } else {
+            println!("Failed to remove {:?}", crate_name)
         }
     }
 
@@ -90,30 +94,25 @@ impl<'a> GitDir<'a> {
 }
 
 // preform remove operation
-fn remove_crate(location: &Path, crate_name: &str, dry_run: bool) {
-    for entry in fs::read_dir(location).expect("failed to read directory") {
-        let entry = entry.unwrap();
-        let path = entry.path();
+fn remove_crate(location: &Path, crate_name: &str, dry_run: bool) -> std::io::Result<()> {
+    for entry in fs::read_dir(location)? {
+        let path = entry?.path();
         let name = crate_name.rsplitn(2, '-').collect::<Vec<&str>>();
         let crate_name = name[1];
         let rev_sha = name[0];
         if path.to_str().unwrap().contains(crate_name) {
             if rev_sha.contains("HEAD") {
-                delete_folder(&path, dry_run)
+                delete_folder(&path, dry_run)?
             } else {
-                for rev in fs::read_dir(path).expect("failed to read git checkout directory") {
-                    let entry = rev.unwrap();
-                    let path = entry.path();
-                    let file_name = path
-                        .file_name()
-                        .expect("path is terminating with ..")
-                        .to_str()
-                        .unwrap();
+                for rev in fs::read_dir(path)? {
+                    let path = rev?.path();
+                    let file_name = path.file_name().unwrap().to_str().unwrap();
                     if file_name == rev_sha {
-                        delete_folder(&path, dry_run)
+                        delete_folder(&path, dry_run)?
                     }
                 }
             }
         }
     }
+    Ok(())
 }
