@@ -1,6 +1,22 @@
 use colored::Colorize;
 use std::{fs, path::Path};
 
+// remove semver version part from crates full name
+pub(crate) fn clear_version_value(full_name: &str) -> (String, String) {
+    let version_split: Vec<&str> = full_name.split('-').collect();
+    let mut version_start_position = version_split.len();
+    for (pos, split_part) in version_split.iter().enumerate() {
+        if semver::Version::parse(split_part).is_ok() {
+            version_start_position = pos;
+            break;
+        }
+    }
+    let (clear_name_vec, version_vec) = version_split.split_at(version_start_position);
+    let clear_name = clear_name_vec.join("-");
+    let version = version_vec.join("-");
+    (clear_name, version)
+}
+
 // delete folder with folder path provided
 pub(crate) fn delete_folder(path: &Path, dry_run: bool) -> std::io::Result<()> {
     if path.exists() {

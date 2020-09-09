@@ -1,5 +1,8 @@
 use crate::{
-    config_file::ConfigFile, crate_detail::CrateDetail, dir_path::DirPath, utils::get_size,
+    config_file::ConfigFile,
+    crate_detail::CrateDetail,
+    dir_path::DirPath,
+    utils::{clear_version_value, get_size},
 };
 use serde::Deserialize;
 use std::{
@@ -279,24 +282,6 @@ impl CrateList {
         &self.cargo_toml_location
     }
 }
-
-// remove version tag from crates full tag mini function of remove_version
-// function
-fn clear_version_value(full_name: &str) -> (String, String) {
-    let version_split: Vec<&str> = full_name.split('-').collect();
-    let mut version_start_position = version_split.len();
-    for (pos, split_part) in version_split.iter().enumerate() {
-        if semver::Version::parse(split_part).is_ok() {
-            version_start_position = pos;
-            break;
-        }
-    }
-    let (clear_name_vec, version_vec) = version_split.split_at(version_start_position);
-    let clear_name = clear_name_vec.join("-");
-    let version = version_vec.join("-");
-    (clear_name, version)
-}
-
 // List out cargo.toml file present directories
 fn list_cargo_toml(path: &Path, ignore_file_name: &[String]) -> CargoTomlLocation {
     let mut cargo_trim_list = CargoTomlLocation::new();

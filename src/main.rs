@@ -326,7 +326,7 @@ fn light_cleanup(
                 delete_folder(src_dir, dry_run).is_ok() && light_cleanup_success;
         }
         if !light_cleanup_success {
-            println!("Warning Failed to delete some folder during light cleanup")
+            println!("Failed to delete some folder during light cleanup")
         }
     }
 }

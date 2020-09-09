@@ -1,4 +1,8 @@
-use crate::{list_crate, utils::delete_folder, ConfigFile, CrateDetail};
+use crate::{
+    list_crate,
+    utils::{clear_version_value, delete_folder},
+    ConfigFile, CrateDetail,
+};
 use colored::Colorize;
 use std::{fs, path::Path};
 
@@ -52,14 +56,14 @@ impl<'a> RegistryDir<'a> {
         is_success = remove_crate(Path::new(&self.cache_dir), crate_name, self.dry_run).is_ok();
         is_success =
             remove_crate(Path::new(&self.src_dir), crate_name, self.dry_run).is_ok() && is_success;
-        let split_value: Vec<&str> = crate_name.rsplitn(2, '-').collect();
-        let name = split_value[1];
+        let split_value = clear_version_value(crate_name);
+        let name = split_value.0;
         let index_cache = self.index_cache_dir.to_owned();
         index_cache.iter().for_each(|index_cache_dir| {
             let same_name_list: Vec<&String> = self
                 .installed_crate
                 .iter()
-                .filter(|x| x.contains(name))
+                .filter(|&x| x.contains(&name))
                 .collect();
             if same_name_list.len() == 1 {
                 is_success =
@@ -83,7 +87,7 @@ impl<'a> RegistryDir<'a> {
             println!("{} {:?}", "Removed".color("red"), crate_name);
         } else {
             println!(
-                "Partially Removed some directory and file of {:?}",
+                "Partially failed to remove some directory and file of {:?}",
                 crate_name
             )
         }
@@ -111,11 +115,7 @@ impl<'a> RegistryDir<'a> {
 
         let read_include = config_file.include();
         let read_exclude = config_file.exclude();
-        let simple_name = crate_name
-            .rsplitn(2, '-')
-            .nth(1)
-            .unwrap_or_default()
-            .to_string();
+        let simple_name = clear_version_value(crate_name).0;
         let env_include = list_crate::env_list("TRIM_INCLUDE");
         let env_exclude = list_crate::env_list("TRIM_EXCLUDE");
 
@@ -155,10 +155,10 @@ fn remove_crate(path: &Path, value: &str, dry_run: bool) -> std::io::Result<()> 
     Ok(())
 }
 
-fn remove_index_cache(path: &Path, value: &str, dry_run: bool) -> std::io::Result<()> {
+fn remove_index_cache(path: &Path, crate_name: &str, dry_run: bool) -> std::io::Result<()> {
     let mut remove_file_location = path.to_path_buf();
-    let split_value: Vec<&str> = value.rsplitn(2, '-').collect();
-    let name = split_value[1];
+    let split_value = clear_version_value(crate_name);
+    let name = split_value.0;
     match name.len() {
         1 => {
             remove_file_location.push("1");
