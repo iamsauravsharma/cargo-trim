@@ -65,6 +65,7 @@ impl<'a> GitDir<'a> {
         let mut size_cleaned = 0.0;
         let read_include = config_file.include();
         let read_exclude = config_file.exclude();
+        // split directory name to split out rev sha and crate name
         let simple_name = crate_name
             .rsplitn(2, '-')
             .nth(1)
@@ -97,6 +98,7 @@ impl<'a> GitDir<'a> {
 fn remove_crate(location: &Path, crate_name: &str, dry_run: bool) -> std::io::Result<()> {
     for entry in fs::read_dir(location)? {
         let path = entry?.path();
+        // split directory name to split crate and rev sha
         let name = crate_name.rsplitn(2, '-').collect::<Vec<&str>>();
         let crate_name = name[1];
         let rev_sha = name[0];

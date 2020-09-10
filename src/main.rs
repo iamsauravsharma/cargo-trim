@@ -50,7 +50,7 @@ fn main() {
     // Perform light cleanup
     let light_cleanup_app = app.is_present("light cleanup");
     let light_cleanup_git = git_subcommand.is_present("light cleanup");
-    let light_cleanup_registry = registry_subcommand.is_present("light_cleanup");
+    let light_cleanup_registry = registry_subcommand.is_present("light cleanup");
     light_cleanup(
         dir_path.checkout_dir(),
         dir_path.src_dir(),
@@ -90,7 +90,6 @@ fn main() {
             crate_list.installed_registry(),
             dry_run_app || dry_run_registry,
         );
-
         let git_crates_location = git_dir::GitDir::new(
             dir_path.checkout_dir(),
             dir_path.db_dir(),
@@ -181,7 +180,7 @@ fn main() {
     }
 }
 
-// Git compress git files
+// Git compress git files according to provided value if option
 fn git_compress(app: &ArgMatches, index_dir: &PathBuf, checkout_dir: &PathBuf, db_dir: &PathBuf) {
     if let Some(value) = app.value_of("git compress") {
         let dry_run = app.is_present("dry run");
@@ -201,6 +200,7 @@ fn git_compress(app: &ArgMatches, index_dir: &PathBuf, checkout_dir: &PathBuf, d
                 run_git_compress_commands(&repo_path, dry_run);
             }
         }
+        // if git is provided it git compress all git folders
         if value.contains("git") || value == "all" {
             if (value == "git" || value == "git-checkout") && checkout_dir.exists() {
                 for entry in fs::read_dir(checkout_dir).expect("failed to read checkout directory")
@@ -314,16 +314,18 @@ fn light_cleanup(
         let mut light_cleanup_success = true;
         if light_cleanup_app || light_cleanup_registry {
             let dry_run = dry_run_app || dry_run_registry;
+            // delete src dir
             light_cleanup_success =
-                delete_folder(checkout_dir, dry_run).is_ok() && light_cleanup_success;
+                delete_folder(src_dir, dry_run).is_ok() && light_cleanup_success;
             // Delete out .cache folder also
             light_cleanup_success =
                 delete_index_cache(index_dir, dry_run).is_ok() && light_cleanup_success;
         }
         if light_cleanup_app || light_cleanup_git {
             let dry_run = dry_run_app || dry_run_git;
+            // delete checkout dir
             light_cleanup_success =
-                delete_folder(src_dir, dry_run).is_ok() && light_cleanup_success;
+                delete_folder(checkout_dir, dry_run).is_ok() && light_cleanup_success;
         }
         if !light_cleanup_success {
             println!("Failed to delete some folder during light cleanup")
@@ -363,6 +365,7 @@ fn list_subcommand(
     config_file: &ConfigFile,
 ) {
     if let Some(list_subcommand) = app.subcommand_matches("list") {
+        // list old crates
         if list_subcommand.is_present("old") {
             crate_list_type(
                 crate_detail,
@@ -371,6 +374,7 @@ fn list_subcommand(
             );
             crate_list_type(crate_detail, crate_list.old_git(), "GIT OLD CRATE");
         }
+        // list orphan cartes
         if list_subcommand.is_present("orphan") {
             crate_list_type(
                 crate_detail,
@@ -378,6 +382,7 @@ fn list_subcommand(
                 "REGISTRY ORPHAN CRATE",
             );
             crate_list_type(crate_detail, crate_list.orphan_git(), "GIT ORPHAN CRATE");
+            // print warning if directory config is empty
             if config_file.directory().is_empty() {
                 let warning_text = "WARNING: You have not initialized any directory as rust \
                                     project directory. This will list all crates as orphan crate. \
@@ -387,6 +392,7 @@ fn list_subcommand(
                 println!("{}", warning_text.color("yellow"));
             }
         }
+        // list all used crate
         if list_subcommand.is_present("used") {
             crate_list_type(
                 crate_detail,
@@ -394,6 +400,7 @@ fn list_subcommand(
                 "REGISTRY USED CRATE",
             );
             crate_list_type(crate_detail, crate_list.used_git(), "GIT USED CRATE");
+            // print warning if directory config is empty
             if config_file.directory().is_empty() {
                 let warning_text = "WARNING: You have not initialized any directory as rust \
                                     project directory. This will list no crates as used crate. \
@@ -403,6 +410,7 @@ fn list_subcommand(
                 println!("{}", warning_text.color("yellow"));
             }
         }
+        // list all crates
         if list_subcommand.is_present("all") {
             crate_list_type(
                 crate_detail,
@@ -415,6 +423,7 @@ fn list_subcommand(
                 "GIT INSTALLED CRATE",
             );
         }
+        // list old orphan crates
         if list_subcommand.is_present("old-orphan") {
             crate_list_type(
                 crate_detail,
@@ -426,6 +435,7 @@ fn list_subcommand(
                 &old_orphan_git_list(crate_list),
                 "GIT OLD+ORPHAN CRATE",
             );
+            // print waning if no directory present in config file
             if config_file.directory().is_empty() {
                 let warning_text = "WARNING: You have not initialized any directory as rust \
                                     project directory. This will list all old crates as old \
@@ -564,7 +574,8 @@ fn old_orphan_clean(
                 .read_line(&mut input)
                 .expect("error: unable to read user input");
             let input = input.trim().to_ascii_lowercase();
-            if vec!["n", "no", ""].contains(&input.as_str()) {
+            // if answer is any instead of yes and y return
+            if !vec!["y", "yes"].contains(&input.as_str()) {
                 return;
             }
         }
@@ -613,7 +624,8 @@ fn orphan_clean(
                 .read_line(&mut input)
                 .expect("error: unable to read user input");
             let input = input.trim().to_ascii_lowercase();
-            if vec!["n", "no", ""].contains(&input.as_str()) {
+            // If answer is not y or yes then return
+            if !vec!["y", "yes"].contains(&input.as_str()) {
                 return;
             }
         }
@@ -637,7 +649,8 @@ fn orphan_clean(
     }
 }
 
-// query size of directory
+// query size of directory of cargo home folder provide some valuable size
+// information
 #[allow(clippy::too_many_lines)]
 fn query_size(
     dir_path: &DirPath,
@@ -919,6 +932,7 @@ fn show_top_number_crates(crate_detail: &CrateDetail, crate_type: &str, number: 
         "registry_source" => crate_detail.registry_crates_source(),
         _ => &blank_hashmap,
     };
+    // sort crates by size
     let mut vector = size_detail.iter().collect::<Vec<_>>();
     vector.sort_by(|a, b| (b.1).cmp(a.1));
     let title = format!("Top {} {}", number, crate_type);
@@ -926,6 +940,8 @@ fn show_top_number_crates(crate_detail: &CrateDetail, crate_type: &str, number: 
     let second_path_len = 10;
     let dash_len = first_path_len + second_path_len + 3;
     show_title(title.as_str(), first_path_len, second_path_len, dash_len);
+    // check n size and determine if to print n number of output or 0 or total crate
+    // count output
     if vector.is_empty() {
         println!("|{:^40}|{:^10}|", "NONE".color("red"), "0.000".color("red"));
     } else if vector.len() < number {
@@ -987,7 +1003,7 @@ fn update_cargo_toml(app: &ArgMatches, cargo_toml_location: &[PathBuf]) {
     }
 }
 
-// Wipe certain directory
+// Wipe certain directory totally
 fn wipe_directory(app: &ArgMatches, dir_path: &DirPath) {
     if let Some(values) = app.values_of("wipe") {
         let dry_run = app.is_present("dry run");

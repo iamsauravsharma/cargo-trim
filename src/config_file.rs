@@ -99,7 +99,7 @@ pub(crate) fn config_file(app: &clap::ArgMatches, config_file: &PathBuf) -> Conf
             );
         }
 
-        // Add new value in config file
+        // Add new values to config file
         if let Some(values) = app.values_of("directory") {
             let path_separator = std::path::MAIN_SEPARATOR;
             for value in values {
@@ -172,6 +172,7 @@ pub(crate) fn config_file(app: &clap::ArgMatches, config_file: &PathBuf) -> Conf
             }
         }
 
+        // save struct in the config file
         let serialized = toml::to_string_pretty(&deserialize_config)
             .expect("ConfigFile cannot to converted to pretty json");
         buffer.clear();

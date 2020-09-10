@@ -107,6 +107,8 @@ impl CrateList {
         version_removed_crate.sort();
         if !version_removed_crate.is_empty() {
             let mut common_crate_version = Vec::new();
+            // check a two version of same crate if crate has two version then it is added
+            // to vec and checked to determine old crate version
             for i in 0..(version_removed_crate.len() - 1) {
                 let (name, version) = &version_removed_crate[i];
                 let (next_name, _) = &version_removed_crate[i + 1];
@@ -115,6 +117,9 @@ impl CrateList {
                 } else {
                     common_crate_version.push((version, i));
                     let mut latest_version = version;
+                    // this is used to check which version is latest since we have sorted string so
+                    // 0.10.0 will come before 0.9.0. so it need to be done to properly determine
+                    // latest version
                     for (common_version, _) in &common_crate_version {
                         if semver::Version::parse(latest_version)
                             < semver::Version::parse(common_version)
@@ -137,24 +142,24 @@ impl CrateList {
 
         // list old git crate
         let mut old_crate_git = Vec::new();
+        let mut full_name_list = Vec::new();
+        // analyze each crates of db dir and create list of head rev value
+        for crates in fs::read_dir(db_dir).expect("failed to read db dir") {
+            let entry = crates.unwrap().path();
+            let path = entry.as_path();
+            let file_name = path
+                .file_name()
+                .expect("failed to get file name form db directory sub folder");
+            let file_name = file_name.to_str().unwrap();
+            let name = file_name.rsplitn(2, '-').collect::<Vec<&str>>();
+            let mut rev_value = latest_rev_value(path);
+            rev_value.retain(|c| c != '\'');
+            let full_name = format!("{}-{}", name[1], rev_value);
+            full_name_list.push(full_name)
+        }
         for crate_name in &installed_crate_git {
             if !crate_name.contains("-HEAD") {
-                let name = crate_name.rsplitn(2, '-').collect::<Vec<&str>>();
-                let mut full_name_list = Vec::new();
-                for crates in fs::read_dir(db_dir).expect("failed to read db dir") {
-                    let entry = crates.unwrap().path();
-                    let path = entry.as_path();
-                    let file_name = path
-                        .file_name()
-                        .expect("failed to get file name form db directory sub folder");
-                    let file_name = file_name.to_str().unwrap();
-                    if file_name.contains(name[1]) {
-                        let mut rev_value = latest_rev_value(path);
-                        rev_value.retain(|c| c != '\'');
-                        let full_name = format!("{}-{}", name[1], rev_value);
-                        full_name_list.push(full_name)
-                    }
-                }
+                // check if crate is in rev value else list that crate as old crate
                 if !full_name_list.contains(crate_name) {
                     old_crate_git.push(crate_name.to_string());
                 }
@@ -172,6 +177,7 @@ impl CrateList {
         env_directory.append(&mut config_directory);
         env_directory.sort();
         env_directory.dedup();
+        // read a Cargo.lock file and determine out a used registry and git crate
         for path in &env_directory {
             let list_cargo_toml = list_cargo_toml(Path::new(path), config_file.ignore_file_name());
             let (mut registry_crate, mut git_crate) = read_content(list_cargo_toml.location_path());
@@ -184,7 +190,7 @@ impl CrateList {
         used_crate_git.sort();
         used_crate_registry.dedup();
 
-        // list orphan crates
+        // list orphan crates. If crate is not used then it is orphan
         let mut orphan_crate_registry = Vec::new();
         let mut orphan_crate_git = Vec::new();
         for crates in &installed_crate_registry {
@@ -282,7 +288,8 @@ impl CrateList {
         &self.cargo_toml_location
     }
 }
-// List out cargo.toml file present directories
+// List out cargo.toml file present directories by recursively analyze all
+// folder present in directory
 fn list_cargo_toml(path: &Path, ignore_file_name: &[String]) -> CargoTomlLocation {
     let mut cargo_trim_list = CargoTomlLocation::new();
     if path.exists() {
@@ -407,6 +414,7 @@ fn get_installed_crate_registry(
     crate_detail: &mut CrateDetail,
 ) -> Vec<String> {
     let mut installed_crate_registry = Vec::new();
+    // read src dir to get installed crate
     if src_dir.exists() {
         for entry in fs::read_dir(src_dir).expect("failed to read src directory") {
             let registry = entry.unwrap().path();
@@ -422,6 +430,7 @@ fn get_installed_crate_registry(
             }
         }
     }
+    // read cache dir to get installed crate
     if cache_dir.exists() {
         for entry in fs::read_dir(cache_dir).expect("failed to read cache dir") {
             let registry = entry.unwrap().path();
@@ -451,6 +460,7 @@ fn get_installed_crate_git(
 ) -> Vec<String> {
     let mut installed_crate_git = Vec::new();
     if checkout_dir.exists() {
+        // read checkout dir to list crate name in form of crate_name-rev_sha
         for entry in fs::read_dir(checkout_dir).expect("failed to read checkout directory") {
             let entry = entry.unwrap().path();
             let path = entry.as_path();
@@ -471,6 +481,7 @@ fn get_installed_crate_git(
             }
         }
     }
+    // read a database directory to list a git crate in form of crate_name-HEAD
     if db_dir.exists() {
         for entry in fs::read_dir(db_dir).expect("failed to read db dir") {
             let entry = entry.unwrap().path();
@@ -500,7 +511,7 @@ pub(crate) fn env_list(variable: &str) -> Vec<String> {
     vec_list
 }
 
-// get latest commit rev value
+// get latest commit rev value from git repository
 fn latest_rev_value(path: &Path) -> String {
     let output = std::process::Command::new("git")
         .arg("log")

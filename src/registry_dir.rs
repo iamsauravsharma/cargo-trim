@@ -27,6 +27,7 @@ impl<'a> RegistryDir<'a> {
         let cache_dir = cache_dir.to_str().unwrap();
         let src_dir = src_dir.to_str().unwrap();
         let mut index_cache_dir = Vec::new();
+        // read a index .cache dir folder for each registry by analyzing index folder
         for entry in fs::read_dir(index_dir).expect("failed to read index directory") {
             let entry = entry.unwrap().path();
             let registry_dir = entry.as_path();
@@ -53,12 +54,17 @@ impl<'a> RegistryDir<'a> {
     // Remove crate from src & cache directory
     pub(crate) fn remove_crate(&mut self, crate_name: &str) {
         let mut is_success;
+        // remove crate from cache dir
         is_success = remove_crate(Path::new(&self.cache_dir), crate_name, self.dry_run).is_ok();
+        // remove crate from index dir
         is_success =
             remove_crate(Path::new(&self.src_dir), crate_name, self.dry_run).is_ok() && is_success;
         let split_value = clear_version_value(crate_name);
         let name = split_value.0;
         let index_cache = self.index_cache_dir.to_owned();
+        // remove index cache dir if their is only one crate. It will also clean crate
+        // name from installed crate name owned locally by it so when two version of
+        // same crate is deleted it properly remove index cache
         index_cache.iter().for_each(|index_cache_dir| {
             let same_name_list: Vec<&String> = self
                 .installed_crate
@@ -155,6 +161,7 @@ fn remove_crate(path: &Path, value: &str, dry_run: bool) -> std::io::Result<()> 
     Ok(())
 }
 
+// determine crate index cache location and remove crate index cache
 fn remove_index_cache(path: &Path, crate_name: &str, dry_run: bool) -> std::io::Result<()> {
     let mut remove_file_location = path.to_path_buf();
     let split_value = clear_version_value(crate_name);
@@ -183,6 +190,7 @@ fn remove_index_cache(path: &Path, crate_name: &str, dry_run: bool) -> std::io::
     Ok(())
 }
 
+// check if any index cache folder is empty if it is it is removed out
 fn remove_empty_index_cache_dir(path: &Path, dry_run: bool) -> std::io::Result<()> {
     if path
         .read_dir()
