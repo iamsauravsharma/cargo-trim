@@ -147,10 +147,7 @@ impl CrateList {
         for crates in fs::read_dir(db_dir).expect("failed to read db dir") {
             let entry = crates.unwrap().path();
             let path = entry.as_path();
-            let file_name = path
-                .file_name()
-                .expect("failed to get file name form db directory sub folder");
-            let file_name = file_name.to_str().unwrap();
+            let file_name = path.file_name().unwrap().to_str().unwrap();
             let name = file_name.rsplitn(2, '-').collect::<Vec<&str>>();
             let mut rev_value = latest_rev_value(path);
             rev_value.retain(|c| c != '\'');
@@ -179,7 +176,7 @@ impl CrateList {
         env_directory.dedup();
         // read a Cargo.lock file and determine out a used registry and git crate
         for path in &env_directory {
-            let list_cargo_toml = list_cargo_toml(Path::new(path), config_file.ignore_file_name());
+            let list_cargo_toml = list_cargo_toml(Path::new(path), &config_file);
             let (mut registry_crate, mut git_crate) = read_content(list_cargo_toml.location_path());
             cargo_toml_location.append(list_cargo_toml);
             used_crate_registry.append(&mut registry_crate);
@@ -288,9 +285,10 @@ impl CrateList {
         &self.cargo_toml_location
     }
 }
+
 // List out cargo.toml file present directories by recursively analyze all
 // folder present in directory
-fn list_cargo_toml(path: &Path, ignore_file_name: &[String]) -> CargoTomlLocation {
+fn list_cargo_toml(path: &Path, config_file: &ConfigFile) -> CargoTomlLocation {
     let mut cargo_trim_list = CargoTomlLocation::new();
     if path.exists() {
         if path.is_dir() {
@@ -299,8 +297,11 @@ fn list_cargo_toml(path: &Path, ignore_file_name: &[String]) -> CargoTomlLocatio
             {
                 let sub_path_buf = entry.unwrap().path();
                 let sub = sub_path_buf.as_path();
-                if sub.is_dir() && !file_name_in(path, ignore_file_name) {
-                    let kids_list = list_cargo_toml(sub, ignore_file_name);
+                if sub.is_dir() {
+                    if need_to_be_ignored(path, config_file) {
+                        continue;
+                    }
+                    let kids_list = list_cargo_toml(sub, config_file);
                     cargo_trim_list.append(kids_list);
                 }
                 if sub.is_file() && sub.file_name() == Some(OsStr::new("Cargo.toml")) {
@@ -314,9 +315,15 @@ fn list_cargo_toml(path: &Path, ignore_file_name: &[String]) -> CargoTomlLocatio
     cargo_trim_list
 }
 
-// check if file name is equal to name or not
-fn file_name_in(path: &Path, file_name_list: &[String]) -> bool {
-    file_name_list.contains(&path.file_name().unwrap().to_str().unwrap().to_string())
+// check if directory should be scanned for listing crates or not
+fn need_to_be_ignored(path: &Path, config_file: &ConfigFile) -> bool {
+    let file_name = path.file_name().unwrap().to_str().unwrap();
+    let is_file_name_ignored = config_file
+        .ignore_file_name()
+        .contains(&file_name.to_owned());
+    let file_is_hidden = file_name.starts_with('.') && !config_file.scan_hidden_folder();
+    let file_is_target = file_name == "target" && !config_file.scan_target_folder();
+    is_file_name_ignored || file_is_hidden || file_is_target
 }
 
 // Read out content of cargo.lock file to list out crates present so can be used

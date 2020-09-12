@@ -13,6 +13,10 @@ pub(crate) struct ConfigFile {
     exclude: Vec<String>,
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     ignore_file_name: Vec<String>,
+    #[serde(default)]
+    scan_hidden_folder: bool,
+    #[serde(default)]
+    scan_target_folder: bool,
 }
 
 impl ConfigFile {
@@ -23,6 +27,8 @@ impl ConfigFile {
             include: Vec::new(),
             exclude: Vec::new(),
             ignore_file_name: Vec::new(),
+            scan_hidden_folder: false,
+            scan_target_folder: false,
         }
     }
 
@@ -44,6 +50,16 @@ impl ConfigFile {
     // return vector of ignore file name value in config file
     pub(crate) fn ignore_file_name(&self) -> &Vec<String> {
         &self.ignore_file_name
+    }
+
+    // scan hidden folder
+    pub(crate) fn scan_hidden_folder(&self) -> bool {
+        self.scan_hidden_folder
+    }
+
+    // scan target folder
+    pub(crate) fn scan_target_folder(&self) -> bool {
+        self.scan_target_folder
     }
 
     // return mutable reference of directory value
@@ -174,7 +190,7 @@ pub(crate) fn config_file(app: &clap::ArgMatches, config_file: &PathBuf) -> Conf
 
         // save struct in the config file
         let serialized = toml::to_string_pretty(&deserialize_config)
-            .expect("ConfigFile cannot to converted to pretty json");
+            .expect("ConfigFile cannot to converted to pretty toml");
         buffer.clear();
         buffer.push_str(&serialized);
         fs::write(config_file, buffer).expect("Failed to write a value to config file");
