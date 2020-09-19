@@ -16,7 +16,7 @@ clap = "2.33.3"
 colored = "2.0.0"
 dirs = "3.0.1"
 semver = "0.10.0"
-serde = { version = "1.0.115", features = ["derive"]}
+serde = { version = "1.0.116", features = ["derive"]}
 toml = "0.5.6"
 
 [features]

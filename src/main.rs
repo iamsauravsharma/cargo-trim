@@ -949,7 +949,7 @@ fn show_top_number_crates(crate_detail: &CrateDetail, crate_type: &str, number: 
     } else {
         (0..number).for_each(|i| print_index_value_crate(&vector, i));
     }
-    print_dash(53);
+    print_dash(dash_len);
 }
 
 // print crate name
