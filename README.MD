@@ -91,6 +91,16 @@ SUBCOMMANDS:
 ### Configuration
 cargo-trim store its config file to config directory of OS and name config file as `cargo_trim_config.toml`.
 In file cargo-trim stores different information for scanning projects as well as listing crates.
+To list where cargo trim is storing config file you can use `cargo trim config --location`
+1. __directory__ : List of directory to scan for a Rust projects (default: [])
+2. __include__ : List of crates to be included while cleaning or listing a crates (default: [])
+3. __exclude__ : List of crates to be excluded while cleaning or listing a crates (default: [])
+4. __ignore_file_name__ : File name/ Directory name which should be ignored while scanning through directories. This can be used to exclude some folder
+such as npm node_modules folder or python venv folder if directory present in config contains such folder. It will help to significantly increase
+performance. (default: [])
+5. __scan_hidden_folder__ : Whether to scan hidden folder(i.e folder which start with dot notation) or not (default: false)
+6. __scan_target_folder__ : Whether to scan target folder. Currently it search for environment variable `CARGO_BUILD_TARGET_DIR` or `CARGO_TARGET_DIR`
+or set default value as target to determine a target folder name (default: false)
 
 [git_link]: https://github.com/iamsauravsharma/cargo-trim
 

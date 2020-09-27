@@ -322,7 +322,10 @@ fn need_to_be_ignored(path: &Path, config_file: &ConfigFile) -> bool {
         .ignore_file_name()
         .contains(&file_name.to_owned());
     let file_is_hidden = file_name.starts_with('.') && !config_file.scan_hidden_folder();
-    let file_is_target = file_name == "target" && !config_file.scan_target_folder();
+    let target_dir_name = env::var("CARGO_BUILD_TARGET_DIR").unwrap_or_else(|_| {
+        env::var("CARGO_TARGET_DIR").unwrap_or_else(|_| String::from("target"))
+    });
+    let file_is_target = file_name == target_dir_name && !config_file.scan_target_folder();
     is_file_name_ignored || file_is_hidden || file_is_target
 }
 
