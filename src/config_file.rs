@@ -88,9 +88,9 @@ impl ConfigFile {
 pub(crate) fn config_file(app: &clap::ArgMatches, config_file: &PathBuf) -> ConfigFile {
     let mut buffer = String::new();
     let mut file =
-        fs::File::open(config_file.to_str().unwrap()).expect("failed to open config dir folder");
+        fs::File::open(config_file.to_str().unwrap()).expect("failed to open config file");
     file.read_to_string(&mut buffer)
-        .expect("failed to read config file string");
+        .expect("failed to read config file");
     if buffer.is_empty() {
         let initial_config = ConfigFile::new();
         let serialize = toml::to_string_pretty(&initial_config)
