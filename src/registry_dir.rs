@@ -1,7 +1,6 @@
 use crate::{
-    list_crate,
     utils::{clear_version_value, delete_folder},
-    ConfigFile, CrateDetail,
+    CrateDetail,
 };
 use colored::Colorize;
 use std::{fs, path::Path};
@@ -107,41 +106,6 @@ impl<'a> RegistryDir<'a> {
             size_cleaned += crate_detail.find(crate_name, "REGISTRY")
         }
         size_cleaned
-    }
-
-    // Remove all crates from registry folder
-    pub(crate) fn remove_all(
-        &mut self,
-        config_file: &ConfigFile,
-        crate_name: &str,
-        crate_detail: &CrateDetail,
-    ) -> f64 {
-        let crate_name = &crate_name.to_string();
-        let mut sized_cleaned = 0.0;
-
-        let read_include = config_file.include();
-        let read_exclude = config_file.exclude();
-        let simple_name = clear_version_value(crate_name).0;
-        let env_include = list_crate::env_list("TRIM_INCLUDE");
-        let env_exclude = list_crate::env_list("TRIM_EXCLUDE");
-
-        if read_include.contains(crate_name)
-            || read_include.contains(&simple_name)
-            || env_include.contains(crate_name)
-            || env_include.contains(&simple_name)
-        {
-            self.remove_crate(crate_name);
-            sized_cleaned += crate_detail.find_size_registry_all(crate_name);
-        }
-        if !read_exclude.contains(crate_name)
-            && !read_exclude.contains(&simple_name)
-            && !env_exclude.contains(crate_name)
-            && !env_exclude.contains(&simple_name)
-        {
-            self.remove_crate(crate_name);
-            sized_cleaned += crate_detail.find_size_registry_all(crate_name);
-        }
-        sized_cleaned
     }
 }
 

@@ -5,13 +5,9 @@ use std::{fs, io::Read, path::PathBuf};
 // Stores config file information
 #[derive(Serialize, Deserialize)]
 pub(crate) struct ConfigFile {
-    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    #[serde(default)]
     directory: Vec<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty", default)]
-    include: Vec<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty", default)]
-    exclude: Vec<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    #[serde(default)]
     ignore_file_name: Vec<String>,
     #[serde(default)]
     scan_hidden_folder: bool,
@@ -24,8 +20,6 @@ impl ConfigFile {
     pub(crate) fn new() -> Self {
         Self {
             directory: Vec::new(),
-            include: Vec::new(),
-            exclude: Vec::new(),
             ignore_file_name: Vec::new(),
             scan_hidden_folder: false,
             scan_target_folder: false,
@@ -35,16 +29,6 @@ impl ConfigFile {
     // return vector of directory value in config file
     pub(crate) fn directory(&self) -> &Vec<String> {
         &self.directory
-    }
-
-    // return vector of exclude value in config file
-    pub(crate) fn exclude(&self) -> &Vec<String> {
-        &self.exclude
-    }
-
-    // return vector of include value in config file
-    pub(crate) fn include(&self) -> &Vec<String> {
-        &self.include
     }
 
     // return vector of ignore file name value in config file
@@ -65,16 +49,6 @@ impl ConfigFile {
     // return mutable reference of directory value
     pub(crate) fn mut_directory(&mut self) -> &mut Vec<String> {
         &mut self.directory
-    }
-
-    // return mutable reference of exclude value
-    pub(crate) fn mut_exclude(&mut self) -> &mut Vec<String> {
-        &mut self.exclude
-    }
-
-    // return mutable reference of include value
-    pub(crate) fn mut_include(&mut self) -> &mut Vec<String> {
-        &mut self.include
     }
 
     // return mutable reference of ignore file name value
@@ -123,22 +97,6 @@ pub(crate) fn config_file(app: &clap::ArgMatches, config_file: &PathBuf) -> Conf
                 deserialize_config.mut_directory().push(path.to_string());
             }
         }
-        if let Some(values) = app.values_of("exclude") {
-            let values: Vec<String> = values
-                .collect::<Vec<&str>>()
-                .iter()
-                .map(|&s| s.to_string())
-                .collect();
-            deserialize_config.mut_exclude().extend(values);
-        }
-        if let Some(values) = app.values_of("include") {
-            let values: Vec<String> = values
-                .collect::<Vec<&str>>()
-                .iter()
-                .map(|&s| s.to_string())
-                .collect();
-            deserialize_config.mut_include().extend(values);
-        }
         if let Some(values) = app.values_of("ignore_file_name") {
             let values: Vec<String> = values
                 .collect::<Vec<&str>>()
@@ -169,16 +127,6 @@ pub(crate) fn config_file(app: &clap::ArgMatches, config_file: &PathBuf) -> Conf
                     let path_separator = std::path::MAIN_SEPARATOR;
                     let path = value.trim_end_matches(path_separator);
                     remove_item_crate(deserialize_config.mut_directory(), path, dry_run);
-                }
-            }
-            if let Some(values) = subcommand.values_of("exclude") {
-                for value in values {
-                    remove_item_crate(deserialize_config.mut_exclude(), value, dry_run);
-                }
-            }
-            if let Some(values) = subcommand.values_of("include") {
-                for value in values {
-                    remove_item_crate(deserialize_config.mut_include(), value, dry_run);
                 }
             }
             if let Some(values) = subcommand.values_of("ignore_file_name") {

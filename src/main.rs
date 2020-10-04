@@ -156,7 +156,6 @@ fn main() {
         let all_registry = registry_subcommand.is_present("all");
         remove_all(
             &crate_list,
-            &config_file,
             &mut registry_crates_location,
             &git_crates_location,
             (all_app, all_git, all_registry),
@@ -778,18 +777,6 @@ fn config_subcommand(app: &ArgMatches, config_file: &ConfigFile, config_file_loc
                 println!("{}", name);
             }
         }
-        if matches.is_present("include") {
-            let read_include = config_file.include();
-            for name in read_include {
-                println!("{}", name);
-            }
-        }
-        if matches.is_present("exclude") {
-            let read_exclude = config_file.exclude();
-            for name in read_exclude {
-                println!("{}", name);
-            }
-        }
         if matches.is_present("ignore_file_name") {
             let read_ignore_file_name = config_file.ignore_file_name();
             for name in read_ignore_file_name {
@@ -810,10 +797,9 @@ fn config_subcommand(app: &ArgMatches, config_file: &ConfigFile, config_file_loc
     }
 }
 
-// remove all crates by following config file information
+// remove all crates
 fn remove_all(
     crate_list: &CrateList,
-    config_file: &ConfigFile,
     registry_crates_location: &mut RegistryDir,
     git_crates_location: &GitDir,
     (all_app, all_git, all_registry): (bool, bool, bool),
@@ -822,16 +808,12 @@ fn remove_all(
     if all_app || all_git || all_registry {
         let mut total_size_cleaned = 0.0;
         if all_app || all_registry {
-            for crate_name in crate_list.installed_registry() {
-                total_size_cleaned +=
-                    registry_crates_location.remove_all(config_file, crate_name, crate_detail);
-            }
+            total_size_cleaned += registry_crates_location
+                .remove_crate_list(crate_detail, crate_list.installed_registry());
         }
         if all_app || all_git {
-            for crate_name in crate_list.installed_git() {
-                total_size_cleaned +=
-                    git_crates_location.remove_all(config_file, crate_name, crate_detail);
-            }
+            total_size_cleaned +=
+                git_crates_location.remove_crate_list(crate_detail, crate_list.installed_git());
         }
         println!(
             "{}",

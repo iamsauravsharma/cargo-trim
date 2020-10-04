@@ -4,15 +4,9 @@ use clap::{App, AppSettings, Arg, ArgGroup, SubCommand};
 #[allow(clippy::too_many_lines)]
 pub(super) fn app() -> App<'static, 'static> {
     let all = Arg::with_name("all").short("a").long("all");
-    let all_trim = all
-        .clone()
-        .help("Clean up all .cargo/registry & .cargo/git follow config file data");
-    let all_git = all
-        .clone()
-        .help("Clean up all .cargo/git follow config file data");
-    let all_registry = all
-        .clone()
-        .help("Clean up all .cargo/registry follow config file data");
+    let all_trim = all.clone().help("Clean up all registry & git crates");
+    let all_git = all.clone().help("Clean up all git crates");
+    let all_registry = all.clone().help("Clean up all registry crates");
     let all_list = all.help("list out all installed crate");
 
     let directory = Arg::with_name("directory").short("d").long("directory");
@@ -23,7 +17,7 @@ pub(super) fn app() -> App<'static, 'static> {
         .takes_value(true)
         .multiple(true)
         .value_name("directory");
-    let directory_set = directory
+    let directory_trim = directory
         .value_name("directory")
         .help(
             "Set directory of Rust project [use TRIM_DIRECTORY environment variable for creating \
@@ -37,23 +31,6 @@ pub(super) fn app() -> App<'static, 'static> {
         .long("dry-run")
         .help("Run command in dry run mode to see what would be removed");
 
-    let exclude = Arg::with_name("exclude").short("e").long("exclude");
-    let exclude_config = exclude.clone().help("Query about exclude data");
-    let exclude_remove = exclude
-        .clone()
-        .help("Remove crate from exclude")
-        .takes_value(true)
-        .multiple(true)
-        .value_name("crate");
-    let exclude_set = exclude
-        .help(
-            "Add listed crates to default conf file exclude list [use TRIM_EXCLUDE environment \
-             variable for creating exclude list without editing conf file]",
-        )
-        .takes_value(true)
-        .multiple(true)
-        .value_name("crate");
-
     let git_compress = Arg::with_name("git compress")
         .short("g")
         .long("gc")
@@ -62,7 +39,7 @@ pub(super) fn app() -> App<'static, 'static> {
         .possible_values(&["all", "index", "git", "git-checkout", "git-db"]);
 
     let ignore_file_name = Arg::with_name("ignore_file_name")
-        .short("f")
+        .short("i")
         .long("ignore-file-name");
     let ignore_file_name_config = ignore_file_name
         .clone()
@@ -81,23 +58,6 @@ pub(super) fn app() -> App<'static, 'static> {
             "Add file name/directory name to ignore list in conf file while scanning for \
              Cargo.toml within given rust project directory",
         );
-
-    let include = Arg::with_name("include").short("i").long("include");
-    let include_config = include.clone().help("Query about include data");
-    let include_remove = include
-        .clone()
-        .help("Remove crate from include")
-        .takes_value(true)
-        .multiple(true)
-        .value_name("crate");
-    let include_set = include
-        .help(
-            "Add listed crates to default conf file include list [use TRIM_INCLUDE environment \
-             variable for creating include list without editing conf file]",
-        )
-        .takes_value(true)
-        .multiple(true)
-        .value_name("crate");
 
     let light_cleanup = Arg::with_name("light cleanup").short("l").long("light");
     let light_cleanup_trim = light_cleanup.clone().help(
@@ -242,10 +202,8 @@ pub(super) fn app() -> App<'static, 'static> {
                     orphan_clean.clone(),
                     query_size_trim,
                     remove_crate_trim,
-                    directory_set,
-                    exclude_set,
+                    directory_trim,
                     ignore_file_name_set,
-                    include_set,
                     top_crate_trim,
                     update,
                     wipe,
@@ -265,8 +223,6 @@ pub(super) fn app() -> App<'static, 'static> {
                         .setting(AppSettings::ArgRequiredElseHelp)
                         .args(&[
                             directory_config,
-                            exclude_config,
-                            include_config,
                             ignore_file_name_config,
                             location,
                             print_config,
@@ -332,21 +288,11 @@ pub(super) fn app() -> App<'static, 'static> {
                     SubCommand::with_name("remove")
                         .about("Remove values from config file")
                         .setting(AppSettings::ArgRequiredElseHelp)
-                        .args(&[
-                            directory_remove,
-                            dry_run,
-                            exclude_remove,
-                            ignore_file_name_remove,
-                            include_remove,
-                        ]),
+                        .args(&[directory_remove, dry_run, ignore_file_name_remove]),
                 )
                 .groups(&[
-                    ArgGroup::with_name("config file modifier").args(&[
-                        "exclude",
-                        "include",
-                        "directory",
-                        "ignore_file_name",
-                    ]),
+                    ArgGroup::with_name("config file modifier")
+                        .args(&["directory", "ignore_file_name"]),
                     ArgGroup::with_name("crate detail required").args(&[
                         "all",
                         "query size",
