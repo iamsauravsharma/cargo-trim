@@ -48,7 +48,7 @@ USAGE:
     cargo trim [FLAGS] [OPTIONS] [SUBCOMMAND]
 
 FLAGS:
-    -a, --all                 Clean up all .cargo/registry & .cargo/git follow config file data
+    -a, --all                 Clean up all registry & git crates
     -n, --dry-run             Run command in dry run mode to see what would be removed
     -h, --help                Prints help information
     -l, --light               Light cleanup repos by removing git checkout and registry source but stores git db and
@@ -64,14 +64,10 @@ FLAGS:
 OPTIONS:
     -d, --directory <directory>...           Set directory of Rust project [use TRIM_DIRECTORY environment variable for
                                              creating directory list without editing conf file]
-    -e, --exclude <crate>...                 Add listed crates to default conf file exclude list [use TRIM_EXCLUDE
-                                             environment variable for creating exclude list without editing conf file]
     -g, --gc <git compress>                  Git compress to reduce size of .cargo [possible values: all, index, git,
                                              git-checkout, git-db]
-    -f, --ignore-file-name <file-name>...    Add file name/directory name to ignore list in conf file while scanning for
+    -i, --ignore-file-name <file-name>...    Add file name/directory name to ignore list in conf file while scanning for
                                              Cargo.toml within given rust project directory
-    -i, --include <crate>...                 Add listed crates to default conf file include list [use TRIM_INCLUDE
-                                             environment variable for creating include list without editing conf file]
     -r, --remove <crate>...                  Remove provided crates from registry or git
     -t, --top <number>                       Show certain number of top crates which have highest size
     -w, --wipe <folder>...                   Wipe folder [possible values: git, checkouts, db, registry, cache, index,
@@ -93,13 +89,11 @@ cargo-trim store its config file to config directory of OS and name config file 
 In file cargo-trim stores different information for scanning projects as well as listing crates.
 To list where cargo trim is storing config file you can use `cargo trim config --location`
 1. __directory__ : List of directory to scan for a Rust projects (default: [])
-2. __include__ : List of crates to be included while cleaning or listing a crates (default: [])
-3. __exclude__ : List of crates to be excluded while cleaning or listing a crates (default: [])
-4. __ignore_file_name__ : File name/ Directory name which should be ignored while scanning through directories. This can be used to exclude some folder
+2. __ignore_file_name__ : File/Directory name which should be ignored while scanning through directories. This can be used to exclude some folder
 such as npm node_modules folder or python venv folder if directory present in config contains such folder. It will help to significantly increase
 performance. (default: [])
-5. __scan_hidden_folder__ : Whether to scan hidden folder(i.e folder which start with dot notation) or not (default: false)
-6. __scan_target_folder__ : Whether to scan target folder. Currently it search for environment variable `CARGO_BUILD_TARGET_DIR` or `CARGO_TARGET_DIR`
+3. __scan_hidden_folder__ : Whether to scan hidden folder(i.e folder which start with dot notation) or not (default: false)
+4. __scan_target_folder__ : Whether to scan target folder. Currently it search for environment variable `CARGO_BUILD_TARGET_DIR` or `CARGO_TARGET_DIR`
 or set default value as target to determine a target folder name (default: false)
 
 [git_link]: https://github.com/iamsauravsharma/cargo-trim

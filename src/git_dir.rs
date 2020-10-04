@@ -1,4 +1,4 @@
-use crate::{list_crate, utils::delete_folder, ConfigFile, CrateDetail};
+use crate::{utils::delete_folder, CrateDetail};
 use colored::Colorize;
 use std::{fs, path::Path};
 
@@ -50,45 +50,6 @@ impl<'a> GitDir<'a> {
         for crate_name in list {
             self.remove_crate(crate_name);
             size_cleaned += crate_detail.find(crate_name, "GIT")
-        }
-        size_cleaned
-    }
-
-    // Remove all crate from git folder
-    pub(crate) fn remove_all(
-        &self,
-        config_file: &ConfigFile,
-        crate_name: &str,
-        crate_detail: &CrateDetail,
-    ) -> f64 {
-        let crate_name = &crate_name.to_string();
-        let mut size_cleaned = 0.0;
-        let read_include = config_file.include();
-        let read_exclude = config_file.exclude();
-        // split directory name to split out rev sha and crate name
-        let simple_name = crate_name
-            .rsplitn(2, '-')
-            .nth(1)
-            .unwrap_or_default()
-            .to_string();
-        let env_include = list_crate::env_list("TRIM_INCLUDE");
-        let env_exclude = list_crate::env_list("TRIM_EXCLUDE");
-
-        if read_include.contains(crate_name)
-            || read_include.contains(&simple_name)
-            || env_include.contains(crate_name)
-            || env_include.contains(&simple_name)
-        {
-            self.remove_crate(crate_name);
-            size_cleaned += crate_detail.find_size_git_all(crate_name);
-        }
-        if !read_exclude.contains(crate_name)
-            && !read_exclude.contains(&simple_name)
-            && !env_exclude.contains(crate_name)
-            && !env_exclude.contains(&simple_name)
-        {
-            self.remove_crate(crate_name);
-            size_cleaned += crate_detail.find_size_git_all(crate_name);
         }
         size_cleaned
     }
