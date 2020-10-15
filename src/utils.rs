@@ -1,5 +1,17 @@
 use colored::Colorize;
-use std::{fs, path::Path};
+use std::{env, fs, path::Path};
+
+// list all a env variables list in vector form
+pub(crate) fn env_list(variable: &str) -> Vec<String> {
+    let list = env::var(variable);
+    let mut vec_list = Vec::new();
+    if let Ok(name_list) = list {
+        name_list
+            .split_whitespace()
+            .for_each(|name| vec_list.push(name.to_string()));
+    }
+    vec_list
+}
 
 // remove semver version part from crates full name
 pub(crate) fn clear_version_value(full_name: &str) -> (String, String) {

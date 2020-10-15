@@ -21,7 +21,7 @@ pub(super) fn app() -> App<'static, 'static> {
         .value_name("directory")
         .help(
             "Set directory of Rust project [use TRIM_DIRECTORY environment variable for creating \
-             directory list without editing conf file]",
+             directory list without editing configuration file]",
         )
         .multiple(true)
         .takes_value(true);
@@ -38,9 +38,7 @@ pub(super) fn app() -> App<'static, 'static> {
         .takes_value(true)
         .possible_values(&["all", "index", "git", "git-checkout", "git-db"]);
 
-    let ignore_file_name = Arg::with_name("ignore_file_name")
-        .short("i")
-        .long("ignore-file-name");
+    let ignore_file_name = Arg::with_name("ignore_file_name").short("i").long("ignore");
     let ignore_file_name_config = ignore_file_name
         .clone()
         .help("Query about ignored file name data");
@@ -49,27 +47,28 @@ pub(super) fn app() -> App<'static, 'static> {
         .help("Remove file name from ignore file name list")
         .takes_value(true)
         .multiple(true)
-        .value_name("file-name");
-    let ignore_file_name_set = ignore_file_name
+        .value_name("file");
+    let ignore_file_name_trim = ignore_file_name
         .takes_value(true)
         .multiple(true)
-        .value_name("file-name")
+        .value_name("file")
         .help(
-            "Add file name/directory name to ignore list in conf file while scanning for \
-             Cargo.toml within given rust project directory",
+            "Add file name/directory name to ignore list in configuration file which are ignored \
+             while scanning Cargo.toml file [use TRIM_IGNORE_FILE_NAME environment variable for \
+             creating ignore file name list without editing configuration file]",
         );
 
     let light_cleanup = Arg::with_name("light cleanup").short("l").long("light");
     let light_cleanup_trim = light_cleanup.clone().help(
-        "Light cleanup repos by removing git checkout and registry source but stores git db and \
+        "Light cleanup repo by removing git checkout and registry source but stores git db and \
          registry archive for future compilation without internet requirement",
     );
 
     let light_cleanup_git = light_cleanup.clone().help(
-        "Light cleanup repos by removing git checkout but stores git db for future compilation",
+        "Light cleanup repo by removing git checkout but stores git db for future compilation",
     );
     let light_cleanup_registry = light_cleanup.help(
-        "Light cleanup repos by removing registry source but stores registry archive for future \
+        "Light cleanup repo by removing registry source but stores registry archive for future \
          compilation",
     );
 
@@ -203,7 +202,7 @@ pub(super) fn app() -> App<'static, 'static> {
                     query_size_trim,
                     remove_crate_trim,
                     directory_trim,
-                    ignore_file_name_set,
+                    ignore_file_name_trim,
                     top_crate_trim,
                     update,
                     wipe,
@@ -219,7 +218,7 @@ pub(super) fn app() -> App<'static, 'static> {
                 )
                 .subcommand(
                     SubCommand::with_name("config")
-                        .about("Query config file data")
+                        .about("Query config file data used by CLI")
                         .setting(AppSettings::ArgRequiredElseHelp)
                         .args(&[
                             directory_config,

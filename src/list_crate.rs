@@ -169,13 +169,9 @@ impl CrateList {
         let mut used_crate_registry = Vec::new();
         let mut used_crate_git = Vec::new();
         let mut cargo_toml_location = CargoTomlLocation::new();
-        let mut env_directory = env_list("TRIM_DIRECTORY");
-        let mut config_directory = config_file.directory().to_owned();
-        env_directory.append(&mut config_directory);
-        env_directory.sort();
-        env_directory.dedup();
+        let config_directory = config_file.directory().to_owned();
         // read a Cargo.lock file and determine out a used registry and git crate
-        for path in &env_directory {
+        for path in &config_directory {
             let list_cargo_toml = list_cargo_toml(Path::new(path), &config_file);
             let (mut registry_crate, mut git_crate) = read_content(list_cargo_toml.location_path());
             cargo_toml_location.append(list_cargo_toml);
@@ -507,18 +503,6 @@ fn get_installed_crate_git(
     installed_crate_git.sort();
     installed_crate_git.dedup();
     installed_crate_git
-}
-
-// list all a env variables list in vector form
-pub(crate) fn env_list(variable: &str) -> Vec<String> {
-    let list = env::var(variable);
-    let mut vec_list = Vec::new();
-    if let Ok(name_list) = list {
-        name_list
-            .split_whitespace()
-            .for_each(|name| vec_list.push(name.to_string()));
-    }
-    vec_list
 }
 
 // get latest commit rev value from git repository

@@ -51,7 +51,7 @@ FLAGS:
     -a, --all                 Clean up all registry & git crates
     -n, --dry-run             Run command in dry run mode to see what would be removed
     -h, --help                Prints help information
-    -l, --light               Light cleanup repos by removing git checkout and registry source but stores git db and
+    -l, --light               Light cleanup repo by removing git checkout and registry source but stores git db and
                               registry archive for future compilation without internet requirement
     -o, --old-clean           Clean old cache crates
     -z, --old-orphan-clean    Clean crates which is both old and orphan
@@ -62,20 +62,21 @@ FLAGS:
     -V, --version             Prints version information
 
 OPTIONS:
-    -d, --directory <directory>...           Set directory of Rust project [use TRIM_DIRECTORY environment variable for
-                                             creating directory list without editing conf file]
-    -g, --gc <git compress>                  Git compress to reduce size of .cargo [possible values: all, index, git,
-                                             git-checkout, git-db]
-    -i, --ignore-file-name <file-name>...    Add file name/directory name to ignore list in conf file while scanning for
-                                             Cargo.toml within given rust project directory
-    -r, --remove <crate>...                  Remove provided crates from registry or git
-    -t, --top <number>                       Show certain number of top crates which have highest size
-    -w, --wipe <folder>...                   Wipe folder [possible values: git, checkouts, db, registry, cache, index,
-                                             index-cache, src]
+    -d, --directory <directory>...    Set directory of Rust project [use TRIM_DIRECTORY environment variable for
+                                      creating directory list without editing configuration file]
+    -g, --gc <git compress>           Git compress to reduce size of .cargo [possible values: all, index, git, git-
+                                      checkout, git-db]
+    -i, --ignore <file>...            Add file name/directory name to ignore list in configuration file which are
+                                      ignored while scanning Cargo.toml file [use TRIM_IGNORE_FILE_NAME environment
+                                      variable for creating ignore file name list without editing configuration file]
+    -r, --remove <crate>...           Remove provided crates from registry or git
+    -t, --top <number>                Show certain number of top crates which have highest size
+    -w, --wipe <folder>...            Wipe folder [possible values: git, checkouts, db, registry, cache, index, index-
+                                      cache, src]
 
 SUBCOMMANDS:
     clear       Clear current working directory from cargo cache config
-    config      Query config file data
+    config      Query config file data used by CLI
     git         Perform operation only to git related cache file
     help        Prints this message or the help of the given subcommand(s)
     init        Initialize current working directory as cargo trim directory
@@ -88,13 +89,14 @@ SUBCOMMANDS:
 cargo-trim store its config file to config directory of OS and name config file as `cargo_trim_config.toml`.
 In file cargo-trim stores different information for scanning projects as well as listing crates.
 To list where cargo trim is storing config file you can use `cargo trim config --location`
-1. __directory__ : List of directory to scan for a Rust projects (default: [])
+Below are list of configuration and their default value a well as  corresponding env variable that can be used for setting same value without editing config file
+1. __directory__ : List of directory to scan for a Rust projects (default: []) (env: TRIM_DIRECTORY)
 2. __ignore_file_name__ : File/Directory name which should be ignored while scanning through directories. This can be used to exclude some folder
 such as npm node_modules folder or python venv folder if directory present in config contains such folder. It will help to significantly increase
-performance. (default: [])
-3. __scan_hidden_folder__ : Whether to scan hidden folder(i.e folder which start with dot notation) or not (default: false)
+performance. (default: []) (env: TRIM_IGNORE_FILE_NAME)
+3. __scan_hidden_folder__ : Whether to scan hidden folder(i.e folder which start with dot notation) or not (default: false) (env: TRIM_SCAN_HIDDEN_FOLDER).
 4. __scan_target_folder__ : Whether to scan target folder. Currently it search for environment variable `CARGO_BUILD_TARGET_DIR` or `CARGO_TARGET_DIR`
-or set default value as target to determine a target folder name (default: false)
+or set default value as target to determine a target folder name (default: false) (env: TRIM_SCAN_TARGET_FOLDER).
 
 [git_link]: https://github.com/iamsauravsharma/cargo-trim
 

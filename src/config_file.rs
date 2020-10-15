@@ -1,6 +1,7 @@
+use crate::utils::env_list;
 use colored::Colorize;
 use serde::{Deserialize, Serialize};
-use std::{fs, io::Read, path::PathBuf};
+use std::{env, fs, io::Read, path::PathBuf};
 
 // Stores config file information
 #[derive(Serialize, Deserialize)]
@@ -46,6 +47,15 @@ impl ConfigFile {
         self.scan_target_folder
     }
 
+    // set scan hidden folder value
+    pub(crate) fn set_scan_hidden_folder(&mut self, value: bool) {
+        self.scan_hidden_folder = value
+    }
+
+    // set scan target folder value
+    pub(crate) fn set_scan_target_folder(&mut self, value: bool) {
+        self.scan_target_folder = value
+    }
     // return mutable reference of directory value
     pub(crate) fn mut_directory(&mut self) -> &mut Vec<String> {
         &mut self.directory
@@ -73,6 +83,7 @@ pub(crate) fn config_file(app: &clap::ArgMatches, config_file: &PathBuf) -> Conf
     }
     let mut deserialize_config: ConfigFile =
         toml::from_str(&buffer).expect("failed to convert string to ConfigFile");
+
     if app.is_present("config file modifier")
         || app.is_present("init")
         || app.is_present("clear")
@@ -143,6 +154,33 @@ pub(crate) fn config_file(app: &clap::ArgMatches, config_file: &PathBuf) -> Conf
         buffer.push_str(&serialized);
         fs::write(config_file, buffer).expect("Failed to write a value to config file");
     }
+
+    // analyze some env variable before setting value
+    let mut env_directory = env_list("TRIM_DIRECTORY");
+    deserialize_config
+        .mut_directory()
+        .append(&mut env_directory);
+    deserialize_config.mut_directory().sort();
+    deserialize_config.mut_directory().dedup();
+    let mut env_ignore_file_name = env_list("TRIM_IGNORE_FILE_NAME");
+    deserialize_config
+        .mut_ignore_file_name()
+        .append(&mut env_ignore_file_name);
+    deserialize_config.mut_ignore_file_name().sort();
+    deserialize_config.mut_ignore_file_name().dedup();
+    let env_scan_hidden_folder = env::var("TRIM_SCAN_HIDDEN_FOLDER");
+    if let Ok(scan_hidden_folder) = env_scan_hidden_folder {
+        if let Ok(new_val) = scan_hidden_folder.trim().parse::<bool>() {
+            deserialize_config.set_scan_hidden_folder(new_val);
+        }
+    }
+    let env_scan_target_folder = env::var("TRIM_SCAN_TARGET_FOLDER");
+    if let Ok(scan_target_folder) = env_scan_target_folder {
+        if let Ok(new_val) = scan_target_folder.trim().parse::<bool>() {
+            deserialize_config.set_scan_target_folder(new_val);
+        }
+    }
+
     deserialize_config
 }
 
