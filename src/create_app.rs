@@ -218,7 +218,7 @@ pub(super) fn app() -> App<'static, 'static> {
                 )
                 .subcommand(
                     SubCommand::with_name("config")
-                        .about("Query config file data used by CLI")
+                        .about("Query about config file data used by CLI")
                         .setting(AppSettings::ArgRequiredElseHelp)
                         .args(&[
                             directory_config,

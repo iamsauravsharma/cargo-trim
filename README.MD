@@ -76,7 +76,7 @@ OPTIONS:
 
 SUBCOMMANDS:
     clear       Clear current working directory from cargo cache config
-    config      Query config file data used by CLI
+    config      Query about config file data used by CLI
     git         Perform operation only to git related cache file
     help        Prints this message or the help of the given subcommand(s)
     init        Initialize current working directory as cargo trim directory
@@ -89,14 +89,23 @@ SUBCOMMANDS:
 cargo-trim store its config file to config directory of OS and name config file as `cargo_trim_config.toml`.
 In file cargo-trim stores different information for scanning projects as well as listing crates.
 To list where cargo trim is storing config file you can use `cargo trim config --location`
-Below are list of configuration and their default value a well as  corresponding env variable that can be used for setting same value without editing config file
-1. __directory__ : List of directory to scan for a Rust projects (default: []) (env: TRIM_DIRECTORY)
-2. __ignore_file_name__ : File/Directory name which should be ignored while scanning through directories. This can be used to exclude some folder
-such as npm node_modules folder or python venv folder if directory present in config contains such folder. It will help to significantly increase
-performance. (default: []) (env: TRIM_IGNORE_FILE_NAME)
-3. __scan_hidden_folder__ : Whether to scan hidden folder(i.e folder which start with dot notation) or not (default: false) (env: TRIM_SCAN_HIDDEN_FOLDER).
-4. __scan_target_folder__ : Whether to scan target folder. Currently it search for environment variable `CARGO_BUILD_TARGET_DIR` or `CARGO_TARGET_DIR`
-or set default value as target to determine a target folder name (default: false) (env: TRIM_SCAN_TARGET_FOLDER).
+Below are list of configuration and their default value a well as corresponding env variable that can be used for setting
+same value without editing config file
+
+##### 1. directory (default: [], env: TRIM_DIRECTORY)
+List of directory to scan for a Rust projects
+
+##### 2. __ignore_file_name__ (default: [], env: TRIM_IGNORE_FILE_NAME)
+File/Directory name which should be ignored while scanning through directories. This can be used to exclude some folder
+such as npm node_modules folder or python venv folder if directory present in config contains such folder. It will help
+to significantly increase performance.
+
+##### 3. __scan_hidden_folder__ (default: false. env: TRIM_SCAN_HIDDEN_FOLDER)
+Whether to scan hidden folder(i.e folder which start with dot notation) or not
+
+##### 4. __scan_target_folder__ (default: false, env: TRIM_SCAN_TARGET_FOLDER)
+Whether to scan target folder. Currently it search for environment variable `CARGO_BUILD_TARGET_DIR` or `CARGO_TARGET_DIR`
+or set default value as target to determine a target folder name
 
 [git_link]: https://github.com/iamsauravsharma/cargo-trim
 
