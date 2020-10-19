@@ -40,7 +40,7 @@ other crates.
 All cargo-trim can be run using `cargo trim <command>`
 `cargo trim --help` will produce out following output which list out all of available command for cargo-trim
 ```
-cargo-trim 0.6.1
+cargo-trim 0.7.0
 Saurav Sharma <appdroiddeveloper@gmail.com>
 Binary application to cleanup $CARGO_HOME cache
 
