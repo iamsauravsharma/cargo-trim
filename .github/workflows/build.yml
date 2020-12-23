@@ -37,6 +37,7 @@ jobs:
        with:
          toolchain: ${{ matrix.rust-version }}
          default: true
+         profile: minimal
          components: rustfmt, clippy
      - name: Install cargo make
        uses: davidB/rust-cargo-make@v1

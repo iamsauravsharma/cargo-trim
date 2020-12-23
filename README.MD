@@ -2,9 +2,9 @@
 
 **Project status & info:**
 
-| Travis Build Status | License | Crates Version |
-| :-----------------: | :-----: | :------------: |
-| [![Travis Build Status][build_badge]][build_link] | [![License: MIT][license_badge]][license_link] | [![Crate][cratesio_badge]][cratesio_link] |
+| License | Crates Version |
+| :-----: | :------------: |
+| [![License: MIT][license_badge]][license_link] | [![Crate][cratesio_badge]][cratesio_link] |
 
 Binary application for cleaning __\$CARGO_HOME/registry__  & __\$CARGO_HOME/git__ folder support orphan and old crates cleaning
 Default \$CARGO_HOME is set as \$HOME/.cargo
@@ -108,9 +108,6 @@ Whether to scan target folder. Currently it search for environment variable `CAR
 or set default value as target to determine a target folder name
 
 [git_link]: https://github.com/iamsauravsharma/cargo-trim
-
-[build_badge]: https://img.shields.io/travis/com/iamsauravsharma/cargo-trim.svg?logo=travis
-[build_link]: https://travis-ci.com/iamsauravsharma/cargo-trim
 
 [license_badge]: https://img.shields.io/github/license/iamsauravsharma/cargo-trim.svg
 [license_link]: LICENSE

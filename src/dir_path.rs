@@ -20,7 +20,7 @@ impl DirPath {
     // set directory path
     pub(crate) fn set_dir_path() -> Self {
         // set config file directory path
-        let config_dir = dirs::config_dir().expect("Cannot get config directory location");
+        let config_dir = dirs_next::config_dir().expect("Cannot get config directory location");
         // if config dir not exists create
         if !config_dir.exists() {
             fs::create_dir_all(&config_dir).expect("Failed to create config dir");

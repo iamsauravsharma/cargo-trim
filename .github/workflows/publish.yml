@@ -15,6 +15,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+          profile: minimal
       - name: Publish to crates.io
         env:
           CARGO_TOKEN: ${{ secrets.CARGO_TOKEN }}

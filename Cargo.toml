@@ -1,23 +1,29 @@
 [package]
 name = "cargo-trim"
 version = "0.7.0"
-authors = ["Saurav Sharma <appdroiddeveloper@gmail.com>"]
+authors = [ "Saurav Sharma <appdroiddeveloper@gmail.com>" ]
 homepage = "https://github.com/iamsauravsharma/cargo-trim"
 repository = "https://github.com/iamsauravsharma/cargo-trim"
 description = "Binary application to cleanup $CARGO_HOME cache"
 license = "MIT"
 readme = "README.MD"
 edition = "2018"
-keywords = ["cargo", "cache", "remove", "manage", "clean"]
-categories = ["command-line-utilities"]
+keywords = [
+    "cargo",
+    "cache",
+    "remove",
+    "manage",
+    "clean"
+]
+categories = [ "command-line-utilities" ]
 
 [dependencies]
 clap = "2.33.3"
 colored = "2.0.0"
-dirs = "3.0.1"
+dirs-next = "2.0.0"
 semver = "0.11.0"
-serde = { version = "1.0.118", features = ["derive"]}
+serde = { version = "1.0.118", features = [ "derive" ] }
 toml = "0.5.8"
 
 [features]
-no-color = ["colored/no-color"]
+no-color = [ "colored/no-color" ]
