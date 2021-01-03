@@ -3,9 +3,9 @@
 #![deny(clippy::all)]
 #![warn(clippy::pedantic)]
 
+mod app;
 mod config_file;
 mod crate_detail;
-mod create_app;
 mod dir_path;
 mod git_dir;
 mod list_crate;
@@ -29,7 +29,7 @@ use std::{collections::HashMap, fs, io, io::Write, path::PathBuf, process::Comma
 fn main() {
     // set all dir path
     let dir_path = DirPath::set_dir_path();
-    let app = create_app::app().get_matches();
+    let app = app::init().get_matches();
     let app = app.subcommand_matches("trim").unwrap();
     let arg_matches = ArgMatches::new();
     let git_subcommand = app.subcommand_matches("git").unwrap_or(&arg_matches);
@@ -64,7 +64,7 @@ fn main() {
 
     // Perform all read and write operation of config file flag and subcommand
     // operation and return config file
-    let config_file = config_file::config_file(app, dir_path.config_file());
+    let config_file = ConfigFile::init(app, dir_path.config_file());
 
     // Query about config file information
     config_subcommand(app, &config_file, &dir_path.config_file());

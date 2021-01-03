@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::{env, fs, io::Read, path::PathBuf};
 
 // Stores config file information
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub(crate) struct ConfigFile {
     #[serde(default)]
     directory: Vec<String>,
@@ -17,14 +17,110 @@ pub(crate) struct ConfigFile {
 }
 
 impl ConfigFile {
-    // Create new config file
-    pub(crate) fn new() -> Self {
-        Self {
-            directory: Vec::new(),
-            ignore_file_name: Vec::new(),
-            scan_hidden_folder: false,
-            scan_target_folder: false,
+    // Perform initial config file actions
+    pub(crate) fn init(app: &clap::ArgMatches, config_file: &PathBuf) -> Self {
+        let mut buffer = String::new();
+        let mut file =
+            fs::File::open(config_file.to_str().unwrap()).expect("failed to open config file");
+        file.read_to_string(&mut buffer)
+            .expect("failed to read config file");
+        if buffer.is_empty() {
+            let initial_config = Self::default();
+            let serialize = toml::to_string_pretty(&initial_config)
+                .expect("failed to convert ConfigFile to string");
+            buffer.push_str(&serialize)
         }
+        let mut deserialize_config: Self =
+            toml::from_str(&buffer).expect("failed to convert string to ConfigFile");
+        if app.is_present("config file modifier")
+            || app.is_present("init")
+            || app.is_present("clear")
+            || app.is_present("remove")
+        {
+            // add working directory to config
+            if app.is_present("init") {
+                deserialize_config.add_directory(
+                    &std::env::current_dir()
+                        .expect("Current working directory is invalid")
+                        .to_str()
+                        .expect("failed to convert to str"),
+                );
+            }
+
+            // Add new values to config file
+            if let Some(values) = app.values_of("directory") {
+                let path_separator = std::path::MAIN_SEPARATOR;
+                for value in values {
+                    let path = value.trim_end_matches(path_separator);
+                    deserialize_config.add_directory(path);
+                }
+            }
+            if let Some(values) = app.values_of("ignore_file_name") {
+                let values = values.collect::<Vec<&str>>();
+                for value in values {
+                    deserialize_config.add_ignore_file_name(value)
+                }
+            }
+
+            // clear working directory from config file
+            if let Some(subcommand) = app.subcommand_matches("clear") {
+                let dry_run = app.is_present("dry run") || subcommand.is_present("dry run");
+                deserialize_config.remove_directory(
+                    std::env::current_dir()
+                        .expect("Current working directory is invalid")
+                        .to_str()
+                        .expect("Cannot convert to str"),
+                    dry_run,
+                );
+            }
+
+            // remove value from config file
+            if let Some(subcommand) = app.subcommand_matches("remove") {
+                let dry_run = app.is_present("dry run") || subcommand.is_present("dry run");
+                if let Some(values) = subcommand.values_of("directory") {
+                    for value in values {
+                        let path_separator = std::path::MAIN_SEPARATOR;
+                        let path = value.trim_end_matches(path_separator);
+                        deserialize_config.remove_directory(path, dry_run);
+                    }
+                }
+                if let Some(values) = subcommand.values_of("ignore_file_name") {
+                    for value in values {
+                        deserialize_config.remove_ignore_file_name(value, dry_run);
+                    }
+                }
+            }
+
+            // save struct in the config file
+            let serialized = toml::to_string_pretty(&deserialize_config)
+                .expect("ConfigFile cannot to converted to pretty toml");
+            buffer.clear();
+            buffer.push_str(&serialized);
+            fs::write(config_file, buffer).expect("Failed to write a value to config file");
+        }
+
+        // analyze some env variable before setting value
+        let env_directory = env_list("TRIM_DIRECTORY");
+        for directory in env_directory {
+            deserialize_config.add_ignore_file_name(&directory);
+        }
+        let env_ignore_file_name = env_list("TRIM_IGNORE_FILE_NAME");
+        for ignore_file_name in env_ignore_file_name {
+            deserialize_config.add_ignore_file_name(&ignore_file_name);
+        }
+        let env_scan_hidden_folder = env::var("TRIM_SCAN_HIDDEN_FOLDER");
+        if let Ok(scan_hidden_folder) = env_scan_hidden_folder {
+            if let Ok(new_val) = scan_hidden_folder.trim().parse::<bool>() {
+                deserialize_config.set_scan_hidden_folder(new_val);
+            }
+        }
+        let env_scan_target_folder = env::var("TRIM_SCAN_TARGET_FOLDER");
+        if let Ok(scan_target_folder) = env_scan_target_folder {
+            if let Ok(new_val) = scan_target_folder.trim().parse::<bool>() {
+                deserialize_config.set_scan_target_folder(new_val);
+            }
+        }
+        deserialize_config
     }
 
     // return vector of directory value in config file
@@ -48,153 +144,52 @@ impl ConfigFile {
     }
 
     // set scan hidden folder value
-    pub(crate) fn set_scan_hidden_folder(&mut self, value: bool) {
+    fn set_scan_hidden_folder(&mut self, value: bool) {
         self.scan_hidden_folder = value
     }
 
     // set scan target folder value
-    pub(crate) fn set_scan_target_folder(&mut self, value: bool) {
+    fn set_scan_target_folder(&mut self, value: bool) {
         self.scan_target_folder = value
     }
-    // return mutable reference of directory value
-    pub(crate) fn mut_directory(&mut self) -> &mut Vec<String> {
-        &mut self.directory
+
+    // add directory
+    fn add_directory(&mut self, path: &str) {
+        self.directory.push(path.to_string());
     }
 
-    // return mutable reference of ignore file name value
-    pub(crate) fn mut_ignore_file_name(&mut self) -> &mut Vec<String> {
-        &mut self.ignore_file_name
+    // add ignore file name
+    fn add_ignore_file_name(&mut self, file_name: &str) {
+        self.ignore_file_name.push(file_name.to_string());
     }
-}
 
-// Function to modify config file or read config file
-#[allow(clippy::too_many_lines)]
-pub(crate) fn config_file(app: &clap::ArgMatches, config_file: &PathBuf) -> ConfigFile {
-    let mut buffer = String::new();
-    let mut file =
-        fs::File::open(config_file.to_str().unwrap()).expect("failed to open config file");
-    file.read_to_string(&mut buffer)
-        .expect("failed to read config file");
-    if buffer.is_empty() {
-        let initial_config = ConfigFile::new();
-        let serialize = toml::to_string_pretty(&initial_config)
-            .expect("failed to convert ConfigFile to string");
-        buffer.push_str(&serialize)
-    }
-    let mut deserialize_config: ConfigFile =
-        toml::from_str(&buffer).expect("failed to convert string to ConfigFile");
-
-    if app.is_present("config file modifier")
-        || app.is_present("init")
-        || app.is_present("clear")
-        || app.is_present("remove")
-    {
-        // add working directory to config
-        if app.is_present("init") {
-            deserialize_config.mut_directory().push(
-                std::env::current_dir()
-                    .expect("Current working directory is invalid")
-                    .to_str()
-                    .expect("failed to convert current directory Path to str")
-                    .to_string(),
+    // remove directory
+    fn remove_directory(&mut self, path: &str, dry_run: bool) {
+        if dry_run {
+            println!(
+                "{} {} {:?}",
+                "Dry run:".color("yellow"),
+                "Removed".color("red"),
+                path
             );
+        } else {
+            self.directory.retain(|data| data != path);
+            println!("{} {:?}", "Removed".color("red"), path);
         }
+    }
 
-        // Add new values to config file
-        if let Some(values) = app.values_of("directory") {
-            let path_separator = std::path::MAIN_SEPARATOR;
-            for value in values {
-                let path = value.trim_end_matches(path_separator);
-                deserialize_config.mut_directory().push(path.to_string());
-            }
-        }
-        if let Some(values) = app.values_of("ignore_file_name") {
-            let values: Vec<String> = values
-                .collect::<Vec<&str>>()
-                .iter()
-                .map(|&s| s.to_string())
-                .collect();
-            deserialize_config.mut_ignore_file_name().extend(values);
-        }
-
-        // clear working directory from config file
-        if let Some(subcommand) = app.subcommand_matches("clear") {
-            let dry_run = app.is_present("dry run") || subcommand.is_present("dry run");
-            remove_item_crate(
-                deserialize_config.mut_directory(),
-                std::env::current_dir()
-                    .expect("Current working directory is invalid")
-                    .to_str()
-                    .expect("failed to convert current directory Path to str"),
-                dry_run,
+    // remove ignore file name
+    fn remove_ignore_file_name(&mut self, file_name: &str, dry_run: bool) {
+        if dry_run {
+            println!(
+                "{} {} {:?}",
+                "Dry run:".color("yellow"),
+                "Removed".color("red"),
+                file_name
             );
+        } else {
+            self.ignore_file_name.retain(|data| data != file_name);
+            println!("{} {:?}", "Removed".color("red"), file_name);
         }
-
-        // remove value from config file
-        if let Some(subcommand) = app.subcommand_matches("remove") {
-            let dry_run = app.is_present("dry run") || subcommand.is_present("dry run");
-            if let Some(values) = subcommand.values_of("directory") {
-                for value in values {
-                    let path_separator = std::path::MAIN_SEPARATOR;
-                    let path = value.trim_end_matches(path_separator);
-                    remove_item_crate(deserialize_config.mut_directory(), path, dry_run);
-                }
-            }
-            if let Some(values) = subcommand.values_of("ignore_file_name") {
-                for value in values {
-                    remove_item_crate(deserialize_config.mut_ignore_file_name(), value, dry_run);
-                }
-            }
-        }
-
-        // save struct in the config file
-        let serialized = toml::to_string_pretty(&deserialize_config)
-            .expect("ConfigFile cannot to converted to pretty toml");
-        buffer.clear();
-        buffer.push_str(&serialized);
-        fs::write(config_file, buffer).expect("Failed to write a value to config file");
-    }
-
-    // analyze some env variable before setting value
-    let mut env_directory = env_list("TRIM_DIRECTORY");
-    deserialize_config
-        .mut_directory()
-        .append(&mut env_directory);
-    deserialize_config.mut_directory().sort();
-    deserialize_config.mut_directory().dedup();
-    let mut env_ignore_file_name = env_list("TRIM_IGNORE_FILE_NAME");
-    deserialize_config
-        .mut_ignore_file_name()
-        .append(&mut env_ignore_file_name);
-    deserialize_config.mut_ignore_file_name().sort();
-    deserialize_config.mut_ignore_file_name().dedup();
-    let env_scan_hidden_folder = env::var("TRIM_SCAN_HIDDEN_FOLDER");
-    if let Ok(scan_hidden_folder) = env_scan_hidden_folder {
-        if let Ok(new_val) = scan_hidden_folder.trim().parse::<bool>() {
-            deserialize_config.set_scan_hidden_folder(new_val);
-        }
-    }
-    let env_scan_target_folder = env::var("TRIM_SCAN_TARGET_FOLDER");
-    if let Ok(scan_target_folder) = env_scan_target_folder {
-        if let Ok(new_val) = scan_target_folder.trim().parse::<bool>() {
-            deserialize_config.set_scan_target_folder(new_val);
-        }
-    }
-
-    deserialize_config
-}
-
-// helper function to help in removing certain value from a config file
-fn remove_item_crate(data: &mut Vec<String>, value: &str, dry_run: bool) {
-    if dry_run {
-        println!(
-            "{} {} {:?}",
-            "Dry run:".color("yellow"),
-            "Removed".color("red"),
-            value
-        );
-    } else {
-        data.retain(|data| data != value);
-        println!("{} {:?}", "Removed".color("red"), value);
     }
 }
