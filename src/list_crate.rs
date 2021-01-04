@@ -1,13 +1,9 @@
 use crate::{
-    config_file::ConfigFile,
-    crate_detail::CrateDetail,
-    dir_path::DirPath,
-    utils::{clear_version_value, get_size},
+    config_file::ConfigFile, crate_detail::CrateDetail, dir_path::DirPath,
+    utils::clear_version_value,
 };
 use serde::Deserialize;
 use std::{
-    env,
-    ffi::OsStr,
     fs,
     path::{Path, PathBuf},
 };
@@ -96,10 +92,10 @@ impl CrateList {
         let db_dir = dir_path.db_dir().as_path();
 
         // list installed crates
-        let installed_bin = get_installed_bin(bin_dir, crate_detail);
+        let installed_bin = crate_detail.get_installed_bin(bin_dir);
         let installed_crate_registry =
-            get_installed_crate_registry(src_dir, cache_dir, crate_detail);
-        let installed_crate_git = get_installed_crate_git(checkout_dir, db_dir, crate_detail);
+            crate_detail.get_installed_crate_registry(src_dir, cache_dir);
+        let installed_crate_git = crate_detail.get_installed_crate_git(checkout_dir, db_dir);
 
         // list old registry crate
         let mut old_crate_registry = Vec::new();
@@ -172,7 +168,7 @@ impl CrateList {
         let config_directory = config_file.directory().to_owned();
         // read a Cargo.lock file and determine out a used registry and git crate
         for path in &config_directory {
-            let list_cargo_toml = list_cargo_toml(Path::new(path), &config_file);
+            let list_cargo_toml = config_file.list_cargo_toml(&Path::new(path));
             let (mut registry_crate, mut git_crate) = read_content(list_cargo_toml.location_path());
             cargo_toml_location.append(list_cargo_toml);
             used_crate_registry.append(&mut registry_crate);
@@ -282,49 +278,6 @@ impl CrateList {
     }
 }
 
-// List out cargo.toml file present directories by recursively analyze all
-// folder present in directory
-fn list_cargo_toml(path: &Path, config_file: &ConfigFile) -> CargoTomlLocation {
-    let mut cargo_trim_list = CargoTomlLocation::new();
-    if path.exists() {
-        if path.is_dir() {
-            for entry in std::fs::read_dir(path)
-                .expect("failed to read directory while trying to find cargo.toml")
-            {
-                let sub_path_buf = entry.unwrap().path();
-                let sub = sub_path_buf.as_path();
-                if sub.is_dir() {
-                    if need_to_be_ignored(path, config_file) {
-                        continue;
-                    }
-                    let kids_list = list_cargo_toml(sub, config_file);
-                    cargo_trim_list.append(kids_list);
-                }
-                if sub.is_file() && sub.file_name() == Some(OsStr::new("Cargo.toml")) {
-                    cargo_trim_list.add_path(path.to_path_buf());
-                }
-            }
-        } else if path.is_file() && path.file_name() == Some(OsStr::new("Cargo.toml")) {
-            cargo_trim_list.add_path(path.to_path_buf());
-        }
-    }
-    cargo_trim_list
-}
-
-// check if directory should be scanned for listing crates or not
-fn need_to_be_ignored(path: &Path, config_file: &ConfigFile) -> bool {
-    let file_name = path.file_name().unwrap().to_str().unwrap();
-    let is_file_name_ignored = config_file
-        .ignore_file_name()
-        .contains(&file_name.to_owned());
-    let file_is_hidden = file_name.starts_with('.') && !config_file.scan_hidden_folder();
-    let target_dir_name = env::var("CARGO_BUILD_TARGET_DIR").unwrap_or_else(|_| {
-        env::var("CARGO_TARGET_DIR").unwrap_or_else(|_| String::from("target"))
-    });
-    let file_is_target = file_name == target_dir_name && !config_file.scan_target_folder();
-    is_file_name_ignored || file_is_hidden || file_is_target
-}
-
 // Read out content of cargo.lock file to list out crates present so can be used
 // for orphan clean
 fn read_content(list: &[PathBuf]) -> (Vec<String>, Vec<String>) {
@@ -392,117 +345,6 @@ fn remove_version(installed_crate_registry: &[String]) -> Vec<(String, String)> 
         removed_version.push(data);
     });
     removed_version
-}
-
-// list installed bin
-fn get_installed_bin(bin_dir: &Path, crate_detail: &mut CrateDetail) -> Vec<String> {
-    let mut installed_bin = Vec::new();
-    if bin_dir.exists() {
-        for entry in fs::read_dir(bin_dir).expect("failed to read bin directory") {
-            let entry = entry.unwrap().path();
-            let bin_size = get_size(&entry).expect("failed to get size of bin directory");
-            let file_name = entry
-                .file_name()
-                .expect("failed to get file name from bin directory");
-            let bin_name = file_name.to_str().unwrap().to_string();
-            crate_detail.add_bin(bin_name.to_owned(), bin_size);
-            installed_bin.push(bin_name)
-        }
-    }
-    installed_bin.sort();
-    installed_bin
-}
-
-// list all installed registry crates
-fn get_installed_crate_registry(
-    src_dir: &Path,
-    cache_dir: &Path,
-    crate_detail: &mut CrateDetail,
-) -> Vec<String> {
-    let mut installed_crate_registry = Vec::new();
-    // read src dir to get installed crate
-    if src_dir.exists() {
-        for entry in fs::read_dir(src_dir).expect("failed to read src directory") {
-            let registry = entry.unwrap().path();
-            for entry in fs::read_dir(registry).expect("failed to read registry folder") {
-                let entry = entry.unwrap().path();
-                let crate_size = get_size(&entry).expect("failed to get registry crate size");
-                let file_name = entry
-                    .file_name()
-                    .expect("failed to get file name form main entry");
-                let crate_name = file_name.to_str().unwrap();
-                crate_detail.add_registry_crate_source(crate_name.to_owned(), crate_size);
-                installed_crate_registry.push(crate_name.to_owned())
-            }
-        }
-    }
-    // read cache dir to get installed crate
-    if cache_dir.exists() {
-        for entry in fs::read_dir(cache_dir).expect("failed to read cache dir") {
-            let registry = entry.unwrap().path();
-            for entry in fs::read_dir(registry).expect("failed to read cache dir registry folder") {
-                let entry = entry.unwrap().path();
-                let file_name = entry
-                    .file_name()
-                    .expect("failed to get file name from cache dir");
-                let crate_size = get_size(&entry).expect("failed to get size");
-                let crate_name = file_name.to_str().unwrap();
-                let split_name = crate_name.rsplitn(2, '.').collect::<Vec<&str>>();
-                crate_detail.add_registry_crate_archive(split_name[1].to_owned(), crate_size);
-                installed_crate_registry.push(split_name[1].to_owned());
-            }
-        }
-    }
-    installed_crate_registry.sort();
-    installed_crate_registry.dedup();
-    installed_crate_registry
-}
-
-// list all installed git crates
-fn get_installed_crate_git(
-    checkout_dir: &Path,
-    db_dir: &Path,
-    crate_detail: &mut CrateDetail,
-) -> Vec<String> {
-    let mut installed_crate_git = Vec::new();
-    if checkout_dir.exists() {
-        // read checkout dir to list crate name in form of crate_name-rev_sha
-        for entry in fs::read_dir(checkout_dir).expect("failed to read checkout directory") {
-            let entry = entry.unwrap().path();
-            let path = entry.as_path();
-            let file_path = path
-                .file_name()
-                .expect("failed to obtain checkout directory sub folder file name");
-            for git_sha_entry in fs::read_dir(path).expect("failed to read checkout dir sub folder")
-            {
-                let git_sha_entry = git_sha_entry.unwrap().path();
-                let crate_size = get_size(&git_sha_entry).expect("failed to get folder size");
-                let git_sha_file_name = git_sha_entry.file_name().expect("failed to get file name");
-                let git_sha = git_sha_file_name.to_str().unwrap();
-                let file_name = file_path.to_str().unwrap();
-                let split_name = file_name.rsplitn(2, '-').collect::<Vec<&str>>();
-                let full_name = format!("{}-{}", split_name[1], git_sha);
-                crate_detail.add_git_crate_archive(full_name.to_owned(), crate_size);
-                installed_crate_git.push(full_name)
-            }
-        }
-    }
-    // read a database directory to list a git crate in form of crate_name-HEAD
-    if db_dir.exists() {
-        for entry in fs::read_dir(db_dir).expect("failed to read db dir") {
-            let entry = entry.unwrap().path();
-            let crate_size = get_size(&entry).expect("failed to get size of db dir folders");
-            let file_name = entry.file_name().expect("failed to get file name");
-            let file_name = file_name.to_str().unwrap();
-            let split_name = file_name.rsplitn(2, '-').collect::<Vec<&str>>();
-            let full_name = format!("{}-HEAD", split_name[1]);
-            crate_detail.add_git_crate_source(full_name.to_owned(), crate_size);
-            installed_crate_git.push(full_name);
-        }
-    }
-    installed_crate_git.sort();
-    installed_crate_git.dedup();
-    installed_crate_git
 }
 
 // get latest commit rev value from git repository

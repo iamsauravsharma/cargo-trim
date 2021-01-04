@@ -23,7 +23,13 @@ use crate::{
 };
 use clap::ArgMatches;
 use colored::Colorize;
-use std::{collections::HashMap, fs, io, io::Write, path::PathBuf, process::Command};
+use std::{
+    collections::HashMap,
+    fs, io,
+    io::Write,
+    path::{Path, PathBuf},
+    process::Command,
+};
 
 #[allow(clippy::too_many_lines)]
 fn main() {
@@ -180,7 +186,7 @@ fn main() {
 }
 
 // Git compress git files according to provided value if option
-fn git_compress(app: &ArgMatches, index_dir: &PathBuf, checkout_dir: &PathBuf, db_dir: &PathBuf) {
+fn git_compress(app: &ArgMatches, index_dir: &Path, checkout_dir: &Path, db_dir: &Path) {
     if let Some(value) = app.value_of("git compress") {
         let dry_run = app.is_present("dry run");
         if (value == "index" || value == "all") && index_dir.exists() {
@@ -231,7 +237,7 @@ fn git_compress(app: &ArgMatches, index_dir: &PathBuf, checkout_dir: &PathBuf, d
 }
 
 // run combination of commands which git compress a index of registry
-fn run_git_compress_commands(repo_path: &PathBuf, dry_run: bool) {
+fn run_git_compress_commands(repo_path: &Path, dry_run: bool) {
     if dry_run {
         println!(
             "{} git compressing {:?}",
@@ -303,9 +309,9 @@ fn run_git_compress_commands(repo_path: &PathBuf, dry_run: bool) {
 
 // light cleanup registry directory
 fn light_cleanup(
-    checkout_dir: &PathBuf,
-    src_dir: &PathBuf,
-    index_dir: &PathBuf,
+    checkout_dir: &Path,
+    src_dir: &Path,
+    index_dir: &Path,
     (light_cleanup_app, light_cleanup_git, light_cleanup_registry): (bool, bool, bool),
     (dry_run_app, dry_run_git, dry_run_registry): (bool, bool, bool),
 ) {
@@ -769,7 +775,7 @@ fn query_size(
 }
 
 // Perform query about config file data
-fn config_subcommand(app: &ArgMatches, config_file: &ConfigFile, config_file_location: &PathBuf) {
+fn config_subcommand(app: &ArgMatches, config_file: &ConfigFile, config_file_location: &Path) {
     if let Some(matches) = app.subcommand_matches("config") {
         if matches.is_present("directory") {
             let read_directory = config_file.directory();
@@ -1012,7 +1018,7 @@ fn wipe_directory(app: &ArgMatches, dir_path: &DirPath) {
 }
 
 // delete index .cache file
-fn delete_index_cache(index_dir: &PathBuf, dry_run: bool) -> std::io::Result<()> {
+fn delete_index_cache(index_dir: &Path, dry_run: bool) -> std::io::Result<()> {
     for entry in fs::read_dir(index_dir)? {
         let registry_dir = entry.unwrap().path();
         for folder in fs::read_dir(registry_dir)? {

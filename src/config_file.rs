@@ -1,7 +1,7 @@
-use crate::utils::env_list;
+use crate::{list_crate::CargoTomlLocation, utils::env_list};
 use colored::Colorize;
 use serde::{Deserialize, Serialize};
-use std::{env, fs, io::Read, path::PathBuf};
+use std::{env, ffi::OsStr, fs, io::Read, path::Path};
 
 // Stores config file information
 #[derive(Serialize, Deserialize, Default)]
@@ -18,7 +18,7 @@ pub(crate) struct ConfigFile {
 
 impl ConfigFile {
     // Perform initial config file actions
-    pub(crate) fn init(app: &clap::ArgMatches, config_file: &PathBuf) -> Self {
+    pub(crate) fn init(app: &clap::ArgMatches, config_file: &Path) -> Self {
         let mut buffer = String::new();
         let mut file =
             fs::File::open(config_file.to_str().unwrap()).expect("failed to open config file");
@@ -191,5 +191,45 @@ impl ConfigFile {
             self.ignore_file_name.retain(|data| data != file_name);
             println!("{} {:?}", "Removed".color("red"), file_name);
         }
+    }
+
+    // List out cargo.toml file present directories by recursively analyze all
+    // folder present in directory
+    pub(crate) fn list_cargo_toml(&self, path: &Path) -> CargoTomlLocation {
+        let mut cargo_trim_list = CargoTomlLocation::new();
+        if path.exists() {
+            if path.is_dir() {
+                for entry in std::fs::read_dir(path)
+                    .expect("failed to read directory while trying to find cargo.toml")
+                {
+                    let sub = entry.unwrap().path();
+                    if sub.is_dir() {
+                        if self.need_to_be_ignored(path) {
+                            continue;
+                        }
+                        let kids_list = self.list_cargo_toml(&sub);
+                        cargo_trim_list.append(kids_list);
+                    }
+                    if sub.is_file() && sub.file_name() == Some(OsStr::new("Cargo.toml")) {
+                        cargo_trim_list.add_path(path.to_path_buf());
+                    }
+                }
+            } else if path.is_file() && path.file_name() == Some(OsStr::new("Cargo.toml")) {
+                cargo_trim_list.add_path(path.to_path_buf());
+            }
+        }
+        cargo_trim_list
+    }
+
+    // check if directory should be scanned for listing crates or not
+    fn need_to_be_ignored(&self, path: &Path) -> bool {
+        let file_name = path.file_name().unwrap().to_str().unwrap();
+        let is_file_name_ignored = self.ignore_file_name().contains(&file_name.to_owned());
+        let file_is_hidden = file_name.starts_with('.') && !self.scan_hidden_folder();
+        let target_dir_name = env::var("CARGO_BUILD_TARGET_DIR").unwrap_or_else(|_| {
+            env::var("CARGO_TARGET_DIR").unwrap_or_else(|_| String::from("target"))
+        });
+        let file_is_target = file_name == target_dir_name && !self.scan_target_folder();
+        is_file_name_ignored || file_is_hidden || file_is_target
     }
 }
