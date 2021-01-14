@@ -45,70 +45,43 @@ impl CrateDetail {
 
     // add git crate source information to CrateDetail
     fn add_git_crate_source(&mut self, crate_name: String, size: u64) {
-        if let Some(crate_size) = self.git_crates_source.get_mut(&crate_name) {
-            *crate_size += size;
-        } else {
-            self.git_crates_source.insert(crate_name, size);
-        }
+        add_crate_to_hash_map(&mut self.git_crates_source, crate_name, size)
     }
 
     // add registry crate source information to CrateDetail
     fn add_registry_crate_source(&mut self, crate_name: String, size: u64) {
-        if let Some(crate_size) = self.registry_crates_source.get_mut(&crate_name) {
-            *crate_size += size;
-        } else {
-            self.registry_crates_source.insert(crate_name, size);
-        }
+        add_crate_to_hash_map(&mut self.registry_crates_source, crate_name, size)
     }
 
     // add git crate archive information to CrateDetail
     fn add_git_crate_archive(&mut self, crate_name: String, size: u64) {
-        if let Some(crate_size) = self.git_crates_archive.get_mut(&crate_name) {
-            *crate_size += size;
-        } else {
-            self.git_crates_archive.insert(crate_name, size);
-        }
+        add_crate_to_hash_map(&mut self.git_crates_archive, crate_name, size)
     }
 
     // add registry crate archive information to CrateDetail
     fn add_registry_crate_archive(&mut self, crate_name: String, size: u64) {
-        if let Some(crate_size) = self.registry_crates_archive.get_mut(&crate_name) {
-            *crate_size += size;
-        } else {
-            self.registry_crates_archive.insert(crate_name, size);
-        }
+        add_crate_to_hash_map(&mut self.registry_crates_archive, crate_name, size)
     }
 
     // find size of certain git crate source in KB
-    #[allow(clippy::cast_precision_loss)]
     fn find_size_git_source(&self, crate_name: &str) -> f64 {
-        self.git_crates_source
-            .get(crate_name)
-            .map_or(0.0, |size| (*size as f64) / 1000_f64.powi(2))
+        get_hashmap_crate_size(&self.git_crates_source, crate_name)
     }
 
     // find size of certain registry source in KB
-    #[allow(clippy::cast_precision_loss)]
     fn find_size_registry_source(&self, crate_name: &str) -> f64 {
-        self.registry_crates_source
-            .get(crate_name)
-            .map_or(0.0, |size| (*size as f64) / 1000_f64.powi(2))
+        get_hashmap_crate_size(&self.registry_crates_source, crate_name)
     }
 
     // find size of certain git crate archive in KB
-    #[allow(clippy::cast_precision_loss)]
     fn find_size_git_archive(&self, crate_name: &str) -> f64 {
-        self.git_crates_archive
-            .get(crate_name)
-            .map_or(0.0, |size| (*size as f64) / 1000_f64.powi(2))
+        get_hashmap_crate_size(&self.git_crates_archive, crate_name)
     }
 
     // find size of certain registry archive in KB
-    #[allow(clippy::cast_precision_loss)]
+
     fn find_size_registry_archive(&self, crate_name: &str) -> f64 {
-        self.registry_crates_archive
-            .get(crate_name)
-            .map_or(0.0, |size| (*size as f64) / 1000_f64.powi(2))
+        get_hashmap_crate_size(&self.registry_crates_archive, crate_name)
     }
 
     // return certain git crate total size in KB
@@ -245,5 +218,20 @@ impl CrateDetail {
         installed_crate_git.sort();
         installed_crate_git.dedup();
         installed_crate_git
+    }
+}
+
+#[allow(clippy::cast_precision_loss)]
+fn get_hashmap_crate_size(hashmap: &HashMap<String, u64>, crate_name: &str) -> f64 {
+    hashmap
+        .get(crate_name)
+        .map_or(0.0, |size| (*size as f64) / 1000_f64.powi(2))
+}
+
+fn add_crate_to_hash_map(hashmap: &mut HashMap<String, u64>, crate_name: String, size: u64) {
+    if let Some(crate_size) = hashmap.get_mut(&crate_name) {
+        *crate_size += size;
+    } else {
+        hashmap.insert(crate_name, size);
     }
 }
