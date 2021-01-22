@@ -580,7 +580,7 @@ fn old_orphan_clean(
                 .expect("error: unable to read user input");
             let input = input.trim().to_ascii_lowercase();
             // if answer is any instead of yes and y return
-            if !vec!["y", "yes"].contains(&input.as_str()) {
+            if !["y", "yes"].contains(&input.as_str()) {
                 return;
             }
         }
@@ -630,7 +630,7 @@ fn orphan_clean(
                 .expect("error: unable to read user input");
             let input = input.trim().to_ascii_lowercase();
             // If answer is not y or yes then return
-            if !vec!["y", "yes"].contains(&input.as_str()) {
+            if !["y", "yes"].contains(&input.as_str()) {
                 return;
             }
         }

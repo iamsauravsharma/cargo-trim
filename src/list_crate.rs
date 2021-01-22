@@ -129,7 +129,7 @@ impl CrateList {
                                 .push(installed_crate_registry.get(*position).unwrap().to_string());
                         }
                     }
-                    common_crate_version = vec![]
+                    common_crate_version = Vec::new()
                 }
             }
         }
