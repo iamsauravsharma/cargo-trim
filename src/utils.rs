@@ -101,3 +101,69 @@ pub(crate) fn convert_pretty(num: u64) -> String {
     let unit = units[power_factor as usize];
     format!("{} {}", pretty_bytes, unit)
 }
+
+#[cfg(test)]
+mod test {
+    use super::{clear_version_value, convert_pretty, env_list};
+
+    #[test]
+    fn test_env_list() {
+        std::env::set_var("SAMPLE_ENV", "MULTIPLE LIST OF VALUE");
+        assert_eq!(
+            env_list("SAMPLE_ENV"),
+            vec![
+                "MULTIPLE".to_string(),
+                "LIST".to_string(),
+                "OF".to_string(),
+                "VALUE".to_string()
+            ]
+        );
+        assert!(env_list("RANDOM_ENV").is_empty());
+    }
+
+    #[test]
+    fn test_clear_version_value() {
+        assert_eq!(
+            clear_version_value("sample_crate-0.12.0"),
+            ("sample_crate".to_string(), "0.12.0".to_string())
+        );
+        assert_eq!(
+            clear_version_value("another-crate-name-1.4.5"),
+            ("another-crate-name".to_string(), "1.4.5".to_string())
+        );
+        assert_eq!(
+            clear_version_value("crate-name-12-123-0.1.0"),
+            ("crate-name-12-123".to_string(), "0.1.0".to_string())
+        );
+        assert_eq!(
+            clear_version_value("complex_name-12.0.0-rc.1"),
+            ("complex_name".to_string(), "12.0.0-rc.1".to_string())
+        );
+        assert_eq!(
+            clear_version_value("build-number-2.3.4+was0-5"),
+            ("build-number".to_string(), "2.3.4+was0-5".to_string())
+        );
+        assert_eq!(
+            clear_version_value("complex_spec-0.12.0-rc.1+name0.4.6"),
+            (
+                "complex_spec".to_string(),
+                "0.12.0-rc.1+name0.4.6".to_string()
+            )
+        );
+    }
+
+    #[test]
+    fn test_convert_pretty() {
+        assert_eq!(convert_pretty(0), "0 B".to_string());
+        assert_eq!(convert_pretty(12), "12 B".to_string());
+        assert_eq!(convert_pretty(1234), "1.234 kB".to_string());
+        assert_eq!(convert_pretty(23908), "23.908 kB".to_string());
+        assert_eq!(convert_pretty(874940334), "874.94 MB".to_string());
+        assert_eq!(convert_pretty(8849909404), "8.85 GB".to_string());
+        assert_eq!(convert_pretty(3417849409404), "3.418 TB".to_string());
+        assert_eq!(
+            convert_pretty(93453982182159417),
+            "93453.982 TB".to_string()
+        );
+    }
+}

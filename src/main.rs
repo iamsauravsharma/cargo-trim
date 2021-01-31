@@ -3,7 +3,7 @@
 #![deny(clippy::all)]
 #![warn(clippy::pedantic)]
 
-mod app;
+mod cli;
 mod config_file;
 mod crate_detail;
 mod dir_path;
@@ -35,7 +35,7 @@ use std::{
 fn main() {
     // set all dir path
     let dir_path = DirPath::set_dir_path();
-    let app = app::init().get_matches();
+    let app = cli::init().get_matches();
     let app = app.subcommand_matches("trim").unwrap();
     let arg_matches = ArgMatches::new();
     let git_subcommand = app.subcommand_matches("git").unwrap_or(&arg_matches);

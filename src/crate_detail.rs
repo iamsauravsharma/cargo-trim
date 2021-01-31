@@ -235,3 +235,39 @@ fn add_crate_to_hash_map(hashmap: &mut HashMap<String, u64>, crate_name: String,
         hashmap.insert(crate_name, size);
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::{add_crate_to_hash_map, get_hashmap_crate_size};
+    use std::collections::HashMap;
+    #[test]
+    fn test_get_hashmap_crate_size() {
+        let mut hashmap_content = HashMap::new();
+        hashmap_content.insert("sample_crate".to_string(), 1000u64);
+        hashmap_content.insert("sample_crate_2".to_string(), 20u64);
+
+        assert_eq!(
+            get_hashmap_crate_size(&hashmap_content, "sample_crate_2"),
+            0.00002
+        );
+        assert_eq!(
+            get_hashmap_crate_size(&hashmap_content, "sample_crate_3"),
+            0.0
+        );
+    }
+    #[test]
+    fn test_add_crate_to_hashmap() {
+        let mut hashmap_content = HashMap::new();
+        hashmap_content.insert("sample_crate".to_string(), 1000u64);
+        hashmap_content.insert("sample_crate_2".to_string(), 20u64);
+        add_crate_to_hash_map(&mut hashmap_content, "sample_crate_2".to_string(), 3000);
+        add_crate_to_hash_map(&mut hashmap_content, "sample_crate_3".to_string(), 2500);
+
+        let mut another_hashmap = HashMap::new();
+        another_hashmap.insert("sample_crate".to_string(), 1000u64);
+        another_hashmap.insert("sample_crate_2".to_string(), 3020u64);
+        another_hashmap.insert("sample_crate_3".to_string(), 2500u64);
+
+        assert_eq!(hashmap_content, another_hashmap);
+    }
+}

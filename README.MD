@@ -107,10 +107,8 @@ Whether to scan hidden folder(i.e. folder which start with dot notation) or not
 Whether to scan target folder. Currently, it searches for environment variable `CARGO_BUILD_TARGET_DIR` or `CARGO_TARGET_DIR`
 or set default value as target to determine a target folder name
 
-[git_link]: https://github.com/iamsauravsharma/cargo-trim
-
-[license_badge]: https://img.shields.io/github/license/iamsauravsharma/cargo-trim.svg
+[license_badge]: https://img.shields.io/github/license/iamsauravsharma/cargo-trim.svg?style=for-the-badge
 [license_link]: LICENSE
 
-[cratesio_badge]: https://img.shields.io/crates/v/cargo-trim.svg
+[cratesio_badge]: https://img.shields.io/crates/v/cargo-trim.svg?style=for-the-badge
 [cratesio_link]: https://crates.io/crates/cargo-trim
