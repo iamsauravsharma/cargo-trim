@@ -1,7 +1,9 @@
-use crate::{list_crate::CargoTomlLocation, utils::env_list};
+use std::{env, ffi::OsStr, fs, io::Read, path::Path};
+
 use colored::Colorize;
 use serde::{Deserialize, Serialize};
-use std::{env, ffi::OsStr, fs, io::Read, path::Path};
+
+use crate::{list_crate::CargoTomlLocation, utils::env_list};
 
 // Stores config file information
 #[derive(Serialize, Deserialize, Default)]

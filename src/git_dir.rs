@@ -1,6 +1,8 @@
-use crate::{utils::delete_folder, CrateDetail};
-use colored::Colorize;
 use std::{fs, path::Path};
+
+use colored::Colorize;
+
+use crate::{utils::delete_folder, CrateDetail};
 
 // Store git dir folder information
 pub(crate) struct GitDir<'a> {

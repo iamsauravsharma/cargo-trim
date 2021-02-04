@@ -238,8 +238,9 @@ fn add_crate_to_hash_map(hashmap: &mut HashMap<String, u64>, crate_name: String,
 
 #[cfg(test)]
 mod test {
-    use super::{add_crate_to_hash_map, get_hashmap_crate_size};
     use std::collections::HashMap;
+
+    use super::{add_crate_to_hash_map, get_hashmap_crate_size};
     #[test]
     fn test_get_hashmap_crate_size() {
         let mut hashmap_content = HashMap::new();

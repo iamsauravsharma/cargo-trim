@@ -12,6 +12,17 @@ mod list_crate;
 mod registry_dir;
 mod utils;
 
+use std::{
+    collections::HashMap,
+    fs, io,
+    io::Write,
+    path::{Path, PathBuf},
+    process::Command,
+};
+
+use clap::ArgMatches;
+use colored::Colorize;
+
 use crate::{
     config_file::ConfigFile,
     crate_detail::CrateDetail,
@@ -20,15 +31,6 @@ use crate::{
     list_crate::CrateList,
     registry_dir::RegistryDir,
     utils::{convert_pretty, delete_folder, get_size},
-};
-use clap::ArgMatches;
-use colored::Colorize;
-use std::{
-    collections::HashMap,
-    fs, io,
-    io::Write,
-    path::{Path, PathBuf},
-    process::Command,
 };
 
 #[allow(clippy::too_many_lines)]

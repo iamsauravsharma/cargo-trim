@@ -1,5 +1,6 @@
-use colored::Colorize;
 use std::{env, fs, path::Path};
+
+use colored::Colorize;
 
 // list all a env variables list in vector form
 pub(crate) fn env_list(variable: &str) -> Vec<String> {

@@ -1,11 +1,13 @@
-use crate::{
-    config_file::ConfigFile, crate_detail::CrateDetail, dir_path::DirPath,
-    utils::clear_version_value,
-};
-use serde::Deserialize;
 use std::{
     fs,
     path::{Path, PathBuf},
+};
+
+use serde::Deserialize;
+
+use crate::{
+    config_file::ConfigFile, crate_detail::CrateDetail, dir_path::DirPath,
+    utils::clear_version_value,
 };
 
 // struct store Cargo.toml file location

@@ -1,9 +1,11 @@
+use std::{fs, path::Path};
+
+use colored::Colorize;
+
 use crate::{
     utils::{clear_version_value, delete_folder},
     CrateDetail,
 };
-use colored::Colorize;
-use std::{fs, path::Path};
 
 // Stores .cargo/registry cache & src information
 pub(crate) struct RegistryDir<'a> {
