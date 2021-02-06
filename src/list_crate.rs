@@ -94,10 +94,10 @@ impl CrateList {
         let db_dir = dir_path.db_dir().as_path();
 
         // list installed crates
-        let installed_bin = crate_detail.get_installed_bin(bin_dir);
+        let installed_bin = crate_detail.list_installed_bin(bin_dir);
         let installed_crate_registry =
-            crate_detail.get_installed_crate_registry(src_dir, cache_dir);
-        let installed_crate_git = crate_detail.get_installed_crate_git(checkout_dir, db_dir);
+            crate_detail.list_installed_crate_registry(src_dir, cache_dir);
+        let installed_crate_git = crate_detail.list_installed_crate_git(checkout_dir, db_dir);
 
         // list old registry crate
         let mut old_crate_registry = Vec::new();

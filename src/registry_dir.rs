@@ -129,30 +129,30 @@ fn remove_crate(path: &Path, value: &str, dry_run: bool) -> std::io::Result<()> 
 
 // determine crate index cache location and remove crate index cache
 fn remove_index_cache(path: &Path, crate_name: &str, dry_run: bool) -> std::io::Result<()> {
-    let mut remove_file_location = path.to_path_buf();
+    let mut crate_index_cache_location = path.to_path_buf();
     let split_value = clear_version_value(crate_name);
     let name = split_value.0;
     match name.len() {
         1 => {
-            remove_file_location.push("1");
-            remove_file_location.push(name);
+            crate_index_cache_location.push("1");
+            crate_index_cache_location.push(name);
         }
         2 => {
-            remove_file_location.push("2");
-            remove_file_location.push(name);
+            crate_index_cache_location.push("2");
+            crate_index_cache_location.push(name);
         }
         3 => {
-            remove_file_location.push("3");
-            remove_file_location.push(&name[..1]);
-            remove_file_location.push(name);
+            crate_index_cache_location.push("3");
+            crate_index_cache_location.push(&name[..1]);
+            crate_index_cache_location.push(name);
         }
         _ => {
-            remove_file_location.push(&name[..2]);
-            remove_file_location.push(&name[2..4]);
-            remove_file_location.push(name);
+            crate_index_cache_location.push(&name[..2]);
+            crate_index_cache_location.push(&name[2..4]);
+            crate_index_cache_location.push(name);
         }
     };
-    delete_folder(&remove_file_location, dry_run)?;
+    delete_folder(&crate_index_cache_location, dry_run)?;
     Ok(())
 }
 

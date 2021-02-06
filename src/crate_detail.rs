@@ -106,7 +106,7 @@ impl CrateDetail {
     }
 
     // list installed bin
-    pub(crate) fn get_installed_bin(&mut self, bin_dir: &Path) -> Vec<String> {
+    pub(crate) fn list_installed_bin(&mut self, bin_dir: &Path) -> Vec<String> {
         let mut installed_bin = Vec::new();
         if bin_dir.exists() {
             for entry in fs::read_dir(bin_dir).expect("failed to read bin directory") {
@@ -125,7 +125,7 @@ impl CrateDetail {
     }
 
     // list all installed registry crates
-    pub(crate) fn get_installed_crate_registry(
+    pub(crate) fn list_installed_crate_registry(
         &mut self,
         src_dir: &Path,
         cache_dir: &Path,
@@ -172,7 +172,7 @@ impl CrateDetail {
     }
 
     // list all installed git crates
-    pub(crate) fn get_installed_crate_git(
+    pub(crate) fn list_installed_crate_git(
         &mut self,
         checkout_dir: &Path,
         db_dir: &Path,

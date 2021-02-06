@@ -341,7 +341,7 @@ fn light_cleanup(
 }
 
 // list crates which is both old and orphan
-fn old_orphan_registry_list(crate_list: &CrateList) -> Vec<String> {
+fn list_old_orphan_registry(crate_list: &CrateList) -> Vec<String> {
     let mut old_orphan_registry = Vec::new();
     let orphan_list = crate_list.orphan_registry();
     for crates in crate_list.old_registry() {
@@ -353,7 +353,7 @@ fn old_orphan_registry_list(crate_list: &CrateList) -> Vec<String> {
 }
 
 // list out git crates which is both old and orphan
-fn old_orphan_git_list(crate_list: &CrateList) -> Vec<String> {
+fn list_old_orphan_git(crate_list: &CrateList) -> Vec<String> {
     let mut old_orphan_git = Vec::new();
     let orphan_list = crate_list.orphan_git();
     for crates in crate_list.old_git() {
@@ -434,12 +434,12 @@ fn list_subcommand(
         if list_subcommand.is_present("old-orphan") {
             crate_list_type(
                 crate_detail,
-                &old_orphan_registry_list(crate_list),
+                &list_old_orphan_registry(crate_list),
                 "REGISTRY OLD+ORPHAN CRATE",
             );
             crate_list_type(
                 crate_detail,
-                &old_orphan_git_list(crate_list),
+                &list_old_orphan_git(crate_list),
                 "GIT OLD+ORPHAN CRATE",
             );
             // print waning if no directory present in config file
@@ -542,17 +542,25 @@ fn old_clean(
 ) {
     if old_app || old_registry || old_git {
         let mut size_cleaned = 0.0;
+        let mut total_crate_removed = 0;
         if old_app || old_registry {
+            let registry_old_crate = crate_list.old_registry();
             size_cleaned +=
-                registry_crates_location.remove_crate_list(crate_detail, crate_list.old_registry());
+                registry_crates_location.remove_crate_list(crate_detail, registry_old_crate);
+            total_crate_removed += registry_old_crate.len();
         }
         if old_app || old_git {
-            size_cleaned +=
-                git_crates_location.remove_crate_list(crate_detail, crate_list.old_git());
+            let git_old_crate = crate_list.old_git();
+            size_cleaned += git_crates_location.remove_crate_list(crate_detail, git_old_crate);
+            total_crate_removed += git_old_crate.len()
         }
         println!(
             "{}",
-            format!("Total size of old crates removed :- {:.3} MB", size_cleaned).color("blue")
+            format!(
+                "Total size of {} old crates removed :- {:.3} MB",
+                total_crate_removed, size_cleaned
+            )
+            .color("blue")
         );
     }
 }
@@ -587,20 +595,24 @@ fn old_orphan_clean(
             }
         }
         let mut size_cleaned = 0.0;
+        let mut total_crate_removed = 0;
         if old_orphan_app || old_orphan_registry {
-            let old_orphan_registry = old_orphan_registry_list(crate_list);
+            let old_orphan_registry_list = list_old_orphan_registry(crate_list);
             size_cleaned +=
-                registry_crates_location.remove_crate_list(crate_detail, &old_orphan_registry);
+                registry_crates_location.remove_crate_list(crate_detail, &old_orphan_registry_list);
+            total_crate_removed += old_orphan_registry_list.len();
         }
         if old_orphan_app || old_orphan_git {
-            let old_orphan_git = old_orphan_git_list(crate_list);
-            size_cleaned += git_crates_location.remove_crate_list(crate_detail, &old_orphan_git);
+            let old_orphan_git_list = list_old_orphan_git(crate_list);
+            size_cleaned +=
+                git_crates_location.remove_crate_list(crate_detail, &old_orphan_git_list);
+            total_crate_removed += old_orphan_git_list.len();
         }
         println!(
             "{}",
             format!(
-                "Total size of crates which is both old and orphan crate removed :- {:.3} MB",
-                size_cleaned
+                "Total size of {} crates which are both old and orphan crate removed :- {:.3} MB",
+                total_crate_removed, size_cleaned
             )
             .color("blue")
         );
@@ -637,19 +649,23 @@ fn orphan_clean(
             }
         }
         let mut size_cleaned = 0.0;
+        let mut total_crate_removed = 0;
         if orphan_app || orphan_registry {
-            size_cleaned += registry_crates_location
-                .remove_crate_list(crate_detail, crate_list.orphan_registry());
+            let registry_orphan_crate = crate_list.orphan_registry();
+            size_cleaned +=
+                registry_crates_location.remove_crate_list(crate_detail, registry_orphan_crate);
+            total_crate_removed += registry_orphan_crate.len();
         }
         if orphan_app || orphan_git {
-            size_cleaned +=
-                git_crates_location.remove_crate_list(crate_detail, crate_list.orphan_git());
+            let git_orphan_crate = crate_list.orphan_git();
+            size_cleaned += git_crates_location.remove_crate_list(crate_detail, git_orphan_crate);
+            total_crate_removed += git_orphan_crate.len();
         }
         println!(
             "{}",
             format!(
-                "Total size of orphan crates removed :- {:.3} MB",
-                size_cleaned
+                "Total size of {} orphan crates removed :- {:.3} MB",
+                total_crate_removed, size_cleaned
             )
             .color("blue")
         );
@@ -815,19 +831,24 @@ fn remove_all(
 ) {
     if all_app || all_git || all_registry {
         let mut total_size_cleaned = 0.0;
+        let mut total_crate_removed = 0;
         if all_app || all_registry {
-            total_size_cleaned += registry_crates_location
-                .remove_crate_list(crate_detail, crate_list.installed_registry());
+            let registry_installed_crate = crate_list.installed_registry();
+            total_size_cleaned +=
+                registry_crates_location.remove_crate_list(crate_detail, registry_installed_crate);
+            total_crate_removed += registry_installed_crate.len();
         }
         if all_app || all_git {
+            let git_installed_crate = crate_list.installed_git();
             total_size_cleaned +=
-                git_crates_location.remove_crate_list(crate_detail, crate_list.installed_git());
+                git_crates_location.remove_crate_list(crate_detail, git_installed_crate);
+            total_crate_removed += git_installed_crate.len();
         }
         println!(
             "{}",
             format!(
-                "Total size of crates removed :- {:.3} MB",
-                total_size_cleaned
+                "Total size of  {} crates removed :- {:.3} MB",
+                total_crate_removed, total_size_cleaned
             )
             .color("blue")
         );
@@ -896,7 +917,7 @@ fn top_crates(
 
         let number = value
             .parse::<usize>()
-            .expect("Cannot convert top n crates value in usize");
+            .expect("Cannot convert top n crates value to usize");
         if top_app {
             show_top_number_crates(crate_detail, "bin", number);
         }
@@ -925,7 +946,8 @@ fn show_top_number_crates(crate_detail: &CrateDetail, crate_type: &str, number: 
     // sort crates by size
     let mut vector = size_detail.iter().collect::<Vec<_>>();
     vector.sort_by(|a, b| (b.1).cmp(a.1));
-    let title = format!("Top {} {}", number, crate_type);
+    let top_number = std::cmp::min(vector.len(), number);
+    let title = format!("Top {} {}", top_number, crate_type);
     let first_path_len = 40;
     let second_path_len = 10;
     let dash_len = first_path_len + second_path_len + 3;
@@ -934,10 +956,8 @@ fn show_top_number_crates(crate_detail: &CrateDetail, crate_type: &str, number: 
     // count output
     if vector.is_empty() {
         println!("|{:^40}|{:^10}|", "NONE".color("red"), "0.000".color("red"));
-    } else if vector.len() < number {
-        (0..vector.len()).for_each(|i| print_index_value_crate(&vector, i));
     } else {
-        (0..number).for_each(|i| print_index_value_crate(&vector, i));
+        (0..top_number).for_each(|i| print_index_value_crate(&vector, i));
     }
     print_dash(dash_len);
 }
@@ -989,7 +1009,7 @@ fn update_cargo_toml(app: &ArgMatches, cargo_toml_location: &[PathBuf]) {
                 }
             }
         }
-        println!("{}", "Successfully update all Cargo.lock".color("blue"));
+        println!("{}", "Successfully updated all Cargo.lock".color("blue"));
     }
 }
 
