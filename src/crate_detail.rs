@@ -143,7 +143,7 @@ impl CrateDetail {
                         .expect("failed to get file name form main entry");
                     let crate_name = file_name.to_str().unwrap();
                     self.add_registry_crate_source(crate_name.to_owned(), crate_size);
-                    installed_crate_registry.push(crate_name.to_owned())
+                    installed_crate_registry.push(crate_name.to_owned());
                 }
             }
         }
@@ -198,7 +198,7 @@ impl CrateDetail {
                     let split_name = file_name.rsplitn(2, '-').collect::<Vec<&str>>();
                     let full_name = format!("{}-{}", split_name[1], git_sha);
                     self.add_git_crate_archive(full_name.to_owned(), crate_size);
-                    installed_crate_git.push(full_name)
+                    installed_crate_git.push(full_name);
                 }
             }
         }

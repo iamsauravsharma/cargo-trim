@@ -979,13 +979,11 @@ fn update_cargo_toml(app: &ArgMatches, cargo_toml_location: &[PathBuf]) {
             cargo_lock.push("Cargo.lock");
             // at first try generating lock file
             if !cargo_lock.exists() {
-                if let Err(e) = Command::new("cargo")
+                Command::new("cargo")
                     .arg("generate-lockfile")
                     .current_dir(location)
                     .output()
-                {
-                    panic!(format!("Failed to generate Cargo.lock {}", e));
-                }
+                    .expect("Failed to generate Cargo.lock");
             }
             // helps so we may not need to generate lock file again for workspace project
             if cargo_lock.exists() {
