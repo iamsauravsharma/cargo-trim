@@ -18,7 +18,7 @@ pub(crate) fn env_list(variable: &str) -> Vec<String> {
 pub(crate) fn clear_version_value(full_name: &str) -> (String, String) {
     let version_split: Vec<&str> = full_name.split('-').collect();
     let mut version_start_position = version_split.len();
-    // check a split part to check from where a semver start
+    // check a split part to check from where a semver start for crate
     for (pos, split_part) in version_split.iter().enumerate() {
         if semver::Version::parse(split_part).is_ok() {
             version_start_position = pos;

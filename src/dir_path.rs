@@ -29,7 +29,7 @@ impl DirPath {
 
         // If config file does not exists create config file
         if !config_file.exists() {
-            fs::File::create(config_file.to_str().unwrap()).expect("Failed to create config file");
+            fs::File::create(&config_file).expect("Failed to create config file");
         }
 
         let home_dir = Path::new(env!("CARGO_HOME")).to_path_buf();

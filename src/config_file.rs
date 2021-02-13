@@ -22,8 +22,7 @@ impl ConfigFile {
     // Perform initial config file actions
     pub(crate) fn init(app: &clap::ArgMatches, config_file: &Path) -> Self {
         let mut buffer = String::new();
-        let mut file =
-            fs::File::open(config_file.to_str().unwrap()).expect("failed to open config file");
+        let mut file = fs::File::open(config_file).expect("failed to open config file");
         file.read_to_string(&mut buffer)
             .expect("failed to read config file");
         if buffer.is_empty() {

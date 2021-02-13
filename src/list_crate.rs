@@ -113,22 +113,27 @@ impl CrateList {
                 if name == next_name {
                     common_crate_version.push((version, i));
                 } else {
-                    common_crate_version.push((version, i));
-                    let mut latest_version = version;
-                    // this is used to check which version is latest since we have sorted string so
-                    // 0.10.0 will come before 0.9.0. so it need to be done to properly determine
-                    // latest version
-                    for (common_version, _) in &common_crate_version {
-                        if semver::Version::parse(latest_version)
-                            < semver::Version::parse(common_version)
-                        {
-                            latest_version = common_version;
+                    // do not need to check if there is no old crate version in list so no two same
+                    // version crate
+                    if !common_crate_version.is_empty() {
+                        common_crate_version.push((version, i));
+                        let mut latest_version = version;
+                        // this is used to check which version is latest since we have sorted string
+                        // so 0.10.0 will come before 0.9.0. so it need to
+                        // be done to properly determine latest version
+                        for (common_version, _) in &common_crate_version {
+                            if semver::Version::parse(latest_version)
+                                < semver::Version::parse(common_version)
+                            {
+                                latest_version = common_version;
+                            }
                         }
-                    }
-                    for (crate_version, position) in &common_crate_version {
-                        if crate_version.as_str() != latest_version {
-                            old_crate_registry
-                                .push(installed_crate_registry.get(*position).unwrap().to_string());
+                        for (crate_version, position) in &common_crate_version {
+                            if crate_version.as_str() != latest_version {
+                                old_crate_registry.push(
+                                    installed_crate_registry.get(*position).unwrap().to_string(),
+                                );
+                            }
                         }
                     }
                     common_crate_version = Vec::new()
@@ -289,10 +294,7 @@ fn read_content(list: &[PathBuf]) -> (Vec<String>, Vec<String>) {
         let mut lock_folder = lock.clone();
         lock_folder.push("Cargo.lock");
         if lock_folder.exists() {
-            let lock_file = lock_folder
-                .to_str()
-                .expect("Failed to convert lock_folder to str");
-            let file_content = std::fs::read_to_string(lock_file)
+            let file_content = std::fs::read_to_string(lock_folder)
                 .expect("failed to read cargo lock content to string");
             let cargo_lock_data: LockData =
                 toml::from_str(&file_content).expect("Failed to convert to Toml format");
