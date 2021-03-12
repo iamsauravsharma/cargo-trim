@@ -584,7 +584,7 @@ fn old_orphan_clean(
             println!("{}", warning_text.color("yellow"));
             let mut input = String::new();
             print!("Do you want to continue? (y/N) ");
-            let _ = io::stdout().flush();
+            io::stdout().flush().expect("failed to flush output stream");
             io::stdin()
                 .read_line(&mut input)
                 .expect("error: unable to read user input");
@@ -638,7 +638,7 @@ fn orphan_clean(
             println!("{}", warning_text.color("yellow"));
             let mut input = String::new();
             print!("Do you want to continue? (y/N) ");
-            let _ = io::stdout().flush();
+            io::stdout().flush().expect("failed to flush output stream");
             io::stdin()
                 .read_line(&mut input)
                 .expect("error: unable to read user input");
