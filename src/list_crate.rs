@@ -172,7 +172,7 @@ impl CrateList {
         let mut used_crate_registry = Vec::new();
         let mut used_crate_git = Vec::new();
         let mut cargo_toml_location = CargoTomlLocation::new();
-        let config_directory = config_file.directory().to_owned();
+        let config_directory = config_file.directory().clone();
         // read a Cargo.lock file and determine out a used registry and git crate
         for path in &config_directory {
             let list_cargo_toml = config_file.list_cargo_toml(&Path::new(path));

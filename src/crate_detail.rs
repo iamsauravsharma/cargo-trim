@@ -116,7 +116,7 @@ impl CrateDetail {
                     .file_name()
                     .expect("failed to get file name from bin directory");
                 let bin_name = file_name.to_str().unwrap().to_string();
-                self.add_bin(bin_name.to_owned(), bin_size);
+                self.add_bin(bin_name.clone(), bin_size);
                 installed_bin.push(bin_name)
             }
         }
@@ -197,7 +197,7 @@ impl CrateDetail {
                     let file_name = file_path.to_str().unwrap();
                     let split_name = file_name.rsplitn(2, '-').collect::<Vec<&str>>();
                     let full_name = format!("{}-{}", split_name[1], git_sha);
-                    self.add_git_crate_archive(full_name.to_owned(), crate_size);
+                    self.add_git_crate_archive(full_name.clone(), crate_size);
                     installed_crate_git.push(full_name);
                 }
             }
@@ -211,7 +211,7 @@ impl CrateDetail {
                 let file_name = file_name.to_str().unwrap();
                 let split_name = file_name.rsplitn(2, '-').collect::<Vec<&str>>();
                 let full_name = format!("{}-HEAD", split_name[1]);
-                self.add_git_crate_source(full_name.to_owned(), crate_size);
+                self.add_git_crate_source(full_name.clone(), crate_size);
                 installed_crate_git.push(full_name);
             }
         }

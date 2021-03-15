@@ -62,7 +62,7 @@ impl<'a> RegistryDir<'a> {
             remove_crate(Path::new(&self.src_dir), crate_name, self.dry_run).is_ok() && is_success;
         let split_value = clear_version_value(crate_name);
         let name = split_value.0;
-        let index_cache = self.index_cache_dir.to_owned();
+        let index_cache = self.index_cache_dir.clone();
         // remove index cache dir if their is only one crate. It will also clean crate
         // name from installed crate name owned locally by it so when two version of
         // same crate is deleted it properly remove index cache
