@@ -919,32 +919,31 @@ fn top_crates(
             .parse::<usize>()
             .expect("Cannot convert top n crates value to usize");
         if top_app {
-            show_top_number_crates(crate_detail, "bin", number);
+            show_top_number_crates(crate_detail.bin(), "bin", number);
         }
         if top_app || top_git {
-            show_top_number_crates(crate_detail, "git_archive", number);
-            show_top_number_crates(crate_detail, "git_source", number);
+            show_top_number_crates(crate_detail.git_crates_archive(), "git_archive", number);
+            show_top_number_crates(crate_detail.git_crates_source(), "git_source", number);
         }
         if top_app || top_registry {
-            show_top_number_crates(crate_detail, "registry_archive", number);
-            show_top_number_crates(crate_detail, "registry_source", number);
+            show_top_number_crates(
+                crate_detail.registry_crates_archive(),
+                "registry_archive",
+                number,
+            );
+            show_top_number_crates(
+                crate_detail.registry_crates_source(),
+                "registry_source",
+                number,
+            );
         }
     }
 }
 
 // top_crates() help to list out top n crates
-fn show_top_number_crates(crate_detail: &CrateDetail, crate_type: &str, number: usize) {
-    let blank_hashmap = HashMap::new();
-    let size_detail = match crate_type {
-        "bin" => crate_detail.bin(),
-        "git_archive" => crate_detail.git_crates_archive(),
-        "git_source" => crate_detail.git_crates_source(),
-        "registry_archive" => crate_detail.registry_crates_archive(),
-        "registry_source" => crate_detail.registry_crates_source(),
-        _ => &blank_hashmap,
-    };
+fn show_top_number_crates(crates: &HashMap<String, u64>, crate_type: &str, number: usize) {
     // sort crates by size
-    let mut vector = size_detail.iter().collect::<Vec<_>>();
+    let mut vector = crates.iter().collect::<Vec<_>>();
     vector.sort_by(|a, b| (b.1).cmp(a.1));
     let top_number = std::cmp::min(vector.len(), number);
     let title = format!("Top {} {}", top_number, crate_type);
@@ -952,8 +951,7 @@ fn show_top_number_crates(crate_detail: &CrateDetail, crate_type: &str, number: 
     let second_path_len = 10;
     let dash_len = first_path_len + second_path_len + 3;
     show_title(title.as_str(), first_path_len, second_path_len, dash_len);
-    // check n size and determine if to print n number of output or 0 or total crate
-    // count output
+    // check n size and determine if to print n number of output NONE for 0 crates
     if vector.is_empty() {
         println!("|{:^40}|{:^10}|", "NONE".color("red"), "0.000".color("red"));
     } else {
