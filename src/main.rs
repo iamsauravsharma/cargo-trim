@@ -557,7 +557,7 @@ fn old_clean(
         println!(
             "{}",
             format!(
-                "Total size of {} old crates removed :- {:.3} MB",
+                "{} old crates removed which had occupied {:.3} MB",
                 total_crate_removed, size_cleaned
             )
             .color("blue")
@@ -611,7 +611,7 @@ fn old_orphan_clean(
         println!(
             "{}",
             format!(
-                "Total size of {} crates which are both old and orphan crate removed :- {:.3} MB",
+                "{} crates which are both old and orphan crate removed which had {:.3} MB",
                 total_crate_removed, size_cleaned
             )
             .color("blue")
@@ -664,7 +664,7 @@ fn orphan_clean(
         println!(
             "{}",
             format!(
-                "Total size of {} orphan crates removed :- {:.3} MB",
+                "{} orphan crates removed which had occupied {:.3} MB",
                 total_crate_removed, size_cleaned
             )
             .color("blue")
