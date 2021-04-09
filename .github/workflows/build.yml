@@ -43,4 +43,4 @@ jobs:
        uses: davidB/rust-cargo-make@v1
      - name: Run tests
        run: |
-        cargo make ci --env FEATURES_FLAG=$(echo $FEATURES_FLAG) VERBOSE_FLAG=$(echo $VERBOSE_FLAG) TARGET_TRIPLE_FLAG=$(echo $TARGET_TRIPLE_FLAG)
+        cargo make ci --env FEATURES_FLAG=$FEATURES_FLAG VERBOSE_FLAG=$VERBOSE_FLAG TARGET_TRIPLE_FLAG=$TARGET_TRIPLE_FLAG
