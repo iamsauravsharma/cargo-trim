@@ -66,7 +66,7 @@ impl<'a> RegistryDir<'a> {
         // remove index cache dir if their is only one crate. It will also clean crate
         // name from installed crate name owned locally by it so when two version of
         // same crate is deleted it properly remove index cache
-        index_cache.iter().for_each(|index_cache_dir| {
+        for index_cache_dir in &index_cache {
             let same_name_list: Vec<&String> = self
                 .installed_crate
                 .iter()
@@ -82,7 +82,7 @@ impl<'a> RegistryDir<'a> {
                 .is_ok()
                 && is_success;
             self.installed_crate.retain(|x| x != crate_name);
-        });
+        }
         if self.dry_run {
             println!(
                 "{} {} {:?}",

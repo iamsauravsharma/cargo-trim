@@ -344,10 +344,10 @@ fn read_content(list: &[PathBuf]) -> (Vec<String>, Vec<String>) {
 // used for old clean flag
 fn remove_version(installed_crate_registry: &[String]) -> Vec<(String, String)> {
     let mut removed_version = Vec::new();
-    installed_crate_registry.iter().for_each(|crate_full_name| {
+    for crate_full_name in installed_crate_registry {
         let data = clear_version_value(crate_full_name);
         removed_version.push(data);
-    });
+    }
     removed_version
 }
 
