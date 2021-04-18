@@ -9,7 +9,7 @@ fn test_help() {
         .arg("trim")
         .arg("help")
         .status()
-        .expect("failed to execute process");
+        .unwrap();
     assert!(status.success());
 }
 
@@ -23,7 +23,7 @@ fn test_list_help() {
         .arg("help")
         .arg("list")
         .status()
-        .expect("failed to execute process");
+        .unwrap();
     assert!(status.success());
 }
 
@@ -37,7 +37,7 @@ fn test_remove_help() {
         .arg("help")
         .arg("remove")
         .status()
-        .expect("failed to execute process");
+        .unwrap();
     assert!(status.success());
 }
 
@@ -51,7 +51,7 @@ fn test_config_help() {
         .arg("help")
         .arg("config")
         .status()
-        .expect("failed to execute process");
+        .unwrap();
     assert!(status.success());
 }
 
@@ -65,7 +65,7 @@ fn test_git_help() {
         .arg("help")
         .arg("git")
         .status()
-        .expect("failed to execute process");
+        .unwrap();
     assert!(status.success());
 }
 
@@ -79,6 +79,6 @@ fn test_registry_help() {
         .arg("help")
         .arg("registry")
         .status()
-        .expect("failed to execute process");
+        .unwrap();
     assert!(status.success());
 }

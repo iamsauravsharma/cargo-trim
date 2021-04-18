@@ -20,6 +20,7 @@ use std::{
     process::Command,
 };
 
+use anyhow::{Context, Result};
 use clap::ArgMatches;
 use colored::Colorize;
 
@@ -34,9 +35,9 @@ use crate::{
 };
 
 #[allow(clippy::too_many_lines)]
-fn main() {
+fn main() -> Result<()> {
     // set all dir path
-    let dir_path = DirPath::set_dir_path();
+    let dir_path = DirPath::set_dir_path()?;
     let app = cli::init().get_matches();
     let app = app.subcommand_matches("trim").unwrap();
     let arg_matches = ArgMatches::new();
@@ -53,7 +54,7 @@ fn main() {
         dir_path.index_dir(),
         dir_path.checkout_dir(),
         dir_path.db_dir(),
-    );
+    )?;
 
     // Perform light cleanup
     let light_cleanup_app = app.is_present("light cleanup");
@@ -72,10 +73,10 @@ fn main() {
 
     // Perform all read and write operation of config file flag and subcommand
     // operation and return config file
-    let config_file = ConfigFile::init(app, dir_path.config_file());
+    let config_file = ConfigFile::init(app, dir_path.config_file())?;
 
     // Query about config file information
-    config_subcommand(app, &config_file, &dir_path.config_file());
+    config_subcommand(app, &config_file, &dir_path.config_file())?;
 
     let crate_detail_required = app.is_present("crate detail required")
         || app.subcommand_matches("list").is_some()
@@ -88,7 +89,7 @@ fn main() {
 
         // List out crates
         let crate_list =
-            list_crate::CrateList::create_list(&dir_path, &config_file, &mut crate_detail);
+            list_crate::CrateList::create_list(&dir_path, &config_file, &mut crate_detail)?;
 
         // Get Location where registry crates and git crates are stored out by cargo
         let mut registry_crates_location = registry_dir::RegistryDir::new(
@@ -97,7 +98,7 @@ fn main() {
             dir_path.index_dir(),
             crate_list.installed_registry(),
             dry_run_app || dry_run_registry,
-        );
+        )?;
         let git_crates_location = git_dir::GitDir::new(
             dir_path.checkout_dir(),
             dir_path.db_dir(),
@@ -131,7 +132,7 @@ fn main() {
             &git_crates_location,
             &crate_detail,
             &config_file,
-        );
+        )?;
 
         // Orphan clean a crates which is not present in directory stored in directory
         // value of config file on -x flag
@@ -145,7 +146,7 @@ fn main() {
             &git_crates_location,
             &crate_detail,
             &config_file,
-        );
+        )?;
 
         // Perform action for -q flag
         let query_size_app = app.is_present("query size");
@@ -156,7 +157,7 @@ fn main() {
             (query_size_app, query_size_git, query_size_registry),
             &crate_list,
             &crate_detail,
-        );
+        )?;
 
         // Remove all crates by following config file
         let all_app = app.is_present("all");
@@ -180,23 +181,29 @@ fn main() {
         );
 
         // Show top crates
-        top_crates(app, git_subcommand, registry_subcommand, &crate_detail);
+        top_crates(app, git_subcommand, registry_subcommand, &crate_detail)?;
 
         let cargo_toml_location = crate_list.cargo_toml_location().location_path();
-        update_cargo_toml(app, cargo_toml_location);
+        update_cargo_toml(app, cargo_toml_location)?;
     }
+    Ok(())
 }
 
 // Git compress git files according to provided value if option
-fn git_compress(app: &ArgMatches, index_dir: &Path, checkout_dir: &Path, db_dir: &Path) {
+fn git_compress(
+    app: &ArgMatches,
+    index_dir: &Path,
+    checkout_dir: &Path,
+    db_dir: &Path,
+) -> Result<()> {
     if let Some(value) = app.value_of("git compress") {
         let dry_run = app.is_present("dry run");
         if (value == "index" || value == "all") && index_dir.exists() {
-            for entry in fs::read_dir(index_dir).expect("failed to read registry index folder") {
-                let repo_path = entry.unwrap().path();
+            for entry in fs::read_dir(index_dir).context("failed to read registry index folder")? {
+                let repo_path = entry?.path();
                 let file_name = repo_path
                     .file_name()
-                    .expect("Failed to get a file name / folder name");
+                    .context("Failed to get a file name / folder name")?;
                 if !dry_run {
                     println!(
                         "{}",
@@ -210,13 +217,14 @@ fn git_compress(app: &ArgMatches, index_dir: &Path, checkout_dir: &Path, db_dir:
         // if git is provided it git compress all git folders
         if value.contains("git") || value == "all" {
             if (value == "git" || value == "git-checkout") && checkout_dir.exists() {
-                for entry in fs::read_dir(checkout_dir).expect("failed to read checkout directory")
+                for entry in
+                    fs::read_dir(checkout_dir).context("failed to read checkout directory")?
                 {
-                    let repo_path = entry.unwrap().path();
+                    let repo_path = entry?.path();
                     for rev in fs::read_dir(repo_path)
-                        .expect("failed to read checkout directory sub directory")
+                        .context("failed to read checkout directory sub directory")?
                     {
-                        let rev_path = rev.unwrap().path();
+                        let rev_path = rev?.path();
                         if !dry_run {
                             println!("{}", "Compressing git checkout".color("blue"));
                         }
@@ -225,8 +233,8 @@ fn git_compress(app: &ArgMatches, index_dir: &Path, checkout_dir: &Path, db_dir:
                 }
             }
             if (value == "git" || value == "git-db") && db_dir.exists() {
-                for entry in fs::read_dir(db_dir).expect("failed to read db dir") {
-                    let repo_path = entry.unwrap().path();
+                for entry in fs::read_dir(db_dir).context("failed to read db dir")? {
+                    let repo_path = entry?.path();
                     if !dry_run {
                         println!("{}", "Compressing git db".color("blue"));
                     }
@@ -236,6 +244,7 @@ fn git_compress(app: &ArgMatches, index_dir: &Path, checkout_dir: &Path, db_dir:
         }
         println!("{}", "Git compress task completed".color("blue"));
     }
+    Ok(())
 }
 
 // run combination of commands which git compress a index of registry
@@ -573,7 +582,7 @@ fn old_orphan_clean(
     git_crates_location: &GitDir,
     crate_detail: &CrateDetail,
     config_file: &ConfigFile,
-) {
+) -> Result<()> {
     if old_orphan_app || old_orphan_registry || old_orphan_git {
         if config_file.directory().is_empty() {
             let warning_text = "WARNING: You have not initialized any directory as rust project \
@@ -584,14 +593,16 @@ fn old_orphan_clean(
             println!("{}", warning_text.color("yellow"));
             let mut input = String::new();
             print!("Do you want to continue? (y/N) ");
-            io::stdout().flush().expect("failed to flush output stream");
+            io::stdout()
+                .flush()
+                .context("failed to flush output stream")?;
             io::stdin()
                 .read_line(&mut input)
-                .expect("error: unable to read user input");
+                .context("error: unable to read user input")?;
             let input = input.trim().to_ascii_lowercase();
             // if answer is any instead of yes and y return
             if !["y", "yes"].contains(&input.as_str()) {
-                return;
+                return Ok(());
             }
         }
         let mut size_cleaned = 0.0;
@@ -617,6 +628,7 @@ fn old_orphan_clean(
             .color("blue")
         );
     }
+    Ok(())
 }
 
 // Clean orphan crates
@@ -627,7 +639,7 @@ fn orphan_clean(
     git_crates_location: &GitDir,
     crate_detail: &CrateDetail,
     config_file: &ConfigFile,
-) {
+) -> Result<()> {
     if orphan_app || orphan_git || orphan_registry {
         if config_file.directory().is_empty() {
             let warning_text = "WARNING: You have not initialized any directory as rust project \
@@ -638,14 +650,16 @@ fn orphan_clean(
             println!("{}", warning_text.color("yellow"));
             let mut input = String::new();
             print!("Do you want to continue? (y/N) ");
-            io::stdout().flush().expect("failed to flush output stream");
+            io::stdout()
+                .flush()
+                .context("failed to flush output stream")?;
             io::stdin()
                 .read_line(&mut input)
-                .expect("error: unable to read user input");
+                .context("error: unable to read user input")?;
             let input = input.trim().to_ascii_lowercase();
             // If answer is not y or yes then return
             if !["y", "yes"].contains(&input.as_str()) {
-                return;
+                return Ok(());
             }
         }
         let mut size_cleaned = 0.0;
@@ -670,6 +684,7 @@ fn orphan_clean(
             .color("blue")
         );
     }
+    Ok(())
 }
 
 // query size of directory of cargo home folder provide some valuable size
@@ -680,7 +695,7 @@ fn query_size(
     (query_size_app, query_size_git, query_size_registry): (bool, bool, bool),
     crate_list: &CrateList,
     crate_detail: &CrateDetail,
-) {
+) -> Result<()> {
     let mut final_size = 0_u64;
     if query_size_app || query_size_git || query_size_registry {
         let first_path_width = 50;
@@ -738,7 +753,7 @@ fn query_size(
         }
         if query_size_app || query_size_registry {
             let registry_dir_size =
-                get_size(dir_path.registry_dir()).expect("failed to get size of registry dir");
+                get_size(dir_path.registry_dir()).context("failed to get size of registry dir")?;
             final_size += registry_dir_size;
             println!(
                 "{:first_width$} {:>second_width$}",
@@ -783,17 +798,23 @@ fn query_size(
             "{:first_width$} {:>second_width$}",
             format!(
                 "Total size occupied by {}",
-                std::env::var("CARGO_HOME").expect("No environmental variable CARGO_HOME present")
+                std::env::var("CARGO_HOME")
+                    .context("No environmental variable CARGO_HOME present")?
             ),
             convert_pretty(final_size),
             first_width = first_path_width,
             second_width = second_path_width
         );
     }
+    Ok(())
 }
 
 // Perform query about config file data
-fn config_subcommand(app: &ArgMatches, config_file: &ConfigFile, config_file_location: &Path) {
+fn config_subcommand(
+    app: &ArgMatches,
+    config_file: &ConfigFile,
+    config_file_location: &Path,
+) -> Result<()> {
     if let Some(matches) = app.subcommand_matches("config") {
         if matches.is_present("directory") {
             let read_directory = config_file.directory();
@@ -815,10 +836,12 @@ fn config_subcommand(app: &ArgMatches, config_file: &ConfigFile, config_file_loc
             );
         }
         if matches.is_present("print config") {
-            let content = toml::to_string_pretty(config_file).unwrap();
+            let content = toml::to_string_pretty(config_file)
+                .context("Failed to convert struct to pretty toml")?;
             println!("{}", content);
         }
     }
+    Ok(())
 }
 
 // remove all crates
@@ -904,7 +927,7 @@ fn top_crates(
     git_subcommand: &ArgMatches,
     registry_subcommand: &ArgMatches,
     crate_detail: &CrateDetail,
-) {
+) -> Result<()> {
     let top_app = app.is_present("top crates");
     let top_git = git_subcommand.is_present("top crates");
     let top_registry = registry_subcommand.is_present("top crates");
@@ -917,7 +940,7 @@ fn top_crates(
 
         let number = value
             .parse::<usize>()
-            .expect("Cannot convert top n crates value to usize");
+            .context("Cannot convert top n crates value to usize")?;
         if top_app {
             show_top_number_crates(crate_detail.bin(), "bin", number);
         }
@@ -938,6 +961,7 @@ fn top_crates(
             );
         }
     }
+    Ok(())
 }
 
 // top_crates() help to list out top n crates
@@ -970,7 +994,7 @@ fn print_index_value_crate(vector: &[(&String, &u64)], i: usize) {
 }
 
 // Update cargo lock
-fn update_cargo_toml(app: &ArgMatches, cargo_toml_location: &[PathBuf]) {
+fn update_cargo_toml(app: &ArgMatches, cargo_toml_location: &[PathBuf]) -> Result<()> {
     if app.is_present("update") {
         for location in cargo_toml_location {
             let mut cargo_lock = location.clone();
@@ -981,7 +1005,7 @@ fn update_cargo_toml(app: &ArgMatches, cargo_toml_location: &[PathBuf]) {
                     .arg("generate-lockfile")
                     .current_dir(location)
                     .output()
-                    .expect("Failed to generate Cargo.lock");
+                    .context("Failed to generate Cargo.lock")?;
             }
             // helps so we may not need to generate lock file again for workspace project
             if cargo_lock.exists() {
@@ -999,14 +1023,15 @@ fn update_cargo_toml(app: &ArgMatches, cargo_toml_location: &[PathBuf]) {
                         .arg("update")
                         .current_dir(location)
                         .spawn()
-                        .expect("Cannot run command")
+                        .context("Cannot run command")?
                         .wait()
-                        .expect("Failed to wait for child");
+                        .context("Failed to wait for child")?;
                 }
             }
         }
         println!("{}", "Successfully updated all Cargo.lock".color("blue"));
     }
+    Ok(())
 }
 
 // Wipe certain directory totally
@@ -1036,11 +1061,11 @@ fn wipe_directory(app: &ArgMatches, dir_path: &DirPath) {
 }
 
 // delete index .cache file
-fn delete_index_cache(index_dir: &Path, dry_run: bool) -> std::io::Result<()> {
+fn delete_index_cache(index_dir: &Path, dry_run: bool) -> Result<()> {
     for entry in fs::read_dir(index_dir)? {
-        let registry_dir = entry.unwrap().path();
+        let registry_dir = entry?.path();
         for folder in fs::read_dir(registry_dir)? {
-            let folder = folder.unwrap().path();
+            let folder = folder?.path();
             let folder_name = folder.file_name().unwrap();
             if folder_name == ".cache" {
                 delete_folder(&folder, dry_run)?;

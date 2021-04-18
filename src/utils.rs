@@ -1,5 +1,6 @@
 use std::{env, fs, path::Path};
 
+use anyhow::Result;
 use colored::Colorize;
 
 // list all a env variables list in vector form
@@ -32,7 +33,7 @@ pub(crate) fn clear_version_value(full_name: &str) -> (String, String) {
 }
 
 // delete folder with folder path provided
-pub(crate) fn delete_folder(path: &Path, dry_run: bool) -> std::io::Result<()> {
+pub(crate) fn delete_folder(path: &Path, dry_run: bool) -> Result<()> {
     if path.exists() {
         if path.is_file() {
             if dry_run {
@@ -62,7 +63,7 @@ pub(crate) fn delete_folder(path: &Path, dry_run: bool) -> std::io::Result<()> {
 }
 
 //  get size of directory
-pub(crate) fn get_size(path: &Path) -> std::io::Result<u64> {
+pub(crate) fn get_size(path: &Path) -> Result<u64> {
     let mut total_size = 0;
     if path.is_dir() {
         for entry in fs::read_dir(path)? {

@@ -3,6 +3,8 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use anyhow::{Context, Result};
+
 // Struct for storing Directory path
 pub(crate) struct DirPath {
     bin_dir: PathBuf,
@@ -18,18 +20,18 @@ pub(crate) struct DirPath {
 
 impl DirPath {
     // set directory path
-    pub(crate) fn set_dir_path() -> Self {
+    pub(crate) fn set_dir_path() -> Result<Self> {
         // set config file directory path
-        let config_dir = dirs_next::config_dir().expect("Cannot get config directory location");
+        let config_dir = dirs_next::config_dir().context("Cannot get config directory location")?;
         // if config dir not exists create
         if !config_dir.exists() {
-            fs::create_dir_all(&config_dir).expect("Failed to create config dir");
+            fs::create_dir_all(&config_dir).context("Failed to create config dir")?;
         }
         let config_file = config_dir.join("cargo_trim_config.toml");
 
         // If config file does not exists create config file
         if !config_file.exists() {
-            fs::File::create(&config_file).expect("Failed to create config file");
+            fs::File::create(&config_file).context("Failed to create config file")?;
         }
 
         let home_dir = Path::new(env!("CARGO_HOME")).to_path_buf();
@@ -52,7 +54,7 @@ impl DirPath {
         let src_dir = registry_dir.join("src");
         let index_dir = registry_dir.join("index");
 
-        Self {
+        Ok(Self {
             bin_dir,
             config_file,
             git_dir,
@@ -62,7 +64,7 @@ impl DirPath {
             cache_dir,
             index_dir,
             src_dir,
-        }
+        })
     }
 
     // return path of bin dir

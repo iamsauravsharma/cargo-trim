@@ -1,5 +1,6 @@
 use std::{env, ffi::OsStr, fs, io::Read, path::Path};
 
+use anyhow::{Context, Result};
 use colored::Colorize;
 use serde::{Deserialize, Serialize};
 
@@ -20,19 +21,19 @@ pub(crate) struct ConfigFile {
 
 impl ConfigFile {
     // Perform initial config file actions
-    pub(crate) fn init(app: &clap::ArgMatches, config_file: &Path) -> Self {
+    pub(crate) fn init(app: &clap::ArgMatches, config_file: &Path) -> Result<Self> {
         let mut buffer = String::new();
-        let mut file = fs::File::open(config_file).expect("failed to open config file");
+        let mut file = fs::File::open(config_file).context("failed to open config file")?;
         file.read_to_string(&mut buffer)
-            .expect("failed to read config file");
+            .context("failed to read config file")?;
         if buffer.is_empty() {
             let initial_config = Self::default();
             let serialize = toml::to_string_pretty(&initial_config)
-                .expect("failed to convert ConfigFile to string");
+                .context("failed to convert ConfigFile to string")?;
             buffer.push_str(&serialize)
         }
         let mut deserialize_config: Self =
-            toml::from_str(&buffer).expect("failed to convert string to ConfigFile");
+            toml::from_str(&buffer).context("failed to convert string to ConfigFile")?;
         if app.is_present("config file modifier")
             || app.is_present("init")
             || app.is_present("clear")
@@ -42,9 +43,9 @@ impl ConfigFile {
             if app.is_present("init") {
                 deserialize_config.add_directory(
                     &std::env::current_dir()
-                        .expect("Current working directory is invalid")
+                        .context("Current working directory is invalid")?
                         .to_str()
-                        .expect("failed to convert to str"),
+                        .context("failed to convert current directory to str")?,
                 );
             }
 
@@ -68,9 +69,9 @@ impl ConfigFile {
                 let dry_run = app.is_present("dry run") || subcommand.is_present("dry run");
                 deserialize_config.remove_directory(
                     std::env::current_dir()
-                        .expect("Current working directory is invalid")
+                        .context("Current working directory is invalid")?
                         .to_str()
-                        .expect("Cannot convert to str"),
+                        .context("Cannot convert current directory to str")?,
                     dry_run,
                 );
             }
@@ -94,10 +95,10 @@ impl ConfigFile {
 
             // save struct in the config file
             let serialized = toml::to_string_pretty(&deserialize_config)
-                .expect("ConfigFile cannot to converted to pretty toml");
+                .context("ConfigFile cannot to converted to pretty toml")?;
             buffer.clear();
             buffer.push_str(&serialized);
-            fs::write(config_file, buffer).expect("Failed to write a value to config file");
+            fs::write(config_file, buffer).context("Failed to write a value to config file")?;
         }
 
         // analyze some env variable before setting value
@@ -121,7 +122,7 @@ impl ConfigFile {
                 deserialize_config.set_scan_target_folder(new_val);
             }
         }
-        deserialize_config
+        Ok(deserialize_config)
     }
 
     // return vector of directory value in config file
@@ -196,19 +197,19 @@ impl ConfigFile {
 
     // List out cargo.toml file present directories by recursively analyze all
     // folder present in directory
-    pub(crate) fn list_cargo_toml(&self, path: &Path) -> CargoTomlLocation {
+    pub(crate) fn list_cargo_toml(&self, path: &Path) -> Result<CargoTomlLocation> {
         let mut cargo_trim_list = CargoTomlLocation::new();
         if path.exists() {
             if path.is_dir() {
                 for entry in std::fs::read_dir(path)
-                    .expect("failed to read directory while trying to find cargo.toml")
+                    .context("failed to read directory while trying to find cargo.toml")?
                 {
-                    let sub = entry.unwrap().path();
+                    let sub = entry?.path();
                     if sub.is_dir() {
                         if self.need_to_be_ignored(path) {
                             continue;
                         }
-                        let kids_list = self.list_cargo_toml(&sub);
+                        let kids_list = self.list_cargo_toml(&sub)?;
                         cargo_trim_list.append(kids_list);
                     }
                     if sub.is_file() && sub.file_name() == Some(OsStr::new("Cargo.toml")) {
@@ -219,7 +220,7 @@ impl ConfigFile {
                 cargo_trim_list.add_path(path.to_path_buf());
             }
         }
-        cargo_trim_list
+        Ok(cargo_trim_list)
     }
 
     // check if directory should be scanned for listing crates or not
