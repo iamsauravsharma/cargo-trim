@@ -18,6 +18,7 @@ keywords = [
 categories = [ "command-line-utilities" ]
 
 [dependencies]
+anyhow = "1.0.40"
 clap = "2.33.3"
 colored = "2.0.0"
 dirs-next = "2.0.0"

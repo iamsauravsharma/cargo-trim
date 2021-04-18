@@ -1,5 +1,7 @@
 use std::{collections::HashMap, fs, path::Path};
 
+use anyhow::{Context, Result};
+
 use crate::utils::get_size;
 
 // stores different crate size and name information
@@ -106,22 +108,22 @@ impl CrateDetail {
     }
 
     // list installed bin
-    pub(crate) fn list_installed_bin(&mut self, bin_dir: &Path) -> Vec<String> {
+    pub(crate) fn list_installed_bin(&mut self, bin_dir: &Path) -> Result<Vec<String>> {
         let mut installed_bin = Vec::new();
         if bin_dir.exists() {
-            for entry in fs::read_dir(bin_dir).expect("failed to read bin directory") {
-                let entry = entry.unwrap().path();
-                let bin_size = get_size(&entry).expect("failed to get size of bin directory");
+            for entry in fs::read_dir(bin_dir).context("failed to read bin directory")? {
+                let entry = entry?.path();
+                let bin_size = get_size(&entry).context("failed to get size of bin directory")?;
                 let file_name = entry
                     .file_name()
-                    .expect("failed to get file name from bin directory");
+                    .context("failed to get file name from bin directory")?;
                 let bin_name = file_name.to_str().unwrap().to_string();
                 self.add_bin(bin_name.clone(), bin_size);
                 installed_bin.push(bin_name)
             }
         }
         installed_bin.sort();
-        installed_bin
+        Ok(installed_bin)
     }
 
     // list all installed registry crates
@@ -129,18 +131,19 @@ impl CrateDetail {
         &mut self,
         src_dir: &Path,
         cache_dir: &Path,
-    ) -> Vec<String> {
+    ) -> Result<Vec<String>> {
         let mut installed_crate_registry = Vec::new();
         // read src dir to get installed crate
         if src_dir.exists() {
-            for entry in fs::read_dir(src_dir).expect("failed to read src directory") {
-                let registry = entry.unwrap().path();
-                for entry in fs::read_dir(registry).expect("failed to read registry folder") {
-                    let entry = entry.unwrap().path();
-                    let crate_size = get_size(&entry).expect("failed to get registry crate size");
+            for entry in fs::read_dir(src_dir).context("failed to read src directory")? {
+                let registry = entry?.path();
+                for entry in fs::read_dir(registry).context("failed to read registry folder")? {
+                    let entry = entry?.path();
+                    let crate_size =
+                        get_size(&entry).context("failed to get registry crate size")?;
                     let file_name = entry
                         .file_name()
-                        .expect("failed to get file name form main entry");
+                        .context("failed to get file name form main entry")?;
                     let crate_name = file_name.to_str().unwrap();
                     self.add_registry_crate_source(crate_name.to_owned(), crate_size);
                     installed_crate_registry.push(crate_name.to_owned());
@@ -149,16 +152,16 @@ impl CrateDetail {
         }
         // read cache dir to get installed crate
         if cache_dir.exists() {
-            for entry in fs::read_dir(cache_dir).expect("failed to read cache dir") {
-                let registry = entry.unwrap().path();
+            for entry in fs::read_dir(cache_dir).context("failed to read cache dir")? {
+                let registry = entry?.path();
                 for entry in
-                    fs::read_dir(registry).expect("failed to read cache dir registry folder")
+                    fs::read_dir(registry).context("failed to read cache dir registry folder")?
                 {
-                    let entry = entry.unwrap().path();
+                    let entry = entry?.path();
                     let file_name = entry
                         .file_name()
-                        .expect("failed to get file name from cache dir");
-                    let crate_size = get_size(&entry).expect("failed to get size");
+                        .context("failed to get file name from cache dir")?;
+                    let crate_size = get_size(&entry).context("failed to get size")?;
                     let crate_name = file_name.to_str().unwrap();
                     let split_name = crate_name.rsplitn(2, '.').collect::<Vec<&str>>();
                     self.add_registry_crate_archive(split_name[1].to_owned(), crate_size);
@@ -168,7 +171,7 @@ impl CrateDetail {
         }
         installed_crate_registry.sort();
         installed_crate_registry.dedup();
-        installed_crate_registry
+        Ok(installed_crate_registry)
     }
 
     // list all installed git crates
@@ -176,23 +179,25 @@ impl CrateDetail {
         &mut self,
         checkout_dir: &Path,
         db_dir: &Path,
-    ) -> Vec<String> {
+    ) -> Result<Vec<String>> {
         let mut installed_crate_git = Vec::new();
         if checkout_dir.exists() {
             // read checkout dir to list crate name in form of crate_name-rev_sha
-            for entry in fs::read_dir(checkout_dir).expect("failed to read checkout directory") {
-                let entry = entry.unwrap().path();
+            for entry in fs::read_dir(checkout_dir).context("failed to read checkout directory")? {
+                let entry = entry?.path();
                 let path = entry.as_path();
                 let file_path = path
                     .file_name()
-                    .expect("failed to obtain checkout directory sub folder file name");
+                    .context("failed to obtain checkout directory sub folder file name")?;
                 for git_sha_entry in
-                    fs::read_dir(path).expect("failed to read checkout dir sub folder")
+                    fs::read_dir(path).context("failed to read checkout dir sub folder")?
                 {
-                    let git_sha_entry = git_sha_entry.unwrap().path();
-                    let crate_size = get_size(&git_sha_entry).expect("failed to get folder size");
-                    let git_sha_file_name =
-                        git_sha_entry.file_name().expect("failed to get file name");
+                    let git_sha_entry = git_sha_entry?.path();
+                    let crate_size =
+                        get_size(&git_sha_entry).context("failed to get folder size")?;
+                    let git_sha_file_name = git_sha_entry
+                        .file_name()
+                        .context("failed to get file name")?;
                     let git_sha = git_sha_file_name.to_str().unwrap();
                     let file_name = file_path.to_str().unwrap();
                     let split_name = file_name.rsplitn(2, '-').collect::<Vec<&str>>();
@@ -204,10 +209,11 @@ impl CrateDetail {
         }
         // read a database directory to list a git crate in form of crate_name-HEAD
         if db_dir.exists() {
-            for entry in fs::read_dir(db_dir).expect("failed to read db dir") {
-                let entry = entry.unwrap().path();
-                let crate_size = get_size(&entry).expect("failed to get size of db dir folders");
-                let file_name = entry.file_name().expect("failed to get file name");
+            for entry in fs::read_dir(db_dir).context("failed to read db dir")? {
+                let entry = entry?.path();
+                let crate_size =
+                    get_size(&entry).context("failed to get size of db dir folders")?;
+                let file_name = entry.file_name().context("failed to get file name")?;
                 let file_name = file_name.to_str().unwrap();
                 let split_name = file_name.rsplitn(2, '-').collect::<Vec<&str>>();
                 let full_name = format!("{}-HEAD", split_name[1]);
@@ -217,7 +223,7 @@ impl CrateDetail {
         }
         installed_crate_git.sort();
         installed_crate_git.dedup();
-        installed_crate_git
+        Ok(installed_crate_git)
     }
 }
 

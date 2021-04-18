@@ -1,5 +1,6 @@
 use std::{fs, path::Path};
 
+use anyhow::Result;
 use colored::Colorize;
 
 use crate::{utils::delete_folder, CrateDetail};
@@ -58,7 +59,7 @@ impl<'a> GitDir<'a> {
 }
 
 // preform remove operation
-fn remove_crate(location: &Path, crate_name: &str, dry_run: bool) -> std::io::Result<()> {
+fn remove_crate(location: &Path, crate_name: &str, dry_run: bool) -> Result<()> {
     for entry in fs::read_dir(location)? {
         let path = entry?.path();
         // split directory name to split crate and rev sha

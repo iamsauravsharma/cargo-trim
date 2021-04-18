@@ -3,6 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use anyhow::{Context, Result};
 use serde::Deserialize;
 
 use crate::{
@@ -86,7 +87,7 @@ impl CrateList {
         dir_path: &DirPath,
         config_file: &ConfigFile,
         crate_detail: &mut CrateDetail,
-    ) -> Self {
+    ) -> Result<Self> {
         let bin_dir = dir_path.bin_dir().as_path();
         let cache_dir = dir_path.cache_dir();
         let src_dir = dir_path.src_dir();
@@ -94,10 +95,10 @@ impl CrateList {
         let db_dir = dir_path.db_dir().as_path();
 
         // list installed crates
-        let installed_bin = crate_detail.list_installed_bin(bin_dir);
+        let installed_bin = crate_detail.list_installed_bin(bin_dir)?;
         let installed_crate_registry =
-            crate_detail.list_installed_crate_registry(src_dir, cache_dir);
-        let installed_crate_git = crate_detail.list_installed_crate_git(checkout_dir, db_dir);
+            crate_detail.list_installed_crate_registry(src_dir, cache_dir)?;
+        let installed_crate_git = crate_detail.list_installed_crate_git(checkout_dir, db_dir)?;
 
         // list old registry crate
         let mut old_crate_registry = Vec::new();
@@ -147,12 +148,12 @@ impl CrateList {
         let mut old_crate_git = Vec::new();
         let mut full_name_list = Vec::new();
         // analyze each crates of db dir and create list of head rev value
-        for crates in fs::read_dir(db_dir).expect("failed to read db dir") {
-            let entry = crates.unwrap().path();
+        for crates in fs::read_dir(db_dir).context("failed to read db dir")? {
+            let entry = crates?.path();
             let path = entry.as_path();
             let file_name = path.file_name().unwrap().to_str().unwrap();
             let name = file_name.rsplitn(2, '-').collect::<Vec<&str>>();
-            let mut rev_value = latest_rev_value(path);
+            let mut rev_value = latest_rev_value(path)?;
             rev_value.retain(|c| c != '\'');
             let full_name = format!("{}-{}", name[1], rev_value);
             full_name_list.push(full_name)
@@ -175,8 +176,9 @@ impl CrateList {
         let config_directory = config_file.directory().clone();
         // read a Cargo.lock file and determine out a used registry and git crate
         for path in &config_directory {
-            let list_cargo_toml = config_file.list_cargo_toml(&Path::new(path));
-            let (mut registry_crate, mut git_crate) = read_content(list_cargo_toml.location_path());
+            let list_cargo_toml = config_file.list_cargo_toml(&Path::new(path))?;
+            let (mut registry_crate, mut git_crate) =
+                read_content(list_cargo_toml.location_path())?;
             cargo_toml_location.append(list_cargo_toml);
             used_crate_registry.append(&mut registry_crate);
             used_crate_git.append(&mut git_crate);
@@ -220,7 +222,7 @@ impl CrateList {
         orphan_crate_git.sort();
         orphan_crate_git.dedup();
 
-        Self {
+        Ok(Self {
             installed_bin,
             installed_crate_registry,
             installed_crate_git,
@@ -231,7 +233,7 @@ impl CrateList {
             orphan_crate_registry,
             orphan_crate_git,
             cargo_toml_location,
-        }
+        })
     }
 
     // provide list of installed bin
@@ -287,7 +289,7 @@ impl CrateList {
 
 // Read out content of cargo.lock file to list out crates present so can be used
 // for orphan clean
-fn read_content(list: &[PathBuf]) -> (Vec<String>, Vec<String>) {
+fn read_content(list: &[PathBuf]) -> Result<(Vec<String>, Vec<String>)> {
     let mut present_crate_registry = Vec::new();
     let mut present_crate_git = Vec::new();
     for lock in list.iter() {
@@ -295,9 +297,9 @@ fn read_content(list: &[PathBuf]) -> (Vec<String>, Vec<String>) {
         lock_folder.push("Cargo.lock");
         if lock_folder.exists() {
             let file_content = std::fs::read_to_string(lock_folder)
-                .expect("failed to read cargo lock content to string");
+                .context("failed to read cargo lock content to string")?;
             let cargo_lock_data: LockData =
-                toml::from_str(&file_content).expect("Failed to convert to Toml format");
+                toml::from_str(&file_content).context("Failed to convert to Toml format")?;
             if let Some(packages) = cargo_lock_data.package() {
                 for package in packages {
                     if let Some(source) = package.source() {
@@ -337,7 +339,7 @@ fn read_content(list: &[PathBuf]) -> (Vec<String>, Vec<String>) {
             }
         }
     }
-    (present_crate_registry, present_crate_git)
+    Ok((present_crate_registry, present_crate_git))
 }
 
 // Function used to remove version from installed_crate_registry list so can be
@@ -352,15 +354,15 @@ fn remove_version(installed_crate_registry: &[String]) -> Vec<(String, String)> 
 }
 
 // get latest commit rev value from git repository
-fn latest_rev_value(path: &Path) -> String {
+fn latest_rev_value(path: &Path) -> Result<String> {
     let output = std::process::Command::new("git")
         .arg("log")
         .arg("--pretty=format:'%h'")
         .arg("--max-count=1")
         .current_dir(path)
         .output()
-        .expect("failed to execute process");
-    std::str::from_utf8(&output.stdout)
-        .expect("stdout is not utf8")
-        .to_string()
+        .context("failed to execute git log command")?;
+    Ok(std::str::from_utf8(&output.stdout)
+        .context("stdout is not utf8")?
+        .to_string())
 }
