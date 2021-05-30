@@ -3,37 +3,34 @@ use std::{fs, path::Path};
 use anyhow::Result;
 use colored::Colorize;
 
-use crate::{utils::delete_folder, CrateDetail};
+use crate::{crate_detail::CrateDetail, utils::delete_folder};
 
 // Store git dir folder information
 pub(crate) struct GitDir<'a> {
     checkout_dir: &'a str,
     db_dir: &'a str,
-    dry_run: bool,
 }
 
 impl<'a> GitDir<'a> {
     // create new GitDir
-    pub(crate) fn new(checkout_dir: &'a Path, db_dir: &'a Path, dry_run: bool) -> Self {
+    pub(crate) fn new(checkout_dir: &'a Path, db_dir: &'a Path) -> Self {
         let checkout_dir = checkout_dir.to_str().unwrap();
         let db_dir = db_dir.to_str().unwrap();
         Self {
             checkout_dir,
             db_dir,
-            dry_run,
         }
     }
 
     // remove crates
-    pub(crate) fn remove_crate(&self, crate_name: &str) {
+    pub(crate) fn remove_crate(&self, crate_name: &str, dry_run: bool) {
         let is_success;
         if crate_name.contains("-HEAD") {
-            is_success = remove_crate(Path::new(&self.db_dir), crate_name, self.dry_run).is_ok();
+            is_success = remove_crate(Path::new(&self.db_dir), crate_name, dry_run).is_ok();
         } else {
-            is_success =
-                remove_crate(Path::new(&self.checkout_dir), crate_name, self.dry_run).is_ok();
+            is_success = remove_crate(Path::new(&self.checkout_dir), crate_name, dry_run).is_ok();
         }
-        if self.dry_run {
+        if dry_run {
             println!(
                 "{} {} {:?}",
                 "Dry run:".color("yellow"),
@@ -48,10 +45,15 @@ impl<'a> GitDir<'a> {
     }
 
     // Remove list of crates
-    pub(crate) fn remove_crate_list(&self, crate_detail: &CrateDetail, list: &[String]) -> f64 {
+    pub(crate) fn remove_crate_list(
+        &self,
+        crate_detail: &CrateDetail,
+        list: &[String],
+        dry_run: bool,
+    ) -> f64 {
         let mut size_cleaned = 0.0;
         for crate_name in list {
-            self.remove_crate(crate_name);
+            self.remove_crate(crate_name, dry_run);
             size_cleaned += crate_detail.find(crate_name, "GIT")
         }
         size_cleaned

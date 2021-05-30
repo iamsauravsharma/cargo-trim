@@ -123,8 +123,8 @@ impl CrateList {
                         // so 0.10.0 will come before 0.9.0. so it need to
                         // be done to properly determine latest version
                         for (common_version, _) in &common_crate_version {
-                            if semver::Version::parse(latest_version)
-                                < semver::Version::parse(common_version)
+                            if semver::Version::parse(latest_version).unwrap()
+                                < semver::Version::parse(common_version).unwrap()
                             {
                                 latest_version = common_version;
                             }
@@ -284,6 +284,30 @@ impl CrateList {
     // list out path of directory which contains cargo lock file
     pub(crate) fn cargo_toml_location(&self) -> &CargoTomlLocation {
         &self.cargo_toml_location
+    }
+
+    // list crates which is both old and orphan
+    pub(crate) fn list_old_orphan_registry(&self) -> Vec<String> {
+        let mut old_orphan_registry = Vec::new();
+        let orphan_list = self.orphan_registry();
+        for crates in self.old_registry() {
+            if orphan_list.contains(crates) {
+                old_orphan_registry.push(crates.to_string())
+            }
+        }
+        old_orphan_registry
+    }
+
+    // list out git crates which is both old and orphan
+    pub(crate) fn list_old_orphan_git(&self) -> Vec<String> {
+        let mut old_orphan_git = Vec::new();
+        let orphan_list = self.orphan_git();
+        for crates in self.old_git() {
+            if orphan_list.contains(crates) {
+                old_orphan_git.push(crates.to_string())
+            }
+        }
+        old_orphan_git
     }
 }
 
