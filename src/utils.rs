@@ -1,19 +1,7 @@
-use std::{env, fs, path::Path};
+use std::{collections::HashMap, fs, path::Path};
 
 use anyhow::Result;
 use colored::Colorize;
-
-// list all a env variables list in vector form
-pub(crate) fn env_list(variable: &str) -> Vec<String> {
-    let list = env::var(variable);
-    let mut vec_list = Vec::new();
-    if let Ok(name_list) = list {
-        name_list
-            .split_whitespace()
-            .for_each(|name| vec_list.push(name.to_string()));
-    }
-    vec_list
-}
 
 // remove semver version part from crates full name
 pub(crate) fn clear_version_value(full_name: &str) -> (String, String) {
@@ -62,6 +50,21 @@ pub(crate) fn delete_folder(path: &Path, dry_run: bool) -> Result<()> {
     Ok(())
 }
 
+// delete index .cache file
+pub(crate) fn delete_index_cache(index_dir: &Path, dry_run: bool) -> Result<()> {
+    for entry in fs::read_dir(index_dir)? {
+        let registry_dir = entry?.path();
+        for folder in fs::read_dir(registry_dir)? {
+            let folder = folder?.path();
+            let folder_name = folder.file_name().unwrap();
+            if folder_name == ".cache" {
+                delete_folder(&folder, dry_run)?;
+            }
+        }
+    }
+    Ok(())
+}
+
 //  get size of directory
 pub(crate) fn get_size(path: &Path) -> Result<u64> {
     let mut total_size = 0;
@@ -104,24 +107,113 @@ pub(crate) fn convert_pretty(num: u64) -> String {
     format!("{} {}", pretty_bytes, unit)
 }
 
+// show title
+pub(crate) fn show_title(
+    title: &str,
+    first_path_len: usize,
+    second_path_len: usize,
+    dash_len: usize,
+) {
+    print_dash(dash_len);
+    println!(
+        "|{:^first_width$}|{:^second_width$}|",
+        title.bold(),
+        "SIZE(MB)".bold(),
+        first_width = first_path_len,
+        second_width = second_path_len
+    );
+    print_dash(dash_len);
+}
+
+// show total count using data and size
+pub(crate) fn show_total_count(
+    data: &[String],
+    size: f64,
+    first_path_len: usize,
+    second_path_len: usize,
+    dash_len: usize,
+) {
+    if data.is_empty() {
+        println!(
+            "|{:^first_width$}|{:^second_width$}|",
+            "NONE".color("red"),
+            "0.000".color("red"),
+            first_width = first_path_len,
+            second_width = second_path_len,
+        );
+    }
+    print_dash(dash_len);
+    println!(
+        "|{:^first_width$}|{:^second_width$}|",
+        format!("Total no of crates:- {}", data.len()).color("blue"),
+        format!("{:.3}", size).color("blue"),
+        first_width = first_path_len,
+        second_width = second_path_len,
+    );
+    print_dash(dash_len);
+}
+
+// print dash
+pub(crate) fn print_dash(len: usize) {
+    println!("{}", "-".repeat(len).color("green"));
+}
+
+// top_crates() help to list out top n crates
+pub(crate) fn show_top_number_crates(
+    crates: &HashMap<String, u64>,
+    crate_type: &str,
+    number: usize,
+) {
+    // sort crates by size
+    let mut vector = crates.iter().collect::<Vec<_>>();
+    vector.sort_by(|a, b| (b.1).cmp(a.1));
+    let top_number = std::cmp::min(vector.len(), number);
+    let title = format!("Top {} {}", top_number, crate_type);
+    let first_path_len = 40;
+    let second_path_len = 10;
+    let dash_len = first_path_len + second_path_len + 3;
+    show_title(title.as_str(), first_path_len, second_path_len, dash_len);
+    // check n size and determine if to print n number of output NONE for 0 crates
+    if vector.is_empty() {
+        println!("|{:^40}|{:^10}|", "NONE".color("red"), "0.000".color("red"));
+    } else {
+        (0..top_number).for_each(|i| print_index_value_crate(&vector, i));
+    }
+    print_dash(dash_len);
+}
+
+// print crate name
+#[allow(clippy::cast_precision_loss)]
+pub(crate) fn print_index_value_crate(vector: &[(&String, &u64)], i: usize) {
+    let crate_name = vector[i].0;
+    let size = vector[i].1;
+    let size = (*size as f64) / 1000_f64.powi(2);
+    println!("|{:^40}|{:^10.3}|", crate_name, size);
+}
+
+fn query_param_widths() -> (usize, usize) {
+    (50, 10)
+}
+
+pub(crate) fn query_full_width() -> usize {
+    let (a, b) = query_param_widths();
+    a + b + 1
+}
+
+pub(crate) fn query_print(first_param: &str, second_param: &str) {
+    let (first_path_width, second_path_width) = query_param_widths();
+    println!(
+        "{:first_width$} {:>second_width$}",
+        first_param,
+        second_param,
+        first_width = first_path_width,
+        second_width = second_path_width
+    );
+}
+
 #[cfg(test)]
 mod test {
-    use super::{clear_version_value, convert_pretty, env_list};
-
-    #[test]
-    fn test_env_list() {
-        std::env::set_var("SAMPLE_ENV", "MULTIPLE LIST OF VALUE");
-        assert_eq!(
-            env_list("SAMPLE_ENV"),
-            vec![
-                "MULTIPLE".to_string(),
-                "LIST".to_string(),
-                "OF".to_string(),
-                "VALUE".to_string()
-            ]
-        );
-        assert!(env_list("RANDOM_ENV").is_empty());
-    }
+    use super::{clear_version_value, convert_pretty};
 
     #[test]
     fn test_clear_version_value() {

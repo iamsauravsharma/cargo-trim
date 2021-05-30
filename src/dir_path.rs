@@ -20,7 +20,7 @@ pub(crate) struct DirPath {
 
 impl DirPath {
     // set directory path
-    pub(crate) fn set_dir_path() -> Result<Self> {
+    pub(crate) fn new() -> Result<Self> {
         // set config file directory path
         let config_dir = dirs_next::config_dir().context("Cannot get config directory location")?;
         // if config dir not exists create

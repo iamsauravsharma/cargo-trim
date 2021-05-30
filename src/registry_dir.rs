@@ -4,8 +4,8 @@ use anyhow::{Context, Result};
 use colored::Colorize;
 
 use crate::{
+    crate_detail::CrateDetail,
     utils::{clear_version_value, delete_folder},
-    CrateDetail,
 };
 
 // Stores .cargo/registry cache & src information
@@ -14,7 +14,6 @@ pub(crate) struct RegistryDir<'a> {
     src_dir: &'a str,
     index_cache_dir: Vec<String>,
     installed_crate: Vec<String>,
-    dry_run: bool,
 }
 
 impl<'a> RegistryDir<'a> {
@@ -24,7 +23,6 @@ impl<'a> RegistryDir<'a> {
         src_dir: &'a Path,
         index_dir: &Path,
         installed_crate: &[String],
-        dry_run: bool,
     ) -> Result<Self> {
         let cache_dir = cache_dir.to_str().unwrap();
         let src_dir = src_dir.to_str().unwrap();
@@ -49,18 +47,17 @@ impl<'a> RegistryDir<'a> {
             src_dir,
             index_cache_dir,
             installed_crate: installed_crate.to_owned(),
-            dry_run,
         })
     }
 
     // Remove crate from src & cache directory
-    pub(crate) fn remove_crate(&mut self, crate_name: &str) {
+    pub(crate) fn remove_crate(&mut self, crate_name: &str, dry_run: bool) {
         let mut is_success;
         // remove crate from cache dir
-        is_success = remove_crate(Path::new(&self.cache_dir), crate_name, self.dry_run).is_ok();
+        is_success = remove_crate(Path::new(&self.cache_dir), crate_name, dry_run).is_ok();
         // remove crate from index dir
         is_success =
-            remove_crate(Path::new(&self.src_dir), crate_name, self.dry_run).is_ok() && is_success;
+            remove_crate(Path::new(&self.src_dir), crate_name, dry_run).is_ok() && is_success;
         let split_value = clear_version_value(crate_name);
         let name = split_value.0;
         let index_cache = self.index_cache_dir.clone();
@@ -70,17 +67,15 @@ impl<'a> RegistryDir<'a> {
         for index_cache_dir in &index_cache {
             let same_name_list = self.installed_crate.iter().filter(|&x| x.contains(&name));
             if same_name_list.count() == 1 {
-                is_success =
-                    remove_index_cache(Path::new(&index_cache_dir), crate_name, self.dry_run)
-                        .is_ok()
-                        && is_success;
+                is_success = remove_index_cache(Path::new(&index_cache_dir), crate_name, dry_run)
+                    .is_ok()
+                    && is_success;
             }
-            is_success = remove_empty_index_cache_dir(Path::new(&index_cache_dir), self.dry_run)
-                .is_ok()
+            is_success = remove_empty_index_cache_dir(Path::new(&index_cache_dir), dry_run).is_ok()
                 && is_success;
             self.installed_crate.retain(|x| x != crate_name);
         }
-        if self.dry_run {
+        if dry_run {
             println!(
                 "{} {} {:?}",
                 "Dry run:".color("yellow"),
@@ -98,10 +93,15 @@ impl<'a> RegistryDir<'a> {
     }
 
     // Remove list of crates
-    pub(crate) fn remove_crate_list(&mut self, crate_detail: &CrateDetail, list: &[String]) -> f64 {
+    pub(crate) fn remove_crate_list(
+        &mut self,
+        crate_detail: &CrateDetail,
+        list: &[String],
+        dry_run: bool,
+    ) -> f64 {
         let mut size_cleaned = 0.0;
         for crate_name in list {
-            self.remove_crate(crate_name);
+            self.remove_crate(crate_name, dry_run);
             size_cleaned += crate_detail.find(crate_name, "REGISTRY")
         }
         size_cleaned

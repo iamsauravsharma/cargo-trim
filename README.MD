@@ -45,30 +45,28 @@ Saurav Sharma <appdroiddeveloper@gmail.com>
 Binary application to cleanup $CARGO_HOME cache
 
 USAGE:
-    cargo trim [FLAGS] [OPTIONS] [SUBCOMMAND]
+    cargo-trim [FLAGS] [OPTIONS] [SUBCOMMAND]
 
 FLAGS:
-    -a, --all                 Clean up all registry & git crates
-    -n, --dry-run             Run command in dry run mode to see what would be removed
-    -h, --help                Prints help information
-    -l, --light               Light cleanup repo by removing git checkout and registry source but stores git db and
-                              registry archive for future compilation without internet requirement
-    -o, --old-clean           Clean old cache crates
-    -z, --old-orphan-clean    Clean crates which is both old and orphan
-    -x, --orphan-clean        Clean orphan cache crates i.e all crates which are not present in lock file generated till
-                              now use cargo trim -u to guarantee your all project generate lock file
-    -q, --query               Return size of different .cargo/cache folders
-    -u, --update              Generate and Update Cargo.lock file present inside config directory folder path
-    -V, --version             Prints version information
+    -a, --all           Clean up all registry & git crates
+    -n, --dry-run       Run command in dry run mode to see what would be done
+    -h, --help          Prints help information
+    -l, --light         Light cleanup repo by removing git checkout and registry source but stores git db and registry
+                        archive for future compilation without internet requirement
+    -o, --old           Clean old cache crates
+    -z, --old-orphan    Clean crates which is both old and orphan
+    -x, --orphan        Clean orphan cache crates i.e all crates which are not present in lock file generated till now
+                        use cargo trim -u to guarantee your all project generate lock file
+    -q, --query         Return size of different .cargo/cache folders
+    -u, --update        Generate and Update Cargo.lock file present inside config directory folder path
+    -V, --version       Prints version information
 
 OPTIONS:
-    -d, --directory <directory>...    Set directory of Rust project [use TRIM_DIRECTORY environment variable for
-                                      creating directory list without editing configuration file]
-    -g, --gc <git compress>           Git compress to reduce size of .cargo [possible values: all, index, git, git-
+    -d, --directory <directory>...    Set directory of Rust project [env: TRIM_DIRECTORY=]
+    -g, --gc <git-compress>           Git compress to reduce size of .cargo [possible values: all, index, git, git-
                                       checkout, git-db]
     -i, --ignore <file>...            Add file name/directory name to ignore list in configuration file which are
-                                      ignored while scanning Cargo.toml file [use TRIM_IGNORE_FILE_NAME environment
-                                      variable for creating ignore file name list without editing configuration file]
+                                      ignored while scanning Cargo.toml file [env: TRIM_IGNORE=]
     -r, --remove <crate>...           Remove provided crates from registry or git
     -t, --top <number>                Show certain number of top crates which have highest size
     -w, --wipe <folder>...            Wipe folder [possible values: git, checkouts, db, registry, cache, index, index-
@@ -92,18 +90,18 @@ To list where cargo trim is storing config file you can use `cargo trim config -
 Below are a list of configuration and their default value a well as corresponding env variable that can be used for setting
 same value without editing config file
 
-##### 1. directory (default: [], env: TRIM_DIRECTORY)
+##### 1. directory (default: [])
 List of directory to scan for a Rust projects
 
-##### 2. __ignore_file_name__ (default: [], env: TRIM_IGNORE_FILE_NAME)
+##### 2. __ignore_file_name__ (default: [])
 File/Directory name which should be ignored while scanning through directories. This can be used to exclude some folder
 such as npm node_modules folder or python venv folder if the directory present in config contains such folder it will help
 to significantly increase performance.
 
-##### 3. __scan_hidden_folder__ (default: false. env: TRIM_SCAN_HIDDEN_FOLDER)
+##### 3. __scan_hidden_folder__ (default: false)
 Whether to scan hidden folder(i.e. folder which start with dot notation) or not
 
-##### 4. __scan_target_folder__ (default: false, env: TRIM_SCAN_TARGET_FOLDER)
+##### 4. __scan_target_folder__ (default: false)
 Whether to scan target folder. Currently, it searches for environment variable `CARGO_BUILD_TARGET_DIR` or `CARGO_TARGET_DIR`
 or set default value as target to determine a target folder name
 
