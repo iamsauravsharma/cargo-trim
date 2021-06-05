@@ -84,7 +84,7 @@ impl Registry {
             let light_cleanup_success =
                 light_cleanup_registry(dir_path.src_dir(), dir_path.index_dir(), dry_run);
             if !light_cleanup_success {
-                println!("Failed to delete some folder during light cleanup")
+                println!("Failed to delete some folder during light cleanup");
             }
         }
         if let Some(number) = self.top {
@@ -200,9 +200,9 @@ impl Registry {
         if let Some(crates) = &self.remove {
             remove_crates(
                 crates,
-                &crate_list,
+                crate_list,
                 registry_crates_location,
-                &crate_detail,
+                crate_detail,
                 dry_run,
             );
         }
@@ -352,9 +352,9 @@ fn remove_crates(
 ) {
     let mut size_cleaned = 0.0;
     for crate_name in crates {
-        if crate_list.installed_registry().contains(&crate_name) {
-            registry_crates_location.remove_crate(&crate_name, dry_run);
-            size_cleaned += crate_detail.find_size_registry_all(&crate_name);
+        if crate_list.installed_registry().contains(crate_name) {
+            registry_crates_location.remove_crate(crate_name, dry_run);
+            size_cleaned += crate_detail.find_size_registry_all(crate_name);
         }
     }
     println!(

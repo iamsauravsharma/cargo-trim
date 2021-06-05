@@ -137,7 +137,7 @@ impl CrateList {
                             }
                         }
                     }
-                    common_crate_version = Vec::new()
+                    common_crate_version = Vec::new();
                 }
             }
         }
@@ -156,7 +156,7 @@ impl CrateList {
             let mut rev_value = latest_rev_value(path)?;
             rev_value.retain(|c| c != '\'');
             let full_name = format!("{}-{}", name[1], rev_value);
-            full_name_list.push(full_name)
+            full_name_list.push(full_name);
         }
         for crate_name in &installed_crate_git {
             if !crate_name.contains("-HEAD") {
@@ -176,7 +176,7 @@ impl CrateList {
         let config_directory = config_file.directory().clone();
         // read a Cargo.lock file and determine out a used registry and git crate
         for path in &config_directory {
-            let list_cargo_toml = config_file.list_cargo_toml(&Path::new(path))?;
+            let list_cargo_toml = config_file.list_cargo_toml(Path::new(path))?;
             let (mut registry_crate, mut git_crate) =
                 read_content(list_cargo_toml.location_path())?;
             cargo_toml_location.append(list_cargo_toml);
@@ -292,7 +292,7 @@ impl CrateList {
         let orphan_list = self.orphan_registry();
         for crates in self.old_registry() {
             if orphan_list.contains(crates) {
-                old_orphan_registry.push(crates.to_string())
+                old_orphan_registry.push(crates.to_string());
             }
         }
         old_orphan_registry
@@ -304,7 +304,7 @@ impl CrateList {
         let orphan_list = self.orphan_git();
         for crates in self.old_git() {
             if orphan_list.contains(crates) {
-                old_orphan_git.push(crates.to_string())
+                old_orphan_git.push(crates.to_string());
             }
         }
         old_orphan_git

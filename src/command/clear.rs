@@ -22,6 +22,7 @@ impl Clear {
                 .to_str()
                 .context("Cannot convert current directory to str")?,
             self.dry_run,
+            true,
         )?;
         Ok(())
     }

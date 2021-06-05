@@ -88,7 +88,7 @@ impl<'a> RegistryDir<'a> {
             println!(
                 "Partially failed to remove some directory and file of {:?}",
                 crate_name
-            )
+            );
         }
     }
 
@@ -102,7 +102,7 @@ impl<'a> RegistryDir<'a> {
         let mut size_cleaned = 0.0;
         for crate_name in list {
             self.remove_crate(crate_name, dry_run);
-            size_cleaned += crate_detail.find(crate_name, "REGISTRY")
+            size_cleaned += crate_detail.find(crate_name, "REGISTRY");
         }
         size_cleaned
     }
@@ -160,7 +160,7 @@ fn remove_empty_index_cache_dir(path: &Path, dry_run: bool) -> Result<()> {
         .map(|mut i| i.next().is_none())
         .unwrap_or(false)
     {
-        delete_folder(&path, dry_run)?
+        delete_folder(path, dry_run)?;
     } else {
         for entry in path.read_dir()? {
             let path = entry?.path();

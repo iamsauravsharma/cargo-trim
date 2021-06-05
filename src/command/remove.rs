@@ -33,12 +33,12 @@ impl Remove {
             for directory in directories {
                 let path_separator = std::path::MAIN_SEPARATOR;
                 let path = directory.trim_end_matches(path_separator);
-                config_file.remove_directory(path, dry_run)?;
+                config_file.remove_directory(path, dry_run, true)?;
             }
         }
         if let Some(files) = &self.ignore {
             for file in files {
-                config_file.remove_ignore_file_name(file, dry_run)?;
+                config_file.remove_ignore_file_name(file, dry_run, true)?;
             }
         }
 

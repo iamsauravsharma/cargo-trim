@@ -38,7 +38,7 @@ impl ConfigFile {
             let initial_config = Self::default();
             let serialize = toml::to_string_pretty(&initial_config)
                 .context("failed to convert Config to string")?;
-            buffer.push_str(&serialize)
+            buffer.push_str(&serialize);
         }
         let mut deserialize_config: Self =
             toml::from_str(&buffer).context("failed to convert string to Config")?;
@@ -67,31 +67,50 @@ impl ConfigFile {
     }
 
     // add directory
-    pub(crate) fn add_directory(&mut self, path: &str, dry_run: bool) -> Result<()> {
+    pub(crate) fn add_directory(
+        &mut self,
+        path: &str,
+        dry_run: bool,
+        save_to_config_file: bool,
+    ) -> Result<()> {
         if dry_run {
             println!("{} Added {:?}", "Dry run:".color("yellow"), path);
         } else {
             self.directory.push(path.to_string());
-            self.save_to_config_file()?;
+            if save_to_config_file {
+                self.save_to_config_file()?;
+            }
             println!("{} {:?}", "Added".color("red"), path);
         }
         Ok(())
     }
 
     // add ignore file name
-    pub(crate) fn add_ignore_file_name(&mut self, file_name: &str, dry_run: bool) -> Result<()> {
+    pub(crate) fn add_ignore_file_name(
+        &mut self,
+        file_name: &str,
+        dry_run: bool,
+        save_to_config_file: bool,
+    ) -> Result<()> {
         if dry_run {
             println!("{} Added {:?}", "Dry run:".color("yellow"), file_name);
         } else {
             self.ignore_file_name.push(file_name.to_string());
-            self.save_to_config_file()?;
+            if save_to_config_file {
+                self.save_to_config_file()?;
+            }
             println!("{} {:?}", "Added".color("red"), file_name);
         }
         Ok(())
     }
 
     // remove directory
-    pub(crate) fn remove_directory(&mut self, path: &str, dry_run: bool) -> Result<()> {
+    pub(crate) fn remove_directory(
+        &mut self,
+        path: &str,
+        dry_run: bool,
+        save_to_config_file: bool,
+    ) -> Result<()> {
         if dry_run {
             println!(
                 "{} {} {:?}",
@@ -101,14 +120,21 @@ impl ConfigFile {
             );
         } else {
             self.directory.retain(|data| data != path);
-            self.save_to_config_file()?;
+            if save_to_config_file {
+                self.save_to_config_file()?;
+            }
             println!("{} {:?}", "Removed".color("red"), path);
         }
         Ok(())
     }
 
     // remove ignore file name
-    pub(crate) fn remove_ignore_file_name(&mut self, file_name: &str, dry_run: bool) -> Result<()> {
+    pub(crate) fn remove_ignore_file_name(
+        &mut self,
+        file_name: &str,
+        dry_run: bool,
+        save_to_config_file: bool,
+    ) -> Result<()> {
         if dry_run {
             println!(
                 "{} {} {:?}",
@@ -118,7 +144,9 @@ impl ConfigFile {
             );
         } else {
             self.ignore_file_name.retain(|data| data != file_name);
-            self.save_to_config_file()?;
+            if save_to_config_file {
+                self.save_to_config_file()?;
+            }
             println!("{} {:?}", "Removed".color("red"), file_name);
         }
         Ok(())

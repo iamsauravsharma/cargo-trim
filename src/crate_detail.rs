@@ -47,22 +47,22 @@ impl CrateDetail {
 
     // add git crate source information to CrateDetail
     fn add_git_crate_source(&mut self, crate_name: String, size: u64) {
-        add_crate_to_hash_map(&mut self.git_crates_source, crate_name, size)
+        add_crate_to_hash_map(&mut self.git_crates_source, crate_name, size);
     }
 
     // add registry crate source information to CrateDetail
     fn add_registry_crate_source(&mut self, crate_name: String, size: u64) {
-        add_crate_to_hash_map(&mut self.registry_crates_source, crate_name, size)
+        add_crate_to_hash_map(&mut self.registry_crates_source, crate_name, size);
     }
 
     // add git crate archive information to CrateDetail
     fn add_git_crate_archive(&mut self, crate_name: String, size: u64) {
-        add_crate_to_hash_map(&mut self.git_crates_archive, crate_name, size)
+        add_crate_to_hash_map(&mut self.git_crates_archive, crate_name, size);
     }
 
     // add registry crate archive information to CrateDetail
     fn add_registry_crate_archive(&mut self, crate_name: String, size: u64) {
-        add_crate_to_hash_map(&mut self.registry_crates_archive, crate_name, size)
+        add_crate_to_hash_map(&mut self.registry_crates_archive, crate_name, size);
     }
 
     // find size of certain git crate source in KB
@@ -119,7 +119,7 @@ impl CrateDetail {
                     .context("failed to get file name from bin directory")?;
                 let bin_name = file_name.to_str().unwrap().to_string();
                 self.add_bin(bin_name.clone(), bin_size);
-                installed_bin.push(bin_name)
+                installed_bin.push(bin_name);
             }
         }
         installed_bin.sort();

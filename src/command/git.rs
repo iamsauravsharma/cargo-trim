@@ -83,7 +83,7 @@ impl Git {
         if self.light_cleanup {
             let light_cleanup_success = light_cleanup_git(dir_path.checkout_dir(), dry_run);
             if !light_cleanup_success {
-                println!("Failed to delete some folder during light cleanup")
+                println!("Failed to delete some folder during light cleanup");
             }
         }
 
@@ -197,9 +197,9 @@ impl Git {
         if let Some(crates) = &self.remove {
             remove_crates(
                 crates,
-                &crate_list,
+                crate_list,
                 git_crates_location,
-                &crate_detail,
+                crate_detail,
                 dry_run,
             );
         }
@@ -317,9 +317,9 @@ fn remove_crates(
 ) {
     let mut size_cleaned = 0.0;
     for crate_name in crates {
-        if crate_list.installed_git().contains(&crate_name) {
-            git_crates_location.remove_crate(&crate_name, dry_run);
-            size_cleaned += crate_detail.find_size_git_all(&crate_name);
+        if crate_list.installed_git().contains(crate_name) {
+            git_crates_location.remove_crate(crate_name, dry_run);
+            size_cleaned += crate_detail.find_size_git_all(crate_name);
         }
     }
     println!(

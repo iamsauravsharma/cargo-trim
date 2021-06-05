@@ -172,28 +172,28 @@ impl Command {
                 dir_path.src_dir(),
                 dir_path.index_dir(),
                 dry_run,
-            )
+            );
         }
         if let Some(folders) = &self.wipe {
             for folder in folders {
-                wipe_directory(folder, &dir_path, dry_run)
+                wipe_directory(folder, &dir_path, dry_run);
             }
         }
         if let Some(directories) = &self.directory {
             let path_separator = std::path::MAIN_SEPARATOR;
             for directory in directories {
                 let path = directory.trim_end_matches(path_separator);
-                config_file.add_directory(path, dry_run)?;
+                config_file.add_directory(path, dry_run, true)?;
             }
         }
         if let Some(ignores) = &self.ignore {
             for ignore in ignores {
-                config_file.add_ignore_file_name(ignore, dry_run)?;
+                config_file.add_ignore_file_name(ignore, dry_run, true)?;
             }
         }
 
         if let Some(number) = self.top {
-            top_crates(&crate_detail, number)
+            top_crates(&crate_detail, number);
         }
 
         if self.update {
@@ -206,14 +206,14 @@ impl Command {
         }
 
         let mut registry_crates_location = crate::registry_dir::RegistryDir::new(
-            &dir_path.cache_dir(),
-            &dir_path.src_dir(),
-            &dir_path.index_dir(),
+            dir_path.cache_dir(),
+            dir_path.src_dir(),
+            dir_path.index_dir(),
             crate_list.installed_registry(),
         )?;
 
         let git_crates_location =
-            crate::git_dir::GitDir::new(&dir_path.checkout_dir(), &dir_path.db_dir());
+            crate::git_dir::GitDir::new(dir_path.checkout_dir(), dir_path.db_dir());
 
         if self.old {
             old_clean(
@@ -336,7 +336,7 @@ fn git_compress(
                     if !dry_run {
                         println!("{}", "Compressing git checkout".color("blue"));
                     }
-                    run_git_compress_commands(&rev_path, dry_run)
+                    run_git_compress_commands(&rev_path, dry_run);
                 }
             }
         }
@@ -433,7 +433,7 @@ fn light_cleanup(checkout_dir: &Path, src_dir: &Path, index_dir: &Path, dry_run:
     // light cleanup git
     light_cleanup_success = git::light_cleanup_git(checkout_dir, dry_run) && light_cleanup_success;
     if !light_cleanup_success {
-        println!("Failed to delete some folder during light cleanup")
+        println!("Failed to delete some folder during light cleanup");
     }
 }
 
@@ -480,7 +480,7 @@ fn update_cargo_toml(cargo_toml_location: &[PathBuf], dry_run: bool) -> Result<(
                     "{} Updating lockfile at path {:?}",
                     "Dry run:".color("yellow"),
                     location
-                )
+                );
             } else {
                 let message = format!("Updating {}", cargo_lock.to_str().unwrap().color("blue"));
                 println!("{}", message);
@@ -685,14 +685,14 @@ fn remove_crates(
 ) {
     let mut size_cleaned = 0.0;
     for crate_name in crates {
-        if crate_list.installed_registry().contains(&crate_name) {
-            registry_crates_location.remove_crate(&crate_name, dry_run);
-            size_cleaned += crate_detail.find_size_registry_all(&crate_name);
+        if crate_list.installed_registry().contains(crate_name) {
+            registry_crates_location.remove_crate(crate_name, dry_run);
+            size_cleaned += crate_detail.find_size_registry_all(crate_name);
         }
 
-        if crate_list.installed_git().contains(&crate_name) {
-            git_crates_location.remove_crate(&crate_name, dry_run);
-            size_cleaned += crate_detail.find_size_git_all(&crate_name);
+        if crate_list.installed_git().contains(crate_name) {
+            git_crates_location.remove_crate(crate_name, dry_run);
+            size_cleaned += crate_detail.find_size_git_all(crate_name);
         }
     }
     println!(

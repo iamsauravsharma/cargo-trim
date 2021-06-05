@@ -40,7 +40,7 @@ impl<'a> GitDir<'a> {
         } else if is_success {
             println!("{} {:?}", "Removed".color("red"), crate_name);
         } else {
-            println!("Failed to remove {:?}", crate_name)
+            println!("Failed to remove {:?}", crate_name);
         }
     }
 
@@ -54,7 +54,7 @@ impl<'a> GitDir<'a> {
         let mut size_cleaned = 0.0;
         for crate_name in list {
             self.remove_crate(crate_name, dry_run);
-            size_cleaned += crate_detail.find(crate_name, "GIT")
+            size_cleaned += crate_detail.find(crate_name, "GIT");
         }
         size_cleaned
     }
@@ -70,13 +70,13 @@ fn remove_crate(location: &Path, crate_name: &str, dry_run: bool) -> Result<()> 
         let rev_sha = name[0];
         if path.to_str().unwrap().contains(crate_name) {
             if rev_sha.contains("HEAD") {
-                delete_folder(&path, dry_run)?
+                delete_folder(&path, dry_run)?;
             } else {
                 for rev in fs::read_dir(path)? {
                     let path = rev?.path();
                     let file_name = path.file_name().unwrap().to_str().unwrap();
                     if file_name == rev_sha {
-                        delete_folder(&path, dry_run)?
+                        delete_folder(&path, dry_run)?;
                     }
                 }
             }
