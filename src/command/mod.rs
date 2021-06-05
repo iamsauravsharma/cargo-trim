@@ -99,7 +99,6 @@ pub(crate) struct Command {
         long = "directory",
         short = "d",
         help = "Set directory of Rust project",
-        env = "TRIM_DIRECTORY",
         use_delimiter = true
     )]
     directory: Option<Vec<String>>,
@@ -109,7 +108,6 @@ pub(crate) struct Command {
         short = "i",
         help = "Add file name/directory name to ignore list in configuration file which are \
                 ignored while scanning Cargo.toml file",
-        env = "TRIM_IGNORE",
         use_delimiter = true,
         value_name = "file"
     )]

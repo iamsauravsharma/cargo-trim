@@ -62,11 +62,11 @@ FLAGS:
     -V, --version       Prints version information
 
 OPTIONS:
-    -d, --directory <directory>...    Set directory of Rust project [env: TRIM_DIRECTORY=]
+    -d, --directory <directory>...    Set directory of Rust project
     -g, --gc <git-compress>           Git compress to reduce size of .cargo [possible values: all, index, git, git-
                                       checkout, git-db]
     -i, --ignore <file>...            Add file name/directory name to ignore list in configuration file which are
-                                      ignored while scanning Cargo.toml file [env: TRIM_IGNORE=]
+                                      ignored while scanning Cargo.toml file
     -r, --remove <crate>...           Remove provided crates from registry or git
     -t, --top <number>                Show certain number of top crates which have highest size
     -w, --wipe <folder>...            Wipe folder [possible values: git, checkouts, db, registry, cache, index, index-

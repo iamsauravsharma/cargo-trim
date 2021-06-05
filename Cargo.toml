@@ -21,7 +21,7 @@ categories = [ "command-line-utilities" ]
 anyhow = "1.0.40"
 colored = "2.0.0"
 dirs-next = "2.0.0"
-semver = "1.0.1"
+semver = "1.0.3"
 serde = { version = "1.0.126", features = [ "derive" ] }
 structopt = "0.3.21"
 toml = "0.5.8"
