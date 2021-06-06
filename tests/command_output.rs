@@ -27,20 +27,6 @@ fn test_list_help() {
     assert!(status.success());
 }
 
-// test check remove subcommand help
-#[test]
-fn test_remove_help() {
-    let status = Command::new("cargo")
-        .arg("run")
-        .arg("--")
-        .arg("trim")
-        .arg("help")
-        .arg("remove")
-        .status()
-        .unwrap();
-    assert!(status.success());
-}
-
 // test check config subcommand help
 #[test]
 fn test_config_help() {
@@ -78,6 +64,34 @@ fn test_registry_help() {
         .arg("trim")
         .arg("help")
         .arg("registry")
+        .status()
+        .unwrap();
+    assert!(status.success());
+}
+
+// test check set subcommand help
+#[test]
+fn test_set_help() {
+    let status = Command::new("cargo")
+        .arg("run")
+        .arg("--")
+        .arg("trim")
+        .arg("help")
+        .arg("set")
+        .status()
+        .unwrap();
+    assert!(status.success());
+}
+
+// test check unset subcommand help
+#[test]
+fn test_unset_help() {
+    let status = Command::new("cargo")
+        .arg("run")
+        .arg("--")
+        .arg("trim")
+        .arg("help")
+        .arg("unset")
         .status()
         .unwrap();
     assert!(status.success());

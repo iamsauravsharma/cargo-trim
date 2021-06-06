@@ -3,8 +3,8 @@ use structopt::{clap::AppSettings, StructOpt};
 
 use crate::config_file::ConfigFile;
 #[derive(Debug, StructOpt)]
-#[structopt(about = "Remove values from config file", settings=&[AppSettings::ArgRequiredElseHelp])]
-pub(crate) struct Remove {
+#[structopt(about = "Unset values from config file", settings=&[AppSettings::ArgRequiredElseHelp])]
+pub(crate) struct Unset {
     #[structopt(
         long = "dry-run",
         short = "n",
@@ -26,7 +26,7 @@ pub(crate) struct Remove {
     ignore: Option<Vec<String>>,
 }
 
-impl Remove {
+impl Unset {
     pub(super) fn run(&self, config_file: &mut ConfigFile) -> Result<()> {
         let dry_run = self.dry_run;
         if let Some(directories) = &self.directory {

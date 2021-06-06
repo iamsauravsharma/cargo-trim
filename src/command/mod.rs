@@ -1,18 +1,12 @@
-use std::{fs, io::Write, path::PathBuf};
+use std::{
+    fs,
+    io::Write,
+    path::{Path, PathBuf},
+};
 
-use anyhow::Context;
+use anyhow::{Context, Result};
 use colored::Colorize;
 use structopt::{clap::AppSettings, StructOpt};
-mod clear;
-mod config;
-mod git;
-mod init;
-mod list;
-mod registry;
-mod remove;
-use std::path::Path;
-
-use anyhow::Result;
 
 use crate::{
     config_file::ConfigFile,
@@ -25,12 +19,22 @@ use crate::{
     utils::{convert_pretty, delete_folder, get_size, print_dash, query_print},
 };
 
+mod clear;
+mod config;
+mod git;
+mod init;
+mod list;
+mod registry;
+mod set;
+mod unset;
+
 #[derive(Debug, StructOpt)]
 enum SubCommand {
     Init(init::Init),
     Clear(clear::Clear),
     Config(config::Config),
-    Remove(remove::Remove),
+    Set(set::Set),
+    Unset(unset::Unset),
     List(list::List),
     Git(git::Git),
     Registry(registry::Registry),
@@ -96,23 +100,6 @@ pub(crate) struct Command {
     )]
     remove: Option<Vec<String>>,
     #[structopt(
-        long = "directory",
-        short = "d",
-        help = "Set directory of Rust project",
-        use_delimiter = true
-    )]
-    directory: Option<Vec<String>>,
-
-    #[structopt(
-        long = "ignore",
-        short = "i",
-        help = "Add file name/directory name to ignore list in configuration file which are \
-                ignored while scanning Cargo.toml file",
-        use_delimiter = true,
-        value_name = "file"
-    )]
-    ignore: Option<Vec<String>>,
-    #[structopt(
         long = "top",
         short = "t",
         help = "Show certain number of top crates which have highest size",
@@ -177,18 +164,6 @@ impl Command {
         if let Some(folders) = &self.wipe {
             for folder in folders {
                 wipe_directory(folder, &dir_path, dry_run);
-            }
-        }
-        if let Some(directories) = &self.directory {
-            let path_separator = std::path::MAIN_SEPARATOR;
-            for directory in directories {
-                let path = directory.trim_end_matches(path_separator);
-                config_file.add_directory(path, dry_run, true)?;
-            }
-        }
-        if let Some(ignores) = &self.ignore {
-            for ignore in ignores {
-                config_file.add_ignore_file_name(ignore, dry_run, true)?;
             }
         }
 
@@ -278,7 +253,8 @@ impl Command {
                     &crate_list,
                     config_file.directory().is_empty(),
                 ),
-                SubCommand::Remove(remove) => remove.run(&mut config_file)?,
+                SubCommand::Set(set) => set.run(&mut config_file)?,
+                SubCommand::Unset(unset) => unset.run(&mut config_file)?,
                 SubCommand::Git(git) => git.run(
                     &dir_path,
                     &crate_list,
