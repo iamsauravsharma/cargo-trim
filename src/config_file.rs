@@ -66,6 +66,52 @@ impl ConfigFile {
         self.scan_target_folder
     }
 
+    // Set scan hidden folder to value
+    pub(crate) fn set_scan_hidden_folder(
+        &mut self,
+        value: bool,
+        dry_run: bool,
+        save_to_config_file: bool,
+    ) -> Result<()> {
+        if dry_run {
+            println!(
+                "{} Set scan_hidden_folder to {:?}",
+                "Dry run:".color("yellow"),
+                value
+            );
+        } else {
+            self.scan_hidden_folder = value;
+            if save_to_config_file {
+                self.save_to_config_file()?;
+            }
+            println!("Set scan_hidden_folder to {:?}", value);
+        }
+        Ok(())
+    }
+
+    // Set scan target folder to value
+    pub(crate) fn set_scan_target_folder(
+        &mut self,
+        value: bool,
+        dry_run: bool,
+        save_to_config_file: bool,
+    ) -> Result<()> {
+        if dry_run {
+            println!(
+                "{} Set scan_target_folder to {:?}",
+                "Dry run:".color("yellow"),
+                value
+            );
+        } else {
+            self.scan_target_folder = value;
+            if save_to_config_file {
+                self.save_to_config_file()?;
+            }
+            println!("Set scan_target_folder to {:?}", value);
+        }
+        Ok(())
+    }
+
     // add directory
     pub(crate) fn add_directory(
         &mut self,

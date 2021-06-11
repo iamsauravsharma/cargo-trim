@@ -25,6 +25,10 @@ pub(crate) struct Set {
         value_name = "file"
     )]
     ignore: Option<Vec<String>>,
+    #[structopt(long = "scan-hidden-folder", help = "Set scan hidden folder as true")]
+    scan_hidden_folder: bool,
+    #[structopt(long = "scan-target-folder", help = "Set scan hidden folder as true")]
+    scan_target_folder: bool,
 }
 
 impl Set {
@@ -41,6 +45,12 @@ impl Set {
             for file in files {
                 config_file.add_ignore_file_name(file, dry_run, true)?;
             }
+        }
+        if self.scan_hidden_folder {
+            config_file.set_scan_hidden_folder(true, dry_run, true)?;
+        }
+        if self.scan_target_folder {
+            config_file.set_scan_target_folder(true, dry_run, true)?;
         }
 
         Ok(())

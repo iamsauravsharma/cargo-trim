@@ -24,6 +24,10 @@ pub(crate) struct Unset {
         value_name = "file"
     )]
     ignore: Option<Vec<String>>,
+    #[structopt(long = "scan-hidden-folder", help = "Set scan hidden folder as false")]
+    scan_hidden_folder: bool,
+    #[structopt(long = "scan-target-folder", help = "Set scan hidden folder as false")]
+    scan_target_folder: bool,
 }
 
 impl Unset {
@@ -40,6 +44,12 @@ impl Unset {
             for file in files {
                 config_file.remove_ignore_file_name(file, dry_run, true)?;
             }
+        }
+        if self.scan_hidden_folder {
+            config_file.set_scan_hidden_folder(false, dry_run, true)?;
+        }
+        if self.scan_target_folder {
+            config_file.set_scan_target_folder(false, dry_run, true)?;
         }
 
         Ok(())
