@@ -88,18 +88,18 @@ To list where cargo trim is storing config file you can use `cargo trim config -
 Below are a list of configuration and their default value a well as corresponding env variable that can be used for setting
 same value without editing config file
 
-##### 1. directory (default: [])
+##### 1. directory (default: []) (env: TRIM_DIRECTORY)
 List of directory to scan for a Rust projects
 
-##### 2. __ignore_file_name__ (default: [])
+##### 2. __ignore_file_name__ (default: []) (env: TRIM_IGNORE)
 File/Directory name which should be ignored while scanning through directories. This can be used to exclude some folder
 such as npm node_modules folder or python venv folder if the directory present in config contains such folder it will help
 to significantly increase performance.
 
-##### 3. __scan_hidden_folder__ (default: false)
+##### 3. __scan_hidden_folder__ (default: false) (env: TRIM_SCAN_HIDDEN_FOLDER)
 Whether to scan hidden folder(i.e. folder which start with dot notation) or not
 
-##### 4. __scan_target_folder__ (default: false)
+##### 4. __scan_target_folder__ (default: false) (env: TRIM_SCAN_TARGET_FOLDER)
 Whether to scan target folder. Currently, it searches for environment variable `CARGO_BUILD_TARGET_DIR` or `CARGO_TARGET_DIR`
 or set default value as target to determine a target folder name
 

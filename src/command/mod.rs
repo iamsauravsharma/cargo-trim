@@ -51,6 +51,14 @@ pub(crate) struct Command {
     #[structopt(long = "all", short = "a", help = "Clean up all registry & git crates")]
     all: bool,
     #[structopt(
+        long = "directory",
+        short = "d",
+        help = "Extra list of directory of Rust projects for current command",
+        env = "TRIM_DIRECTORY",
+        hidden = true
+    )]
+    directory: Option<Vec<String>>,
+    #[structopt(
         long = "dry-run",
         short = "n",
         help = "Run command in dry run mode to see what would be done"
@@ -63,6 +71,14 @@ pub(crate) struct Command {
         possible_values=&["all", "index", "git", "git-checkout", "git-db"]
     )]
     git_compress: Option<String>,
+    #[structopt(
+        long = "ignore",
+        short = "i",
+        help = "Extra list of ignore file name which should be ignored for current command",
+        env = "TRIM_IGNORE",
+        hidden = true
+    )]
+    ignore: Option<Vec<String>>,
     #[structopt(
         long = "light",
         short = "l",
@@ -99,6 +115,22 @@ pub(crate) struct Command {
         value_name = "crate"
     )]
     remove: Option<Vec<String>>,
+    #[structopt(
+        long = "scan-hidden-folder",
+        help = " Whether to scan hidden folder for current command",
+        possible_values = &["true", "false"],
+        env = "TRIM_SCAN_HIDDEN_FOLDER",
+        hidden = true
+    )]
+    scan_hidden_folder: Option<String>,
+    #[structopt(
+        long = "scan-target-folder",
+        help = "Whether to scan target folder for current command",
+        possible_values = &["true", "false"],
+        env = "TRIM_SCAN_TARGET_FOLDER",
+        hidden = true
+    )]
+    scan_target_folder: Option<String>,
     #[structopt(
         long = "top",
         short = "t",
@@ -143,6 +175,31 @@ impl Command {
         // List out crates
         let crate_list =
             crate::list_crate::CrateList::create_list(&dir_path, &config_file, &mut crate_detail)?;
+
+        if let Some(directories) = &self.directory {
+            for directory in directories {
+                config_file.add_directory(directory, dry_run, false)?;
+            }
+        }
+        if let Some(ignore_file_names) = &self.ignore {
+            for file in ignore_file_names {
+                config_file.add_ignore_file_name(file, dry_run, false)?;
+            }
+        }
+        if let Some(scan_hidden_folder) = &self.scan_hidden_folder {
+            match scan_hidden_folder.as_str() {
+                "true" => config_file.set_scan_hidden_folder(true, dry_run, false)?,
+                "false" => config_file.set_scan_hidden_folder(false, dry_run, false)?,
+                _ => (),
+            }
+        }
+        if let Some(scan_target_folder) = &self.scan_target_folder {
+            match scan_target_folder.as_str() {
+                "true" => config_file.set_scan_target_folder(true, dry_run, false)?,
+                "false" => config_file.set_scan_target_folder(false, dry_run, false)?,
+                _ => (),
+            }
+        }
 
         if let Some(val) = &self.git_compress {
             git_compress(
