@@ -51,23 +51,20 @@ FLAGS:
     -a, --all           Clean up all registry & git crates
     -n, --dry-run       Run command in dry run mode to see what would be done
     -h, --help          Prints help information
-    -l, --light         Light cleanup repo by removing git checkout and registry source but stores git db and registry
-                        archive for future compilation without internet requirement
+    -l, --light         Light cleanup repo by removing git checkout and registry source but stores git db and registry archive for future compilation without internet requirement
     -o, --old           Clean old cache crates
     -z, --old-orphan    Clean crates which is both old and orphan
-    -x, --orphan        Clean orphan cache crates i.e all crates which are not present in lock file generated till now
-                        use cargo trim -u to guarantee your all project generate lock file
+    -x, --orphan        Clean orphan cache crates i.e all crates which are not present in lock file generated till now use cargo trim -u to guarantee your all project generate lock
+                        file
     -q, --query         Return size of different .cargo/cache folders
     -u, --update        Generate and Update Cargo.lock file present inside config directory folder path
     -V, --version       Prints version information
 
 OPTIONS:
-    -g, --gc <git-compress>    Git compress to reduce size of .cargo [possible values: all, index, git, git-checkout,
-                               git-db]
+    -g, --gc <git-compress>    Git compress to reduce size of .cargo [possible values: all, index, git, git-checkout, git-db]
     -r, --remove <crate>...    Remove provided crates from registry or git
     -t, --top <number>         Show certain number of top crates which have highest size
-    -w, --wipe <folder>...     Wipe folder [possible values: git, checkouts, db, registry, cache, index, index-cache,
-                               src]
+    -w, --wipe <folder>...     Wipe folder [possible values: git, checkouts, db, registry, cache, index, index-cache, src]
 
 SUBCOMMANDS:
     clear       Clear current working directory from cargo cache config
@@ -88,18 +85,38 @@ To list where cargo trim is storing config file you can use `cargo trim config -
 Below are a list of configuration and their default value a well as corresponding env variable that can be used for setting
 same value without editing config file
 
-##### 1. directory (default: []) (env: TRIM_DIRECTORY)
+#### 1. directory
+
+__default: []__
+
+__env: TRIM_DIRECTORY__
+
 List of directory to scan for a Rust projects
 
-##### 2. __ignore_file_name__ (default: []) (env: TRIM_IGNORE)
+#### 2. __ignore_file_name__
+
+__default: []__
+
+__env: TRIM_IGNORE__
+
 File/Directory name which should be ignored while scanning through directories. This can be used to exclude some folder
 such as npm node_modules folder or python venv folder if the directory present in config contains such folder it will help
 to significantly increase performance.
 
-##### 3. __scan_hidden_folder__ (default: false) (env: TRIM_SCAN_HIDDEN_FOLDER)
+#### 3. __scan_hidden_folder__
+
+__default: false__
+
+__env: TRIM_SCAN_HIDDEN_FOLDER__
+
 Whether to scan hidden folder(i.e. folder which start with dot notation) or not
 
-##### 4. __scan_target_folder__ (default: false) (env: TRIM_SCAN_TARGET_FOLDER)
+#### 4. __scan_target_folder__
+
+__default: false__
+
+__env: TRIM_SCAN_TARGET_FOLDER__
+
 Whether to scan target folder. Currently, it searches for environment variable `CARGO_BUILD_TARGET_DIR` or `CARGO_TARGET_DIR`
 or set default value as target to determine a target folder name
 

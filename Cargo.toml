@@ -18,12 +18,12 @@ keywords = [
 categories = [ "command-line-utilities" ]
 
 [dependencies]
-anyhow = "1.0.41"
+anyhow = "1.0.42"
 colored = "2.0.0"
 dirs-next = "2.0.0"
 semver = "1.0.3"
 serde = { version = "1.0.126", features = [ "derive" ] }
-structopt = "0.3.21"
+structopt = { version= "0.3.22", features = ["wrap_help"] }
 toml = "0.5.8"
 
 [features]
