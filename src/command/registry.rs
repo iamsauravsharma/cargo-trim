@@ -1,7 +1,7 @@
 use std::{io::Write, path::Path};
 
 use anyhow::{Context, Result};
-use colored::Colorize;
+use owo_colors::OwoColorize;
 use structopt::{clap::AppSettings, StructOpt};
 
 use crate::{
@@ -104,7 +104,7 @@ impl Registry {
                     "{} old crates removed which had occupied {:.3} MB",
                     total_crate_removed, sized_cleaned
                 )
-                .color("blue")
+                .blue()
             );
         }
 
@@ -116,7 +116,7 @@ impl Registry {
                                     init' to initialize current directory as rust project \
                                     directory or pass cargo trim -d <directory> for setting rust \
                                     project directory";
-                println!("{}", warning_text.color("yellow"));
+                println!("{}", warning_text.yellow());
                 let mut input = String::new();
                 print!("Do you want to continue? (y/N) ");
                 std::io::stdout()
@@ -144,7 +144,7 @@ impl Registry {
                     "{} crates which are both old and orphan crate removed which had {:.3} MB",
                     total_crate_removed, sized_cleaned
                 )
-                .color("blue")
+                .blue()
             );
         }
 
@@ -156,7 +156,7 @@ impl Registry {
                                     trim init' to initialize current directory as rust project \
                                     directory or pass cargo trim -d <directory> for setting rust \
                                     project directory";
-                println!("{}", warning_text.color("yellow"));
+                println!("{}", warning_text.yellow());
                 let mut input = String::new();
                 print!("Do you want to continue? (y/N) ");
                 std::io::stdout()
@@ -180,7 +180,7 @@ impl Registry {
                     "{} orphan crates removed which had occupied {:.3} MB",
                     total_crate_removed, sized_cleaned
                 )
-                .color("blue")
+                .blue()
             );
         }
 
@@ -193,7 +193,7 @@ impl Registry {
                     "Total size of  {} crates removed :- {:.3} MB",
                     total_crate_removed, sized_cleaned
                 )
-                .color("blue")
+                .blue()
             );
         }
 
@@ -359,6 +359,6 @@ fn remove_crates(
     }
     println!(
         "{}",
-        format!("Total size removed :- {:.3} MB", size_cleaned).color("blue")
+        format!("Total size removed :- {:.3} MB", size_cleaned).blue()
     );
 }

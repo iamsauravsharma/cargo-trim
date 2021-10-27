@@ -1,4 +1,4 @@
-use colored::Colorize;
+use owo_colors::OwoColorize;
 use structopt::{clap::AppSettings, StructOpt};
 
 use crate::{crate_detail::CrateDetail, list_crate::CrateList};
@@ -87,7 +87,7 @@ fn list_old_orphan(crate_detail: &CrateDetail, crate_list: &CrateList, directory
                             they are not orphan crates. Run command 'cargo trim init' to \
                             initialize current directory as rust project directory or pass cargo \
                             trim -d <directory> for setting rust project directory";
-        println!("{}", warning_text.color("yellow"));
+        println!("{}", warning_text.yellow());
     }
 }
 
@@ -105,7 +105,7 @@ fn list_orphan(crate_detail: &CrateDetail, crate_list: &CrateList, directory_is_
                             'cargo trim init' to initialize current directory as rust project \
                             directory or pass cargo trim -d <directory> for setting rust project \
                             directory";
-        println!("{}", warning_text.color("yellow"));
+        println!("{}", warning_text.yellow());
     }
 }
 
@@ -122,7 +122,7 @@ fn list_used(crate_detail: &CrateDetail, crate_list: &CrateList, directory_is_em
                             directory. This will list no crates as used crate. Run command 'cargo \
                             trim init' to initialize current directory as rust project directory \
                             or pass cargo trim -d <directory> for setting rust project directory";
-        println!("{}", warning_text.color("yellow"));
+        println!("{}", warning_text.yellow());
     }
 }
 

@@ -1,7 +1,7 @@
 use std::{fs, path::Path};
 
 use anyhow::Result;
-use colored::Colorize;
+use owo_colors::OwoColorize;
 
 use crate::{crate_detail::CrateDetail, utils::delete_folder};
 
@@ -33,12 +33,12 @@ impl<'a> GitDir<'a> {
         if dry_run {
             println!(
                 "{} {} {:?}",
-                "Dry run:".color("yellow"),
-                "Removed".color("red"),
+                "Dry run:".yellow(),
+                "Removed".red(),
                 crate_name
             );
         } else if is_success {
-            println!("{} {:?}", "Removed".color("red"), crate_name);
+            println!("{} {:?}", "Removed".red(), crate_name);
         } else {
             println!("Failed to remove {:?}", crate_name);
         }

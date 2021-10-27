@@ -23,11 +23,6 @@ For bleeding edge latest development version:
     cargo install --git https://github.com/iamsauravsharma/cargo-trim
 ```
 
-By default, cargo-trim print out colored output if you want to use a non-colored output you can enable no-color feature
-```
-    cargo install cargo-trim --features no-color
-```
-
 ### Setup
 Initially you need to set up cargo-trim for some commands such as orphan clean to work properly.
 To set up cargo-trim to properly work for all projects related to rust lang go to directory where all projects lies and run

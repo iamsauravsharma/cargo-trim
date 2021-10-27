@@ -1,7 +1,7 @@
 use std::{collections::HashMap, fs, path::Path};
 
 use anyhow::Result;
-use colored::Colorize;
+use owo_colors::OwoColorize;
 
 // remove semver version part from crates full name
 pub(crate) fn clear_version_value(full_name: &str) -> (String, String) {
@@ -25,23 +25,13 @@ pub(crate) fn delete_folder(path: &Path, dry_run: bool) -> Result<()> {
     if path.exists() {
         if path.is_file() {
             if dry_run {
-                println!(
-                    "{} {} {:?}",
-                    "Dry run:".color("yellow"),
-                    "Removed".color("red"),
-                    path
-                );
+                println!("{} {} {:?}", "Dry run:".yellow(), "Removed".red(), path);
             } else {
                 fs::remove_file(&path)?;
             }
         } else if path.is_dir() {
             if dry_run {
-                println!(
-                    "{} {} {:?}",
-                    "Dry run:".color("yellow"),
-                    "Removed".color("red"),
-                    path
-                );
+                println!("{} {} {:?}", "Dry run:".yellow(), "Removed".red(), path);
             } else {
                 fs::remove_dir_all(path)?;
             }
@@ -136,8 +126,8 @@ pub(crate) fn show_total_count(
     if data.is_empty() {
         println!(
             "|{:^first_width$}|{:^second_width$}|",
-            "NONE".color("red"),
-            "0.000".color("red"),
+            "NONE".red(),
+            "0.000".red(),
             first_width = first_path_len,
             second_width = second_path_len,
         );
@@ -145,8 +135,8 @@ pub(crate) fn show_total_count(
     print_dash(dash_len);
     println!(
         "|{:^first_width$}|{:^second_width$}|",
-        format!("Total no of crates:- {}", data.len()).color("blue"),
-        format!("{:.3}", size).color("blue"),
+        format!("Total no of crates:- {}", data.len()).blue(),
+        format!("{:.3}", size).blue(),
         first_width = first_path_len,
         second_width = second_path_len,
     );
@@ -155,7 +145,7 @@ pub(crate) fn show_total_count(
 
 // print dash
 pub(crate) fn print_dash(len: usize) {
-    println!("{}", "-".repeat(len).color("green"));
+    println!("{}", "-".repeat(len));
 }
 
 // top_crates() help to list out top n crates
@@ -175,7 +165,7 @@ pub(crate) fn show_top_number_crates(
     show_title(title.as_str(), first_path_len, second_path_len, dash_len);
     // check n size and determine if to print n number of output NONE for 0 crates
     if vector.is_empty() {
-        println!("|{:^40}|{:^10}|", "NONE".color("red"), "0.000".color("red"));
+        println!("|{:^40}|{:^10}|", "NONE".red(), "0.000".red());
     } else {
         (0..top_number).for_each(|i| print_index_value_crate(&vector, i));
     }

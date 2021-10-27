@@ -7,7 +7,7 @@ use std::{
 };
 
 use anyhow::{Context, Result};
-use colored::Colorize;
+use owo_colors::OwoColorize;
 use serde::{Deserialize, Serialize};
 
 use crate::list_crate::CargoTomlLocation;
@@ -76,7 +76,7 @@ impl ConfigFile {
         if dry_run {
             println!(
                 "{} Set scan_hidden_folder to {:?}",
-                "Dry run:".color("yellow"),
+                "Dry run:".yellow(),
                 value
             );
         } else {
@@ -99,7 +99,7 @@ impl ConfigFile {
         if dry_run {
             println!(
                 "{} Set scan_target_folder to {:?}",
-                "Dry run:".color("yellow"),
+                "Dry run:".yellow(),
                 value
             );
         } else {
@@ -120,13 +120,13 @@ impl ConfigFile {
         save_to_config_file: bool,
     ) -> Result<()> {
         if dry_run {
-            println!("{} Added {:?}", "Dry run:".color("yellow"), path);
+            println!("{} Added {:?}", "Dry run:".yellow(), path);
         } else {
             self.directory.push(path.to_string());
             if save_to_config_file {
                 self.save_to_config_file()?;
             }
-            println!("{} {:?}", "Added".color("red"), path);
+            println!("{} {:?}", "Added".red(), path);
         }
         Ok(())
     }
@@ -139,13 +139,13 @@ impl ConfigFile {
         save_to_config_file: bool,
     ) -> Result<()> {
         if dry_run {
-            println!("{} Added {:?}", "Dry run:".color("yellow"), file_name);
+            println!("{} Added {:?}", "Dry run:".yellow(), file_name);
         } else {
             self.ignore_file_name.push(file_name.to_string());
             if save_to_config_file {
                 self.save_to_config_file()?;
             }
-            println!("{} {:?}", "Added".color("red"), file_name);
+            println!("{} {:?}", "Added".red(), file_name);
         }
         Ok(())
     }
@@ -158,18 +158,13 @@ impl ConfigFile {
         save_to_config_file: bool,
     ) -> Result<()> {
         if dry_run {
-            println!(
-                "{} {} {:?}",
-                "Dry run:".color("yellow"),
-                "Removed".color("red"),
-                path
-            );
+            println!("{} {} {:?}", "Dry run:".yellow(), "Removed".red(), path);
         } else {
             self.directory.retain(|data| data != path);
             if save_to_config_file {
                 self.save_to_config_file()?;
             }
-            println!("{} {:?}", "Removed".color("red"), path);
+            println!("{} {:?}", "Removed".red(), path);
         }
         Ok(())
     }
@@ -184,8 +179,8 @@ impl ConfigFile {
         if dry_run {
             println!(
                 "{} {} {:?}",
-                "Dry run:".color("yellow"),
-                "Removed".color("red"),
+                "Dry run:".yellow(),
+                "Removed".red(),
                 file_name
             );
         } else {
@@ -193,7 +188,7 @@ impl ConfigFile {
             if save_to_config_file {
                 self.save_to_config_file()?;
             }
-            println!("{} {:?}", "Removed".color("red"), file_name);
+            println!("{} {:?}", "Removed".red(), file_name);
         }
         Ok(())
     }

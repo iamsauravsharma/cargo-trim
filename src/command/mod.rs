@@ -5,7 +5,7 @@ use std::{
 };
 
 use anyhow::{Context, Result};
-use colored::Colorize;
+use owo_colors::OwoColorize;
 use structopt::{clap::AppSettings, StructOpt};
 
 use crate::{
@@ -350,8 +350,7 @@ fn git_compress(
             if !dry_run {
                 println!(
                     "{}",
-                    format!("Compressing {} registry index", file_name.to_str().unwrap())
-                        .color("blue")
+                    format!("Compressing {} registry index", file_name.to_str().unwrap()).blue()
                 );
             }
             run_git_compress_commands(&repo_path, dry_run);
@@ -367,7 +366,7 @@ fn git_compress(
                 {
                     let rev_path = rev?.path();
                     if !dry_run {
-                        println!("{}", "Compressing git checkout".color("blue"));
+                        println!("{}", "Compressing git checkout".blue());
                     }
                     run_git_compress_commands(&rev_path, dry_run);
                 }
@@ -377,24 +376,20 @@ fn git_compress(
             for entry in fs::read_dir(db_dir).context("failed to read db dir")? {
                 let repo_path = entry?.path();
                 if !dry_run {
-                    println!("{}", "Compressing git db".color("blue"));
+                    println!("{}", "Compressing git db".blue());
                 }
                 run_git_compress_commands(&repo_path, dry_run);
             }
         }
     }
-    println!("{}", "Git compress task completed".color("blue"));
+    println!("{}", "Git compress task completed".blue());
     Ok(())
 }
 
 // run combination of commands which git compress a index of registry
 fn run_git_compress_commands(repo_path: &Path, dry_run: bool) {
     if dry_run {
-        println!(
-            "{} git compressing {:?}",
-            "Dry run:".color("yellow"),
-            repo_path
-        );
+        println!("{} git compressing {:?}", "Dry run:".yellow(), repo_path);
     } else {
         // Remove history of all checkout which will help in remove dangling commits
         if let Err(e) = std::process::Command::new("git")
@@ -407,7 +402,7 @@ fn run_git_compress_commands(repo_path: &Path, dry_run: bool) {
         {
             eprintln!(
                 "{}",
-                format!("  \u{2514} git reflog failed to execute due to error {}", e).color("red")
+                format!("  \u{2514} git reflog failed to execute due to error {}", e).red()
             );
         } else {
             println!("{:70}.......Step 1/3", "  \u{251c} Completed git reflog");
@@ -428,7 +423,7 @@ fn run_git_compress_commands(repo_path: &Path, dry_run: bool) {
                     "  \u{2514} git pack-refs failed to execute due to error {}",
                     e
                 )
-                .color("red")
+                .red()
             );
         } else {
             println!(
@@ -447,7 +442,7 @@ fn run_git_compress_commands(repo_path: &Path, dry_run: bool) {
         {
             eprintln!(
                 "{}",
-                format!("  \u{2514} git gc failed to execute due to error {}", e).color("red")
+                format!("  \u{2514} git gc failed to execute due to error {}", e).red()
             );
         } else {
             println!(
@@ -487,7 +482,7 @@ fn wipe_directory(folder: &str, dir_path: &DirPath, dry_run: bool) {
     if has_failed {
         println!("Failed to remove {:?} directory", folder);
     } else {
-        println!("{} {:?} directory", "Removed".color("red"), folder);
+        println!("{} {:?} directory", "Removed".red(), folder);
     }
 }
 
@@ -511,11 +506,11 @@ fn update_cargo_toml(cargo_toml_location: &[PathBuf], dry_run: bool) -> Result<(
             if dry_run {
                 println!(
                     "{} Updating lockfile at path {:?}",
-                    "Dry run:".color("yellow"),
+                    "Dry run:".yellow(),
                     location
                 );
             } else {
-                let message = format!("Updating {}", cargo_lock.to_str().unwrap().color("blue"));
+                let message = format!("Updating {}", cargo_lock.to_str().unwrap().blue());
                 println!("{}", message);
                 std::process::Command::new("cargo")
                     .arg("update")
@@ -527,7 +522,7 @@ fn update_cargo_toml(cargo_toml_location: &[PathBuf], dry_run: bool) -> Result<(
             }
         }
     }
-    println!("{}", "Successfully updated all Cargo.lock".color("blue"));
+    println!("{}", "Successfully updated all Cargo.lock".blue());
     Ok(())
 }
 
@@ -576,7 +571,7 @@ fn old_clean(
             total_git_crate_removed + total_registry_crate_removed,
             git_sized_cleaned + registry_sized_cleaned
         )
-        .color("blue")
+        .blue()
     );
 }
 
@@ -595,7 +590,7 @@ fn old_orphan_clean(
                             not orphan crates. Run command 'cargo trim init' to initialize \
                             current directory as rust project directory or pass cargo trim -d \
                             <directory> for setting rust project directory";
-        println!("{}", warning_text.color("yellow"));
+        println!("{}", warning_text.yellow());
         let mut input = String::new();
         print!("Do you want to continue? (y/N) ");
         std::io::stdout()
@@ -627,7 +622,7 @@ fn old_orphan_clean(
             total_git_crate_removed + total_registry_crate_removed,
             git_sized_cleaned + registry_sized_cleaned
         )
-        .color("blue")
+        .blue()
     );
     Ok(())
 }
@@ -647,7 +642,7 @@ fn orphan_clean(
                             classified as orphan crate. Run command 'cargo trim init' to \
                             initialize current directory as rust project directory or pass cargo \
                             trim -d <directory> for setting rust project directory";
-        println!("{}", warning_text.color("yellow"));
+        println!("{}", warning_text.yellow());
         let mut input = String::new();
         print!("Do you want to continue? (y/N) ");
         std::io::stdout()
@@ -678,7 +673,7 @@ fn orphan_clean(
             total_git_crate_removed + total_registry_crate_removed,
             git_sized_cleaned + registry_sized_cleaned
         )
-        .color("blue")
+        .blue()
     );
     Ok(())
 }
@@ -703,7 +698,7 @@ fn remove_all(
             total_git_crate_removed + total_registry_crate_removed,
             git_sized_cleaned + registry_sized_cleaned
         )
-        .color("blue")
+        .blue()
     );
 }
 
@@ -730,6 +725,6 @@ fn remove_crates(
     }
     println!(
         "{}",
-        format!("Total size removed :- {:.3} MB", size_cleaned).color("blue")
+        format!("Total size removed :- {:.3} MB", size_cleaned).blue()
     );
 }

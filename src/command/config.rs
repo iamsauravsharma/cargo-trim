@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use anyhow::{Context, Result};
-use colored::Colorize;
+use owo_colors::OwoColorize;
 use structopt::{clap::AppSettings, StructOpt};
 
 use crate::config_file::ConfigFile;
@@ -43,7 +43,7 @@ impl Config {
         if self.location {
             println!(
                 "{}: {:?}",
-                "Config file location".color("blue"),
+                "Config file location".blue(),
                 config_file_location
             );
         }
