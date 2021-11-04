@@ -82,7 +82,6 @@ pub(crate) struct CrateList {
 
 impl CrateList {
     // create list of all types of crate present in directory
-    #[allow(clippy::too_many_lines)]
     pub(crate) fn create_list(
         dir_path: &DirPath,
         config_file: &ConfigFile,
@@ -101,126 +100,20 @@ impl CrateList {
         let installed_crate_git = crate_detail.list_installed_crate_git(checkout_dir, db_dir)?;
 
         // list old registry crate
-        let mut old_crate_registry = Vec::new();
-        let mut version_removed_crate = remove_version(&installed_crate_registry);
-        version_removed_crate.sort();
-        if !version_removed_crate.is_empty() {
-            let mut common_crate_version = Vec::new();
-            // check a two version of same crate if crate has two version then it is added
-            // to vec and checked to determine old crate version
-            for i in 0..(version_removed_crate.len() - 1) {
-                let (name, version) = &version_removed_crate[i];
-                let (next_name, _) = &version_removed_crate[i + 1];
-                if name == next_name {
-                    common_crate_version.push((version, i));
-                } else {
-                    // do not need to check if there is no old crate version in list so no two same
-                    // version crate
-                    if !common_crate_version.is_empty() {
-                        common_crate_version.push((version, i));
-                        let mut latest_version = version;
-                        // this is used to check which version is latest since we have sorted string
-                        // so 0.10.0 will come before 0.9.0. so it need to
-                        // be done to properly determine latest version
-                        for (common_version, _) in &common_crate_version {
-                            if semver::Version::parse(latest_version).unwrap()
-                                < semver::Version::parse(common_version).unwrap()
-                            {
-                                latest_version = common_version;
-                            }
-                        }
-                        for (crate_version, position) in &common_crate_version {
-                            if crate_version.as_str() != latest_version {
-                                old_crate_registry.push(
-                                    installed_crate_registry.get(*position).unwrap().to_string(),
-                                );
-                            }
-                        }
-                    }
-                    common_crate_version = Vec::new();
-                }
-            }
-        }
-        old_crate_registry.sort();
-        old_crate_registry.dedup();
-
-        // list old git crate
-        let mut old_crate_git = Vec::new();
-        let mut full_name_list = Vec::new();
-        // analyze each crates of db dir and create list of head rev value
-        for crates in fs::read_dir(db_dir).context("failed to read db dir")? {
-            let entry = crates?.path();
-            let path = entry.as_path();
-            let file_name = path.file_name().unwrap().to_str().unwrap();
-            let name = file_name.rsplitn(2, '-').collect::<Vec<&str>>();
-            let mut rev_value = latest_rev_value(path)?;
-            rev_value.retain(|c| c != '\'');
-            let full_name = format!("{}-{}", name[1], rev_value);
-            full_name_list.push(full_name);
-        }
-        for crate_name in &installed_crate_git {
-            if !crate_name.contains("-HEAD") {
-                // check if crate is in rev value else list that crate as old crate
-                if !full_name_list.contains(crate_name) {
-                    old_crate_git.push(crate_name.to_string());
-                }
-            }
-        }
-        old_crate_git.sort();
-        old_crate_git.dedup();
+        let (old_crate_registry, old_crate_git) =
+            list_old_crates(db_dir, &installed_crate_registry, &installed_crate_git)?;
 
         // list all used crates in rust program
-        let mut used_crate_registry = Vec::new();
-        let mut used_crate_git = Vec::new();
-        let mut cargo_toml_location = CargoTomlLocation::new();
-        let config_directory = config_file.directory().clone();
-        // read a Cargo.lock file and determine out a used registry and git crate
-        for path in &config_directory {
-            let list_cargo_toml = config_file.list_cargo_toml(Path::new(path))?;
-            let (mut registry_crate, mut git_crate) =
-                read_content(list_cargo_toml.location_path())?;
-            cargo_toml_location.append(list_cargo_toml);
-            used_crate_registry.append(&mut registry_crate);
-            used_crate_git.append(&mut git_crate);
-        }
-        used_crate_registry.sort();
-        used_crate_registry.dedup();
-        used_crate_git.sort();
-        used_crate_registry.dedup();
+        let (cargo_toml_location, used_crate_registry, used_crate_git) =
+            list_used_crates(config_file)?;
 
         // list orphan crates. If crate is not used then it is orphan
-        let mut orphan_crate_registry = Vec::new();
-        let mut orphan_crate_git = Vec::new();
-        for crates in &installed_crate_registry {
-            if !used_crate_registry.contains(crates) {
-                orphan_crate_registry.push(crates.to_string());
-            }
-        }
-        for crates in &installed_crate_git {
-            if crates.contains("-HEAD") {
-                let split_installed = crates.rsplitn(2, '-').collect::<Vec<&str>>();
-                if used_crate_git.is_empty() {
-                    orphan_crate_git.push(crates.to_string());
-                }
-                let mut used_in_project = false;
-                for used in &used_crate_git {
-                    if used.contains(split_installed[1]) {
-                        used_in_project = true;
-                        // Break if found to be used one time no need to check for other
-                        break;
-                    }
-                }
-                if !used_in_project {
-                    orphan_crate_git.push(crates.to_string());
-                }
-            } else if !used_crate_git.contains(crates) {
-                orphan_crate_git.push(crates.to_string());
-            }
-        }
-        orphan_crate_registry.sort();
-        orphan_crate_registry.dedup();
-        orphan_crate_git.sort();
-        orphan_crate_git.dedup();
+        let (orphan_crate_registry, orphan_crate_git) = list_orphan_crates(
+            &installed_crate_registry,
+            &installed_crate_git,
+            &used_crate_registry,
+            &used_crate_git,
+        );
 
         Ok(Self {
             installed_bin,
@@ -364,6 +257,147 @@ fn read_content(list: &[PathBuf]) -> Result<(Vec<String>, Vec<String>)> {
         }
     }
     Ok((present_crate_registry, present_crate_git))
+}
+
+// List old crates
+fn list_old_crates(
+    db_dir: &Path,
+    installed_crate_registry: &[String],
+    installed_crate_git: &[String],
+) -> Result<(Vec<String>, Vec<String>)> {
+    let mut old_crate_registry = Vec::new();
+    let mut version_removed_crate = remove_version(installed_crate_registry);
+    version_removed_crate.sort();
+    if !version_removed_crate.is_empty() {
+        let mut common_crate_version = Vec::new();
+        // check a two version of same crate if crate has two version then it is added
+        // to vec and checked to determine old crate version
+        for i in 0..(version_removed_crate.len() - 1) {
+            let (name, version) = &version_removed_crate[i];
+            let (next_name, _) = &version_removed_crate[i + 1];
+            if name == next_name {
+                common_crate_version.push((version, i));
+            } else {
+                // do not need to check if there is no old crate version in list so no two same
+                // version crate
+                if !common_crate_version.is_empty() {
+                    common_crate_version.push((version, i));
+                    let mut latest_version = version;
+                    // this is used to check which version is latest since we have sorted string
+                    // so 0.10.0 will come before 0.9.0. so it need to
+                    // be done to properly determine latest version
+                    for (common_version, _) in &common_crate_version {
+                        if semver::Version::parse(latest_version).unwrap()
+                            < semver::Version::parse(common_version).unwrap()
+                        {
+                            latest_version = common_version;
+                        }
+                    }
+                    for (crate_version, position) in &common_crate_version {
+                        if crate_version.as_str() != latest_version {
+                            old_crate_registry
+                                .push(installed_crate_registry.get(*position).unwrap().to_string());
+                        }
+                    }
+                }
+                common_crate_version = Vec::new();
+            }
+        }
+    }
+    old_crate_registry.sort();
+    old_crate_registry.dedup();
+
+    // list old git crate
+    let mut old_crate_git = Vec::new();
+    let mut full_name_list = Vec::new();
+    // analyze each crates of db dir and create list of head rev value
+    for crates in fs::read_dir(db_dir).context("failed to read db dir")? {
+        let entry = crates?.path();
+        let path = entry.as_path();
+        let file_name = path.file_name().unwrap().to_str().unwrap();
+        let name = file_name.rsplitn(2, '-').collect::<Vec<&str>>();
+        let mut rev_value = latest_rev_value(path)?;
+        rev_value.retain(|c| c != '\'');
+        let full_name = format!("{}-{}", name[1], rev_value);
+        full_name_list.push(full_name);
+    }
+    for crate_name in installed_crate_git {
+        if !crate_name.contains("-HEAD") {
+            // check if crate is in rev value else list that crate as old crate
+            if !full_name_list.contains(crate_name) {
+                old_crate_git.push(crate_name.to_string());
+            }
+        }
+    }
+    old_crate_git.sort();
+    old_crate_git.dedup();
+
+    Ok((old_crate_registry, old_crate_git))
+}
+
+// list used crates
+fn list_used_crates(
+    config_file: &ConfigFile,
+) -> Result<(CargoTomlLocation, Vec<String>, Vec<String>)> {
+    let mut used_crate_registry = Vec::new();
+    let mut used_crate_git = Vec::new();
+    let mut cargo_toml_location = CargoTomlLocation::new();
+    let config_directory = config_file.directory().clone();
+    // read a Cargo.lock file and determine out a used registry and git crate
+    for path in &config_directory {
+        let list_cargo_toml = config_file.list_cargo_toml(Path::new(path))?;
+        let (mut registry_crate, mut git_crate) = read_content(list_cargo_toml.location_path())?;
+        cargo_toml_location.append(list_cargo_toml);
+        used_crate_registry.append(&mut registry_crate);
+        used_crate_git.append(&mut git_crate);
+    }
+    used_crate_registry.sort();
+    used_crate_registry.dedup();
+    used_crate_git.sort();
+    used_crate_registry.dedup();
+    Ok((cargo_toml_location, used_crate_registry, used_crate_git))
+}
+
+// list orphan crates
+fn list_orphan_crates(
+    installed_crate_registry: &[String],
+    installed_crate_git: &[String],
+    used_crate_registry: &[String],
+    used_crate_git: &[String],
+) -> (Vec<String>, Vec<String>) {
+    let mut orphan_crate_registry = Vec::new();
+    let mut orphan_crate_git = Vec::new();
+    for crates in installed_crate_registry {
+        if !used_crate_registry.contains(crates) {
+            orphan_crate_registry.push(crates.to_string());
+        }
+    }
+    for crates in installed_crate_git {
+        if crates.contains("-HEAD") {
+            let split_installed = crates.rsplitn(2, '-').collect::<Vec<&str>>();
+            if used_crate_git.is_empty() {
+                orphan_crate_git.push(crates.to_string());
+            }
+            let mut used_in_project = false;
+            for used in used_crate_git {
+                if used.contains(split_installed[1]) {
+                    used_in_project = true;
+                    // Break if found to be used one time no need to check for other
+                    break;
+                }
+            }
+            if !used_in_project {
+                orphan_crate_git.push(crates.to_string());
+            }
+        } else if !used_crate_git.contains(crates) {
+            orphan_crate_git.push(crates.to_string());
+        }
+    }
+    orphan_crate_registry.sort();
+    orphan_crate_registry.dedup();
+    orphan_crate_git.sort();
+    orphan_crate_git.dedup();
+    (orphan_crate_registry, orphan_crate_git)
 }
 
 // Function used to remove version from installed_crate_registry list so can be
