@@ -52,9 +52,8 @@ impl<'a> RegistryDir<'a> {
 
     // Remove crate from src & cache directory
     pub(crate) fn remove_crate(&mut self, crate_name: &str, dry_run: bool) {
-        let mut is_success;
         // remove crate from cache dir
-        is_success = remove_crate(Path::new(&self.cache_dir), crate_name, dry_run).is_ok();
+        let mut is_success = remove_crate(Path::new(&self.cache_dir), crate_name, dry_run).is_ok();
         // remove crate from index dir
         is_success =
             remove_crate(Path::new(&self.src_dir), crate_name, dry_run).is_ok() && is_success;

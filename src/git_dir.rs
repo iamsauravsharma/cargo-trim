@@ -24,12 +24,11 @@ impl<'a> GitDir<'a> {
 
     // remove crates
     pub(crate) fn remove_crate(&self, crate_name: &str, dry_run: bool) {
-        let is_success;
-        if crate_name.contains("-HEAD") {
-            is_success = remove_crate(Path::new(&self.db_dir), crate_name, dry_run).is_ok();
+        let is_success = if crate_name.contains("-HEAD") {
+            remove_crate(Path::new(&self.db_dir), crate_name, dry_run).is_ok()
         } else {
-            is_success = remove_crate(Path::new(&self.checkout_dir), crate_name, dry_run).is_ok();
-        }
+            remove_crate(Path::new(&self.checkout_dir), crate_name, dry_run).is_ok()
+        };
         if dry_run {
             println!(
                 "{} {} {:?}",

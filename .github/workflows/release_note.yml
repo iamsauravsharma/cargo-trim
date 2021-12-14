@@ -9,19 +9,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Set up Go
-      uses: actions/setup-go@v2
+    - name: Generate a changelog
+      uses: orhun/git-cliff-action@v1
+      id: git-cliff
       with:
-        go-version: "1.14"
-    - name: Checkout
-      uses: actions/checkout@v1
-    - name: Generate Release note
-      run: |
-          go get -u github.com/git-chglog/git-chglog/cmd/git-chglog
-          git-chglog $(git describe --tags) > RELEASE_NOTE.md
+        config: cliff.toml
+        args: --verbose
+      env:
+        OUTPUT: CHANGELOG.md
     - name: Create GitHub release
       uses: softprops/action-gh-release@v1
       with:
-        body_path: RELEASE_NOTE.md
+        body_path: ${{ steps.git-cliff.outputs.changelog }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
