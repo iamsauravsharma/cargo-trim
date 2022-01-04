@@ -16,9 +16,7 @@ pub(crate) struct CargoTomlLocation {
 
 impl CargoTomlLocation {
     pub(crate) fn new() -> Self {
-        Self {
-            path: Vec::new(),
-        }
+        Self { path: Vec::new() }
     }
 
     pub(crate) fn add_path(&mut self, path: PathBuf) {

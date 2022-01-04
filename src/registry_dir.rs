@@ -131,21 +131,21 @@ fn remove_index_cache(path: &Path, crate_name: &str, dry_run: bool) -> Result<()
         1 => {
             crate_index_cache_location.push("1");
             crate_index_cache_location.push(name);
-        },
+        }
         2 => {
             crate_index_cache_location.push("2");
             crate_index_cache_location.push(name);
-        },
+        }
         3 => {
             crate_index_cache_location.push("3");
             crate_index_cache_location.push(&name[..1]);
             crate_index_cache_location.push(name);
-        },
+        }
         _ => {
             crate_index_cache_location.push(&name[..2]);
             crate_index_cache_location.push(&name[2..4]);
             crate_index_cache_location.push(name);
-        },
+        }
     };
     delete_folder(&crate_index_cache_location, dry_run)?;
     Ok(())

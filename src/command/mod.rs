@@ -308,7 +308,7 @@ impl Command {
                         &crate_list,
                         config_file.directory().is_empty(),
                     );
-                },
+                }
                 SubCommand::Set(set) => set.run(&mut config_file)?,
                 SubCommand::Unset(unset) => unset.run(&mut config_file)?,
                 SubCommand::Git(git) => {
@@ -319,7 +319,7 @@ impl Command {
                         &git_crates_location,
                         config_file.directory().is_empty(),
                     )?;
-                },
+                }
                 SubCommand::Registry(registry) => {
                     registry.run(
                         &dir_path,
@@ -328,7 +328,7 @@ impl Command {
                         &mut registry_crates_location,
                         config_file.directory().is_empty(),
                     )?;
-                },
+                }
             }
         }
 
