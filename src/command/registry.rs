@@ -1,16 +1,16 @@
-use std::{io::Write, path::Path};
+use std::io::Write;
+use std::path::Path;
 
 use anyhow::{Context, Result};
 use owo_colors::OwoColorize;
-use structopt::{clap::AppSettings, StructOpt};
+use structopt::clap::AppSettings;
+use structopt::StructOpt;
 
-use crate::{
-    crate_detail::CrateDetail,
-    dir_path::DirPath,
-    list_crate::CrateList,
-    registry_dir::RegistryDir,
-    utils::{convert_pretty, get_size, print_dash, query_print, show_top_number_crates},
-};
+use crate::crate_detail::CrateDetail;
+use crate::dir_path::DirPath;
+use crate::list_crate::CrateList;
+use crate::registry_dir::RegistryDir;
+use crate::utils::{convert_pretty, get_size, print_dash, query_print, show_top_number_crates};
 
 #[derive(Debug, StructOpt)]
 #[structopt(about="Perform operation only to registry related cache file", settings=&[

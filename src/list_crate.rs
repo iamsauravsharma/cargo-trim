@@ -1,15 +1,13 @@
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
+use std::fs;
+use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 use serde::Deserialize;
 
-use crate::{
-    config_file::ConfigFile, crate_detail::CrateDetail, dir_path::DirPath,
-    utils::clear_version_value,
-};
+use crate::config_file::ConfigFile;
+use crate::crate_detail::CrateDetail;
+use crate::dir_path::DirPath;
+use crate::utils::clear_version_value;
 
 // struct store Cargo.toml file location
 pub(crate) struct CargoTomlLocation {
@@ -18,7 +16,9 @@ pub(crate) struct CargoTomlLocation {
 
 impl CargoTomlLocation {
     pub(crate) fn new() -> Self {
-        Self { path: Vec::new() }
+        Self {
+            path: Vec::new(),
+        }
     }
 
     pub(crate) fn add_path(&mut self, path: PathBuf) {

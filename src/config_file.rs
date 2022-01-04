@@ -1,10 +1,7 @@
-use std::{
-    env,
-    ffi::OsStr,
-    fs,
-    io::Read,
-    path::{Path, PathBuf},
-};
+use std::ffi::OsStr;
+use std::io::Read;
+use std::path::{Path, PathBuf};
+use std::{env, fs};
 
 use anyhow::{Context, Result};
 use owo_colors::OwoColorize;

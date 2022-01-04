@@ -1,12 +1,11 @@
-use std::{fs, path::Path};
+use std::fs;
+use std::path::Path;
 
 use anyhow::{Context, Result};
 use owo_colors::OwoColorize;
 
-use crate::{
-    crate_detail::CrateDetail,
-    utils::{clear_version_value, delete_folder},
-};
+use crate::crate_detail::CrateDetail;
+use crate::utils::{clear_version_value, delete_folder};
 
 // Stores .cargo/registry cache & src information
 pub(crate) struct RegistryDir<'a> {
@@ -132,21 +131,21 @@ fn remove_index_cache(path: &Path, crate_name: &str, dry_run: bool) -> Result<()
         1 => {
             crate_index_cache_location.push("1");
             crate_index_cache_location.push(name);
-        }
+        },
         2 => {
             crate_index_cache_location.push("2");
             crate_index_cache_location.push(name);
-        }
+        },
         3 => {
             crate_index_cache_location.push("3");
             crate_index_cache_location.push(&name[..1]);
             crate_index_cache_location.push(name);
-        }
+        },
         _ => {
             crate_index_cache_location.push(&name[..2]);
             crate_index_cache_location.push(&name[2..4]);
             crate_index_cache_location.push(name);
-        }
+        },
     };
     delete_folder(&crate_index_cache_location, dry_run)?;
     Ok(())

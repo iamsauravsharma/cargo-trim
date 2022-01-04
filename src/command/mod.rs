@@ -1,23 +1,20 @@
-use std::{
-    fs,
-    io::Write,
-    path::{Path, PathBuf},
-};
+use std::fs;
+use std::io::Write;
+use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 use owo_colors::OwoColorize;
-use structopt::{clap::AppSettings, StructOpt};
+use structopt::clap::AppSettings;
+use structopt::StructOpt;
 
-use crate::{
-    config_file::ConfigFile,
-    crate_detail::CrateDetail,
-    dir_path,
-    dir_path::DirPath,
-    git_dir::GitDir,
-    list_crate::CrateList,
-    registry_dir::RegistryDir,
-    utils::{convert_pretty, delete_folder, get_size, print_dash, query_print},
-};
+use crate::config_file::ConfigFile;
+use crate::crate_detail::CrateDetail;
+use crate::dir_path;
+use crate::dir_path::DirPath;
+use crate::git_dir::GitDir;
+use crate::list_crate::CrateList;
+use crate::registry_dir::RegistryDir;
+use crate::utils::{convert_pretty, delete_folder, get_size, print_dash, query_print};
 
 mod clear;
 mod config;
@@ -305,27 +302,33 @@ impl Command {
                 SubCommand::Init(init) => init.run(&mut config_file)?,
                 SubCommand::Clear(clear) => clear.run(&mut config_file)?,
                 SubCommand::Config(config) => config.run(&config_file, dir_path.config_file())?,
-                SubCommand::List(list) => list.run(
-                    &crate_detail,
-                    &crate_list,
-                    config_file.directory().is_empty(),
-                ),
+                SubCommand::List(list) => {
+                    list.run(
+                        &crate_detail,
+                        &crate_list,
+                        config_file.directory().is_empty(),
+                    );
+                },
                 SubCommand::Set(set) => set.run(&mut config_file)?,
                 SubCommand::Unset(unset) => unset.run(&mut config_file)?,
-                SubCommand::Git(git) => git.run(
-                    &dir_path,
-                    &crate_list,
-                    &crate_detail,
-                    &git_crates_location,
-                    config_file.directory().is_empty(),
-                )?,
-                SubCommand::Registry(registry) => registry.run(
-                    &dir_path,
-                    &crate_list,
-                    &crate_detail,
-                    &mut registry_crates_location,
-                    config_file.directory().is_empty(),
-                )?,
+                SubCommand::Git(git) => {
+                    git.run(
+                        &dir_path,
+                        &crate_list,
+                        &crate_detail,
+                        &git_crates_location,
+                        config_file.directory().is_empty(),
+                    )?;
+                },
+                SubCommand::Registry(registry) => {
+                    registry.run(
+                        &dir_path,
+                        &crate_list,
+                        &crate_detail,
+                        &mut registry_crates_location,
+                        config_file.directory().is_empty(),
+                    )?;
+                },
             }
         }
 

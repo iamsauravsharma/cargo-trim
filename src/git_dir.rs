@@ -1,9 +1,11 @@
-use std::{fs, path::Path};
+use std::fs;
+use std::path::Path;
 
 use anyhow::Result;
 use owo_colors::OwoColorize;
 
-use crate::{crate_detail::CrateDetail, utils::delete_folder};
+use crate::crate_detail::CrateDetail;
+use crate::utils::delete_folder;
 
 // Store git dir folder information
 pub(crate) struct GitDir<'a> {

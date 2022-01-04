@@ -1,7 +1,9 @@
 use owo_colors::OwoColorize;
-use structopt::{clap::AppSettings, StructOpt};
+use structopt::clap::AppSettings;
+use structopt::StructOpt;
 
-use crate::{crate_detail::CrateDetail, list_crate::CrateList};
+use crate::crate_detail::CrateDetail;
+use crate::list_crate::CrateList;
 
 #[derive(Debug, StructOpt)]
 #[structopt(about = "List out crates", settings=&[AppSettings::ArgRequiredElseHelp])]

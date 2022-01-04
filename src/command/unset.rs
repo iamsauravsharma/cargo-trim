@@ -1,5 +1,6 @@
 use anyhow::Result;
-use structopt::{clap::AppSettings, StructOpt};
+use structopt::clap::AppSettings;
+use structopt::StructOpt;
 
 use crate::config_file::ConfigFile;
 #[derive(Debug, StructOpt)]

@@ -1,16 +1,16 @@
-use std::{io::Write, path::Path};
+use std::io::Write;
+use std::path::Path;
 
 use anyhow::{Context, Result};
 use owo_colors::OwoColorize;
-use structopt::{clap::AppSettings, StructOpt};
+use structopt::clap::AppSettings;
+use structopt::StructOpt;
 
-use crate::{
-    crate_detail::CrateDetail,
-    dir_path::DirPath,
-    git_dir::GitDir,
-    list_crate::CrateList,
-    utils::{convert_pretty, get_size, print_dash, query_print, show_top_number_crates},
-};
+use crate::crate_detail::CrateDetail;
+use crate::dir_path::DirPath;
+use crate::git_dir::GitDir;
+use crate::list_crate::CrateList;
+use crate::utils::{convert_pretty, get_size, print_dash, query_print, show_top_number_crates};
 #[derive(Debug, StructOpt)]
 #[structopt(about="Perform operation only to git related cache file", settings=&[
     AppSettings::ArgRequiredElseHelp,

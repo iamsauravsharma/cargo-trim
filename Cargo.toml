@@ -16,6 +16,6 @@ anyhow = "1.0.51"
 dirs-next = "2.0.0"
 owo-colors = "3.1.1"
 semver = "1.0.4"
-serde = { version = "1.0.131", features = ["derive"] }
+serde = { version = "1.0.132", features = ["derive"] }
 structopt = { version = "0.3.25", features = ["wrap_help"] }
 toml = "0.5.8"
