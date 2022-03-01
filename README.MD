@@ -49,14 +49,13 @@ FLAGS:
     -l, --light         Light cleanup repo by removing git checkout and registry source but stores git db and registry archive for future compilation without internet requirement
     -o, --old           Clean old cache crates
     -z, --old-orphan    Clean crates which is both old and orphan
-    -x, --orphan        Clean orphan cache crates i.e all crates which are not present in lock file generated till now use cargo trim -u to guarantee your all project generate lock
-                        file
+    -x, --orphan        Clean orphan cache crates i.e all crates which are not present in lock file generated till now use cargo trim -u to guarantee your all project generate lock file
     -q, --query         Return size of different .cargo/cache folders
     -u, --update        Generate and Update Cargo.lock file present inside config directory folder path
     -V, --version       Prints version information
 
 OPTIONS:
-    -g, --gc <git-compress>    Git compress to reduce size of .cargo [possible values: all, index, git, git-checkout, git-db]
+    -g, --gc <git-compress>    Git compress to reduce size of .cargo (git command required) [possible values: all, index, git, git-checkout, git-db]
     -r, --remove <crate>...    Remove provided crates from registry or git
     -t, --top <number>         Show certain number of top crates which have highest size
     -w, --wipe <folder>...     Wipe folder [possible values: git, checkouts, db, registry, cache, index, index-cache, src]

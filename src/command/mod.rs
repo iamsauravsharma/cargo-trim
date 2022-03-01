@@ -64,7 +64,7 @@ pub(crate) struct Command {
     #[structopt(
         long="gc",
         short="g",
-        help="Git compress to reduce size of .cargo",
+        help="Git compress to reduce size of .cargo (git command required)",
         possible_values=&["all", "index", "git", "git-checkout", "git-db"]
     )]
     git_compress: Option<String>,
@@ -356,7 +356,7 @@ fn git_compress(
                     format!("Compressing {} registry index", file_name.to_str().unwrap()).blue()
                 );
             }
-            run_git_compress_commands(&repo_path, dry_run);
+            run_git_compress_commands(&repo_path, dry_run)?;
         }
     }
     // if git is provided it git compress all git folders
@@ -371,7 +371,7 @@ fn git_compress(
                     if !dry_run {
                         println!("{}", "Compressing git checkout".blue());
                     }
-                    run_git_compress_commands(&rev_path, dry_run);
+                    run_git_compress_commands(&rev_path, dry_run)?;
                 }
             }
         }
@@ -381,7 +381,7 @@ fn git_compress(
                 if !dry_run {
                     println!("{}", "Compressing git db".blue());
                 }
-                run_git_compress_commands(&repo_path, dry_run);
+                run_git_compress_commands(&repo_path, dry_run)?;
             }
         }
     }
@@ -390,70 +390,49 @@ fn git_compress(
 }
 
 // run combination of commands which git compress a index of registry
-fn run_git_compress_commands(repo_path: &Path, dry_run: bool) {
+fn run_git_compress_commands(repo_path: &Path, dry_run: bool) -> Result<()> {
     if dry_run {
         println!("{} git compressing {:?}", "Dry run:".yellow(), repo_path);
     } else {
         // Remove history of all checkout which will help in remove dangling commits
-        if let Err(e) = std::process::Command::new("git")
+        std::process::Command::new("git")
             .arg("reflog")
             .arg("expire")
             .arg("--expire=now")
             .arg("--all")
             .current_dir(repo_path)
             .output()
-        {
-            eprintln!(
-                "{}",
-                format!("  \u{2514} git reflog failed to execute due to error {}", e).red()
-            );
-        } else {
-            println!("{:70}.......Step 1/3", "  \u{251c} Completed git reflog");
-        }
+            .context("Failed to execute git reflog command")?;
+        println!("{:70}.......Step 1/3", "  \u{251c} Completed git reflog");
 
         // pack refs of branches/tags etc into one file know as pack-refs file for
         // effective repo access
-        if let Err(e) = std::process::Command::new("git")
+        std::process::Command::new("git")
             .arg("pack-refs")
             .arg("--all")
             .arg("--prune")
             .current_dir(repo_path)
             .output()
-        {
-            eprintln!(
-                "{}",
-                format!(
-                    "  \u{2514} git pack-refs failed to execute due to error {}",
-                    e
-                )
-                .red()
-            );
-        } else {
-            println!(
-                "{:70}.......Step 2/3",
-                "  \u{251c} Packed refs and tags successfully"
-            );
-        }
+            .context("Failed to execute git pack-refs command")?;
+        println!(
+            "{:70}.......Step 2/3",
+            "  \u{251c} Packed refs and tags successfully"
+        );
 
         // cleanup unnecessary file and optimize a local repo
-        if let Err(e) = std::process::Command::new("git")
+        std::process::Command::new("git")
             .arg("gc")
             .arg("--aggressive")
             .arg("--prune=now")
             .current_dir(repo_path)
             .output()
-        {
-            eprintln!(
-                "{}",
-                format!("  \u{2514} git gc failed to execute due to error {}", e).red()
-            );
-        } else {
-            println!(
-                "{:70}.......Step 3/3",
-                "  \u{2514} Cleaned up unnecessary files and optimize a files"
-            );
-        }
+            .context("Failed to execute git gc command")?;
+        println!(
+            "{:70}.......Step 3/3",
+            "  \u{2514} Cleaned up unnecessary files and optimize a files"
+        );
     }
+    Ok(())
 }
 // light cleanup registry directory
 fn light_cleanup(checkout_dir: &Path, src_dir: &Path, index_dir: &Path, dry_run: bool) {
