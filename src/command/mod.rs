@@ -44,6 +44,7 @@ enum SubCommand {
     author=env!("CARGO_PKG_AUTHORS"),
     about=env!("CARGO_PKG_DESCRIPTION")
 )]
+#[allow(clippy::struct_excessive_bools)]
 pub(crate) struct Command {
     #[structopt(long = "all", short = "a", help = "Clean up all registry & git crates")]
     all: bool,
@@ -157,6 +158,7 @@ pub(crate) struct Command {
 }
 
 impl Command {
+    #[allow(clippy::too_many_lines)]
     pub(crate) fn run(&self) -> Result<()> {
         let dry_run = self.dry_run;
 

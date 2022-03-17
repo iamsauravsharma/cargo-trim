@@ -7,6 +7,7 @@ use crate::list_crate::CrateList;
 
 #[derive(Debug, StructOpt)]
 #[structopt(about = "List out crates", settings=&[AppSettings::ArgRequiredElseHelp])]
+#[allow(clippy::struct_excessive_bools)]
 pub(crate) struct List {
     #[structopt(long = "all", short = "a", help = "List out all installed crate")]
     all: bool,

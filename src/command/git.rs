@@ -15,6 +15,7 @@ use crate::utils::{convert_pretty, get_size, print_dash, query_print, show_top_n
 #[structopt(about="Perform operation only to git related cache file", settings=&[
     AppSettings::ArgRequiredElseHelp,
 ])]
+#[allow(clippy::struct_excessive_bools)]
 pub(crate) struct Git {
     #[structopt(long = "all", short = "a", help = "Clean up all git crates")]
     all: bool,
@@ -70,6 +71,7 @@ pub(crate) struct Git {
 }
 
 impl Git {
+    #[allow(clippy::too_many_lines)]
     pub(super) fn run(
         &self,
         dir_path: &DirPath,

@@ -12,6 +12,7 @@ use crate::config_file::ConfigFile;
     about = "Query about config file data used by CLI",
     settings=&[AppSettings::ArgRequiredElseHelp]
 )]
+#[allow(clippy::struct_excessive_bools)]
 pub(crate) struct Config {
     #[structopt(long = "directory", short = "d", help = "Query about directory data")]
     directory: bool,

@@ -2,7 +2,6 @@
 #![deny(unsafe_code)]
 #![deny(clippy::all)]
 #![warn(clippy::pedantic)]
-#![allow(clippy::too_many_lines, clippy::struct_excessive_bools)]
 
 mod command;
 mod config_file;
