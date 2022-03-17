@@ -1,27 +1,26 @@
+use clap::Parser;
 use owo_colors::OwoColorize;
-use structopt::clap::AppSettings;
-use structopt::StructOpt;
 
 use crate::crate_detail::CrateDetail;
 use crate::list_crate::CrateList;
 
-#[derive(Debug, StructOpt)]
-#[structopt(about = "List out crates", settings=&[AppSettings::ArgRequiredElseHelp])]
+#[derive(Debug, Parser)]
+#[clap(about = "List out crates", arg_required_else_help = true)]
 #[allow(clippy::struct_excessive_bools)]
 pub(crate) struct List {
-    #[structopt(long = "all", short = "a", help = "List out all installed crate")]
+    #[clap(long = "all", short = 'a', help = "List out all installed crate")]
     all: bool,
-    #[structopt(long = "old", short = "o", help = "List out old crates")]
+    #[clap(long = "old", short = 'o', help = "List out old crates")]
     old: bool,
-    #[structopt(
+    #[clap(
         long = "old-orphan",
-        short = "z",
+        short = 'z',
         help = "List out crates which are both old and orphan"
     )]
     old_orphan: bool,
-    #[structopt(long = "orphan", short = "x", help = "List out orphan crates")]
+    #[clap(long = "orphan", short = 'x', help = "List out orphan crates")]
     orphan: bool,
-    #[structopt(long = "used", short = "u", help = "List out used crates")]
+    #[clap(long = "used", short = 'u', help = "List out used crates")]
     used: bool,
 }
 

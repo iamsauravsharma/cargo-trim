@@ -1,34 +1,33 @@
 use anyhow::Result;
-use structopt::clap::AppSettings;
-use structopt::StructOpt;
+use clap::Parser;
 
 use crate::config_file::ConfigFile;
-#[derive(Debug, StructOpt)]
-#[structopt(about = "Set config file values", settings=&[AppSettings::ArgRequiredElseHelp])]
+#[derive(Debug, Parser)]
+#[clap(about = "Set config file values", arg_required_else_help = true)]
 pub(crate) struct Set {
-    #[structopt(
+    #[clap(
         long = "dry-run",
-        short = "n",
+        short = 'n',
         help = "Run command in dry run mode to see what would be done"
     )]
     dry_run: bool,
-    #[structopt(
+    #[clap(
         long = "directory",
-        short = "d",
+        short = 'd',
         help = "Set directory of Rust project"
     )]
     directory: Option<Vec<String>>,
-    #[structopt(
+    #[clap(
         long = "ignore",
-        short = "i",
+        short = 'i',
         help = "Add file name/directory name to ignore list in configuration file which are \
                 ignored while scanning Cargo.toml file",
         value_name = "file"
     )]
     ignore: Option<Vec<String>>,
-    #[structopt(long = "scan-hidden-folder", help = "Set scan hidden folder as true")]
+    #[clap(long = "scan-hidden-folder", help = "Set scan hidden folder as true")]
     scan_hidden_folder: bool,
-    #[structopt(long = "scan-target-folder", help = "Set scan hidden folder as true")]
+    #[clap(long = "scan-target-folder", help = "Set scan hidden folder as true")]
     scan_target_folder: bool,
 }
 

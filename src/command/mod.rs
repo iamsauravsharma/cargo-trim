@@ -3,9 +3,8 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
+use clap::Parser;
 use owo_colors::OwoColorize;
-use structopt::clap::AppSettings;
-use structopt::StructOpt;
 
 use crate::config_file::ConfigFile;
 use crate::crate_detail::CrateDetail;
@@ -25,7 +24,7 @@ mod registry;
 mod set;
 mod unset;
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 enum SubCommand {
     Init(init::Init),
     Clear(clear::Clear),
@@ -37,112 +36,109 @@ enum SubCommand {
     Registry(registry::Registry),
 }
 
-#[derive(Debug, StructOpt)]
-#[structopt(name= env!("CARGO_PKG_NAME"), settings=&[
-    AppSettings::GlobalVersion,
-    AppSettings::ArgRequiredElseHelp],
-    author=env!("CARGO_PKG_AUTHORS"),
-    about=env!("CARGO_PKG_DESCRIPTION")
+#[derive(Debug, Parser)]
+#[clap(name= clap::crate_name!(),
+    version=clap::crate_version!(),
+    propagate_version=true,
+    arg_required_else_help=true,
+    author=clap::crate_authors!(),
+    about=clap::crate_description!()
 )]
 #[allow(clippy::struct_excessive_bools)]
 pub(crate) struct Command {
-    #[structopt(long = "all", short = "a", help = "Clean up all registry & git crates")]
+    #[clap(long = "all", short = 'a', help = "Clean up all registry & git crates")]
     all: bool,
-    #[structopt(
+    #[clap(
         long = "directory",
-        short = "d",
+        short = 'd',
         help = "Extra list of directory of Rust projects for current command",
-        env = "TRIM_DIRECTORY",
-        hidden = true
+        env = "TRIM_DIRECTORY"
     )]
     directory: Option<Vec<String>>,
-    #[structopt(
+    #[clap(
         long = "dry-run",
-        short = "n",
+        short = 'n',
         help = "Run command in dry run mode to see what would be done"
     )]
     dry_run: bool,
-    #[structopt(
+    #[clap(
         long="gc",
-        short="g",
+        short='g',
         help="Git compress to reduce size of .cargo (git command required)",
         possible_values=&["all", "index", "git", "git-checkout", "git-db"]
     )]
     git_compress: Option<String>,
-    #[structopt(
+    #[clap(
         long = "ignore",
-        short = "i",
+        short = 'i',
         help = "Extra list of ignore file name which should be ignored for current command",
-        env = "TRIM_IGNORE",
-        hidden = true
+        env = "TRIM_IGNORE"
     )]
     ignore: Option<Vec<String>>,
-    #[structopt(
+    #[clap(
         long = "light",
-        short = "l",
+        short = 'l',
         help = "Light cleanup repo by removing git checkout and registry source but stores git db \
                 and registry archive for future compilation without internet requirement"
     )]
     light_cleanup: bool,
-    #[structopt(long = "old", short = "o", help = "Clean old cache crates")]
+    #[clap(long = "old", short = 'o', help = "Clean old cache crates")]
     old: bool,
-    #[structopt(
+    #[clap(
         long = "old-orphan",
-        short = "z",
+        short = 'z',
         help = "Clean crates which is both old and orphan"
     )]
     old_orphan: bool,
-    #[structopt(
+    #[clap(
         long = "orphan",
-        short = "x",
+        short = 'x',
         help = "Clean orphan cache crates i.e all crates which are not present in lock file \
                 generated till now use cargo trim -u to guarantee your all project generate lock \
                 file"
     )]
     orphan: bool,
-    #[structopt(
+    #[clap(
         long = "query",
-        short = "q",
+        short = 'q',
         help = "Return size of different .cargo/cache folders"
     )]
     query: bool,
-    #[structopt(
+    #[clap(
         long = "remove",
-        short = "r",
+        short = 'r',
         help = "Remove provided crates from registry or git",
         value_name = "crate"
     )]
     remove: Option<Vec<String>>,
-    #[structopt(
+    #[clap(
         long = "scan-hidden-folder",
-        help = " Whether to scan hidden folder for current command",
+        help = "Whether to scan hidden folder for current command",
         possible_values = &["true", "false"],
         env = "TRIM_SCAN_HIDDEN_FOLDER",
-        hidden = true
     )]
     scan_hidden_folder: Option<String>,
-    #[structopt(
+    #[clap(
         long = "scan-target-folder",
         help = "Whether to scan target folder for current command",
         possible_values = &["true", "false"],
         env = "TRIM_SCAN_TARGET_FOLDER",
-        hidden = true
     )]
     scan_target_folder: Option<String>,
-    #[structopt(
+    #[clap(
         long = "top",
-        short = "t",
+        short = 't',
         help = "Show certain number of top crates which have highest size",
         value_name = "number"
     )]
     top: Option<usize>,
-    #[structopt(
+    #[clap(
         long = "update",
-        short = "u",
+        short = 'u',
         help = "Generate and Update Cargo.lock file present inside config directory folder path"
     )]
     update: bool,
-    #[structopt(long="wipe", short="w", help="Wipe folder", possible_values=&[
+    #[clap(long="wipe", short='w', help="Wipe folder", possible_values=&[
         "git",
         "checkouts",
         "db",
@@ -153,7 +149,7 @@ pub(crate) struct Command {
         "src",
     ], value_name="folder")]
     wipe: Option<Vec<String>>,
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     sub_command: Option<SubCommand>,
 }
 

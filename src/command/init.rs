@@ -1,14 +1,14 @@
 use anyhow::{Context, Result};
-use structopt::StructOpt;
+use clap::Parser;
 
 use crate::config_file::ConfigFile;
 
-#[derive(Debug, StructOpt)]
-#[structopt(about = "Initialize current working directory as cargo trim directory")]
+#[derive(Debug, Parser)]
+#[clap(about = "Initialize current working directory as cargo trim directory")]
 pub(crate) struct Init {
-    #[structopt(
+    #[clap(
         long = "dry-run",
-        short = "n",
+        short = 'n',
         help = "Run command in dry run mode to see what would be done"
     )]
     dry_run: bool,

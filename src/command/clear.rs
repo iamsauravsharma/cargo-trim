@@ -1,14 +1,14 @@
 use anyhow::{Context, Result};
-use structopt::StructOpt;
+use clap::Parser;
 
 use crate::config_file::ConfigFile;
 
-#[derive(Debug, StructOpt)]
-#[structopt(about = "Clear current working directory from cargo cache config")]
+#[derive(Debug, Parser)]
+#[clap(about = "Clear current working directory from cargo cache config")]
 pub(crate) struct Clear {
-    #[structopt(
+    #[clap(
         long = "dry-run",
-        short = "n",
+        short = 'n',
         help = "Run command in dry run mode to see what would be done"
     )]
     dry_run: bool,

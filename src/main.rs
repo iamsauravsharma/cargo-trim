@@ -15,7 +15,7 @@ mod utils;
 use std::env;
 
 use anyhow::Result;
-use structopt::StructOpt;
+use clap::Parser;
 
 fn main() -> Result<()> {
     let args = env::args();
@@ -27,7 +27,7 @@ fn main() -> Result<()> {
         command_args.push(param);
     }
 
-    let command = command::Command::from_iter(command_args);
+    let command = command::Command::parse_from(command_args);
     command.run()?;
     Ok(())
 }

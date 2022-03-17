@@ -1,30 +1,29 @@
 use std::path::Path;
 
 use anyhow::{Context, Result};
+use clap::Parser;
 use owo_colors::OwoColorize;
-use structopt::clap::AppSettings;
-use structopt::StructOpt;
 
 use crate::config_file::ConfigFile;
 
-#[derive(Debug, StructOpt)]
-#[structopt(
+#[derive(Debug, Parser)]
+#[clap(
     about = "Query about config file data used by CLI",
-    settings=&[AppSettings::ArgRequiredElseHelp]
+    arg_required_else_help = true
 )]
 #[allow(clippy::struct_excessive_bools)]
 pub(crate) struct Config {
-    #[structopt(long = "directory", short = "d", help = "Query about directory data")]
+    #[clap(long = "directory", short = 'd', help = "Query about directory data")]
     directory: bool,
-    #[structopt(
+    #[clap(
         long = "ignore",
-        short = "i",
+        short = 'i',
         help = "Query about ignored file name data"
     )]
     ignore: bool,
-    #[structopt(long = "location", short = "l", help = "Return config file location")]
+    #[clap(long = "location", short = 'l', help = "Return config file location")]
     location: bool,
-    #[structopt(long = "print", short = "p", help = "Display config file content")]
+    #[clap(long = "print", short = 'p', help = "Display config file content")]
     print: bool,
 }
 

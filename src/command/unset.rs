@@ -1,33 +1,32 @@
 use anyhow::Result;
-use structopt::clap::AppSettings;
-use structopt::StructOpt;
+use clap::Parser;
 
 use crate::config_file::ConfigFile;
-#[derive(Debug, StructOpt)]
-#[structopt(about = "Unset values from config file", settings=&[AppSettings::ArgRequiredElseHelp])]
+#[derive(Debug, Parser)]
+#[clap(about = "Unset values from config file", arg_required_else_help = true)]
 pub(crate) struct Unset {
-    #[structopt(
+    #[clap(
         long = "dry-run",
-        short = "n",
+        short = 'n',
         help = "Run command in dry run mode to see what would be done"
     )]
     dry_run: bool,
-    #[structopt(
+    #[clap(
         long = "directory",
-        short = "d",
+        short = 'd',
         help = "Directory to be removed from config file"
     )]
     directory: Option<Vec<String>>,
-    #[structopt(
+    #[clap(
         long = "ignore",
-        short = "i",
+        short = 'i',
         help = "Ignore file name to be removed from config file",
         value_name = "file"
     )]
     ignore: Option<Vec<String>>,
-    #[structopt(long = "scan-hidden-folder", help = "Set scan hidden folder as false")]
+    #[clap(long = "scan-hidden-folder", help = "Set scan hidden folder as false")]
     scan_hidden_folder: bool,
-    #[structopt(long = "scan-target-folder", help = "Set scan hidden folder as false")]
+    #[clap(long = "scan-target-folder", help = "Set scan hidden folder as false")]
     scan_target_folder: bool,
 }
 

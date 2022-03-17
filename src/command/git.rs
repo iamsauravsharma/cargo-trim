@@ -2,68 +2,68 @@ use std::io::Write;
 use std::path::Path;
 
 use anyhow::{Context, Result};
+use clap::Parser;
 use owo_colors::OwoColorize;
-use structopt::clap::AppSettings;
-use structopt::StructOpt;
 
 use crate::crate_detail::CrateDetail;
 use crate::dir_path::DirPath;
 use crate::git_dir::GitDir;
 use crate::list_crate::CrateList;
 use crate::utils::{convert_pretty, get_size, print_dash, query_print, show_top_number_crates};
-#[derive(Debug, StructOpt)]
-#[structopt(about="Perform operation only to git related cache file", settings=&[
-    AppSettings::ArgRequiredElseHelp,
-])]
+#[derive(Debug, Parser)]
+#[clap(
+    about = "Perform operation only to git related cache file",
+    arg_required_else_help = true
+)]
 #[allow(clippy::struct_excessive_bools)]
 pub(crate) struct Git {
-    #[structopt(long = "all", short = "a", help = "Clean up all git crates")]
+    #[clap(long = "all", short = 'a', help = "Clean up all git crates")]
     all: bool,
-    #[structopt(
+    #[clap(
         long = "dry-run",
-        short = "n",
+        short = 'n',
         help = "Run command in dry run mode to see what would be done"
     )]
     dry_run: bool,
-    #[structopt(
+    #[clap(
         long = "light",
-        short = "l",
+        short = 'l',
         help = "Light cleanup repo by removing git checkout but stores git db for future \
                 compilation"
     )]
     light_cleanup: bool,
-    #[structopt(long = "old", short = "o", help = "Clean old git cache crates")]
+    #[clap(long = "old", short = 'o', help = "Clean old git cache crates")]
     old: bool,
-    #[structopt(
+    #[clap(
         long = "old-orphan",
-        short = "z",
+        short = 'z',
         help = "Clean git crates which is both old and orphan"
     )]
     old_orphan: bool,
-    #[structopt(
+    #[clap(
         long = "orphan",
-        short = "x",
+        short = 'x',
         help = "Clean orphan cache git crates i.e all crates which are not present in lock file \
                 generated till now use cargo trim -u to guarantee your all project generate lock \
                 file"
     )]
     orphan: bool,
-    #[structopt(
+    #[clap(
         long = "query",
-        short = "q",
+        short = 'q',
         help = "Return size of different .cargo/git cache folders"
     )]
     query: bool,
-    #[structopt(
+    #[clap(
         long = "remove",
-        short = "r",
+        short = 'r',
         help = "Remove provided crates from git",
         value_name = "crate"
     )]
     remove: Option<Vec<String>>,
-    #[structopt(
+    #[clap(
         long = "top",
-        short = "t",
+        short = 't',
         help = "Show certain number of top crates which have highest size",
         value_name = "number"
     )]
