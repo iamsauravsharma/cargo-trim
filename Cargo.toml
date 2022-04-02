@@ -13,9 +13,9 @@ categories = ["command-line-utilities"]
 
 [dependencies]
 anyhow = "1.0.56"
-clap = { version = "3.1.6", features = ["derive", "cargo", "env"] }
+clap = { version = "3.1.8", features = ["derive", "cargo", "env"] }
 dirs-next = "2.0.0"
-owo-colors = "3.2.0"
-semver = "1.0.6"
+owo-colors = "3.3.0"
+semver = "1.0.7"
 serde = { version = "1.0.136", features = ["derive"] }
 toml = "0.5.8"
