@@ -17,7 +17,7 @@ jobs:
       id: git-cliff
       with:
         config: cliff.toml
-        args: --verbose
+        args: -vv --current --strip header
       env:
         OUTPUT: CHANGELOG.md
     - name: Create GitHub release
