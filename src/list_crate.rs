@@ -307,23 +307,25 @@ fn list_old_crates(
 
     // list old git crate
     let mut old_crate_git = Vec::new();
-    let mut full_name_list = Vec::new();
     // analyze each crates of db dir and create list of head rev value
-    for crates in fs::read_dir(db_dir).context("failed to read db dir")? {
-        let entry = crates?.path();
-        let path = entry.as_path();
-        let file_name = path.file_name().unwrap().to_str().unwrap();
-        let name = file_name.rsplitn(2, '-').collect::<Vec<&str>>();
-        let mut rev_value = latest_rev_value(path)?;
-        rev_value.retain(|c| c != '\'');
-        let full_name = format!("{}-{}", name[1], rev_value);
-        full_name_list.push(full_name);
-    }
-    for crate_name in installed_crate_git {
-        if !crate_name.contains("-HEAD") {
-            // check if crate is in rev value else list that crate as old crate
-            if !full_name_list.contains(crate_name) {
-                old_crate_git.push(crate_name.to_string());
+    if db_dir.exists() {
+        let mut full_name_list = Vec::new();
+        for crates in fs::read_dir(db_dir).context("failed to read db dir")? {
+            let entry = crates?.path();
+            let path = entry.as_path();
+            let file_name = path.file_name().unwrap().to_str().unwrap();
+            let name = file_name.rsplitn(2, '-').collect::<Vec<&str>>();
+            let mut rev_value = latest_rev_value(path)?;
+            rev_value.retain(|c| c != '\'');
+            let full_name = format!("{}-{}", name[1], rev_value);
+            full_name_list.push(full_name);
+        }
+        for crate_name in installed_crate_git {
+            if !crate_name.contains("-HEAD") {
+                // check if crate is in rev value else list that crate as old crate
+                if !full_name_list.contains(crate_name) {
+                    old_crate_git.push(crate_name.to_string());
+                }
             }
         }
     }
