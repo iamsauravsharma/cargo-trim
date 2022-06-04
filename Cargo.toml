@@ -12,10 +12,10 @@ keywords = ["cargo", "cache", "remove", "manage", "clean"]
 categories = ["command-line-utilities"]
 
 [dependencies]
-anyhow = "1.0.56"
-clap = { version = "3.1.8", features = ["derive", "cargo", "env"] }
+anyhow = "1.0.57"
+clap = { version = "3.1.18", features = ["derive", "cargo", "env"] }
 dirs-next = "2.0.0"
-owo-colors = "3.3.0"
-semver = "1.0.7"
-serde = { version = "1.0.136", features = ["derive"] }
-toml = "0.5.8"
+owo-colors = "3.4.0"
+semver = "1.0.9"
+serde = { version = "1.0.137", features = ["derive"] }
+toml = "0.5.9"

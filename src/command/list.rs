@@ -130,11 +130,11 @@ fn list_used(crate_detail: &CrateDetail, crate_list: &CrateList, directory_is_em
 
 // list certain crate type to terminal
 fn crate_list_type(crate_detail: &CrateDetail, crate_type: &[String], title: &str) {
-    let first_path_len = 40;
-    let second_path_len = 10;
-    let second_path_precision = 3;
-    let dash_len = first_path_len + second_path_len + 3;
-    crate::utils::show_title(title, first_path_len, second_path_len, dash_len);
+    let first_width = 40;
+    let second_width = 10;
+    let precision = 3;
+    let dash_len = first_width + second_width + 3;
+    crate::utils::show_title(title, first_width, second_width, dash_len);
 
     let mut total_size = 0.0;
     for crates in crate_type {
@@ -142,18 +142,8 @@ fn crate_list_type(crate_detail: &CrateDetail, crate_type: &[String], title: &st
         total_size += size;
         println!(
             "|{:^first_width$}|{:^second_width$.precision$}|",
-            crates,
-            size,
-            first_width = first_path_len,
-            second_width = second_path_len,
-            precision = second_path_precision
+            crates, size
         );
     }
-    crate::utils::show_total_count(
-        crate_type,
-        total_size,
-        first_path_len,
-        second_path_len,
-        dash_len,
-    );
+    crate::utils::show_total_count(crate_type, total_size, first_width, second_width, dash_len);
 }

@@ -100,19 +100,12 @@ pub(crate) fn convert_pretty(num: u64) -> String {
 }
 
 // show title
-pub(crate) fn show_title(
-    title: &str,
-    first_path_len: usize,
-    second_path_len: usize,
-    dash_len: usize,
-) {
+pub(crate) fn show_title(title: &str, first_width: usize, second_width: usize, dash_len: usize) {
     print_dash(dash_len);
     println!(
         "|{:^first_width$}|{:^second_width$}|",
         title.bold(),
         "SIZE(MB)".bold(),
-        first_width = first_path_len,
-        second_width = second_path_len
     );
     print_dash(dash_len);
 }
@@ -121,8 +114,8 @@ pub(crate) fn show_title(
 pub(crate) fn show_total_count(
     data: &[String],
     size: f64,
-    first_path_len: usize,
-    second_path_len: usize,
+    first_width: usize,
+    second_width: usize,
     dash_len: usize,
 ) {
     if data.is_empty() {
@@ -130,8 +123,6 @@ pub(crate) fn show_total_count(
             "|{:^first_width$}|{:^second_width$}|",
             "NONE".red(),
             "0.000".red(),
-            first_width = first_path_len,
-            second_width = second_path_len,
         );
     }
     print_dash(dash_len);
@@ -139,8 +130,6 @@ pub(crate) fn show_total_count(
         "|{:^first_width$}|{:^second_width$}|",
         format!("Total no of crates:- {}", data.len()).blue(),
         format!("{:.3}", size).blue(),
-        first_width = first_path_len,
-        second_width = second_path_len,
     );
     print_dash(dash_len);
 }
@@ -161,10 +150,10 @@ pub(crate) fn show_top_number_crates(
     vector.sort_by(|a, b| (b.1).cmp(a.1));
     let top_number = std::cmp::min(vector.len(), number);
     let title = format!("Top {} {}", top_number, crate_type);
-    let first_path_len = 40;
-    let second_path_len = 10;
-    let dash_len = first_path_len + second_path_len + 3;
-    show_title(title.as_str(), first_path_len, second_path_len, dash_len);
+    let first_width = 40;
+    let second_width = 10;
+    let dash_len = first_width + second_width + 3;
+    show_title(title.as_str(), first_width, second_width, dash_len);
     // check n size and determine if to print n number of output NONE for 0 crates
     if vector.is_empty() {
         println!("|{:^40}|{:^10}|", "NONE".red(), "0.000".red());
