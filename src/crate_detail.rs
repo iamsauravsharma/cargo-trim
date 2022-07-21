@@ -229,6 +229,7 @@ impl CrateDetail {
     }
 }
 
+// Convert stored bytes size to KB and return f64 for crate from hashmap
 #[allow(clippy::cast_precision_loss)]
 fn get_hashmap_crate_size(hashmap: &HashMap<String, u64>, crate_name: &str) -> f64 {
     hashmap

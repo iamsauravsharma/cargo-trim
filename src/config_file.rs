@@ -21,7 +21,7 @@ pub(crate) struct ConfigFile {
     #[serde(default)]
     scan_target_folder: bool,
     #[serde(skip)]
-    config_file: PathBuf,
+    location: PathBuf,
 }
 
 impl ConfigFile {
@@ -39,7 +39,7 @@ impl ConfigFile {
         }
         let mut deserialize_config: Self =
             toml::from_str(&buffer).context("failed to convert string to Config")?;
-        deserialize_config.config_file = config_file.to_path_buf();
+        deserialize_config.location = config_file.to_path_buf();
         Ok(deserialize_config)
     }
 
@@ -68,7 +68,7 @@ impl ConfigFile {
         &mut self,
         value: bool,
         dry_run: bool,
-        save_to_config_file: bool,
+        save: bool,
     ) -> Result<()> {
         if dry_run {
             println!(
@@ -78,8 +78,8 @@ impl ConfigFile {
             );
         } else {
             self.scan_hidden_folder = value;
-            if save_to_config_file {
-                self.save_to_config_file()?;
+            if save {
+                self.save()?;
             }
             println!("Set scan_hidden_folder to {:?}", value);
         }
@@ -91,7 +91,7 @@ impl ConfigFile {
         &mut self,
         value: bool,
         dry_run: bool,
-        save_to_config_file: bool,
+        save: bool,
     ) -> Result<()> {
         if dry_run {
             println!(
@@ -101,8 +101,8 @@ impl ConfigFile {
             );
         } else {
             self.scan_target_folder = value;
-            if save_to_config_file {
-                self.save_to_config_file()?;
+            if save {
+                self.save()?;
             }
             println!("Set scan_target_folder to {:?}", value);
         }
@@ -110,18 +110,13 @@ impl ConfigFile {
     }
 
     // add directory
-    pub(crate) fn add_directory(
-        &mut self,
-        path: &str,
-        dry_run: bool,
-        save_to_config_file: bool,
-    ) -> Result<()> {
+    pub(crate) fn add_directory(&mut self, path: &str, dry_run: bool, save: bool) -> Result<()> {
         if dry_run {
             println!("{} Added {:?}", "Dry run:".yellow(), path);
         } else {
             self.directory.push(path.to_string());
-            if save_to_config_file {
-                self.save_to_config_file()?;
+            if save {
+                self.save()?;
             }
             println!("{} {:?}", "Added".red(), path);
         }
@@ -133,14 +128,14 @@ impl ConfigFile {
         &mut self,
         file_name: &str,
         dry_run: bool,
-        save_to_config_file: bool,
+        save: bool,
     ) -> Result<()> {
         if dry_run {
             println!("{} Added {:?}", "Dry run:".yellow(), file_name);
         } else {
             self.ignore_file_name.push(file_name.to_string());
-            if save_to_config_file {
-                self.save_to_config_file()?;
+            if save {
+                self.save()?;
             }
             println!("{} {:?}", "Added".red(), file_name);
         }
@@ -148,18 +143,13 @@ impl ConfigFile {
     }
 
     // remove directory
-    pub(crate) fn remove_directory(
-        &mut self,
-        path: &str,
-        dry_run: bool,
-        save_to_config_file: bool,
-    ) -> Result<()> {
+    pub(crate) fn remove_directory(&mut self, path: &str, dry_run: bool, save: bool) -> Result<()> {
         if dry_run {
             println!("{} {} {:?}", "Dry run:".yellow(), "Removed".red(), path);
         } else {
             self.directory.retain(|data| data != path);
-            if save_to_config_file {
-                self.save_to_config_file()?;
+            if save {
+                self.save()?;
             }
             println!("{} {:?}", "Removed".red(), path);
         }
@@ -171,7 +161,7 @@ impl ConfigFile {
         &mut self,
         file_name: &str,
         dry_run: bool,
-        save_to_config_file: bool,
+        save: bool,
     ) -> Result<()> {
         if dry_run {
             println!(
@@ -182,8 +172,8 @@ impl ConfigFile {
             );
         } else {
             self.ignore_file_name.retain(|data| data != file_name);
-            if save_to_config_file {
-                self.save_to_config_file()?;
+            if save {
+                self.save()?;
             }
             println!("{} {:?}", "Removed".red(), file_name);
         }
@@ -221,22 +211,25 @@ impl ConfigFile {
     // check if directory should be scanned for listing crates or not
     fn need_to_be_ignored(&self, path: &Path) -> bool {
         let file_name = path.file_name().unwrap().to_str().unwrap();
-        let is_file_name_ignored = self.ignore_file_name().contains(&file_name.to_owned());
-        let file_is_hidden = file_name.starts_with('.') && !self.scan_hidden_folder();
+        if self.ignore_file_name().contains(&file_name.to_owned()) {
+            return true;
+        }
+        if file_name.starts_with('.') && !self.scan_hidden_folder() {
+            return true;
+        }
         let target_dir_name = env::var("CARGO_BUILD_TARGET_DIR").unwrap_or_else(|_| {
             env::var("CARGO_TARGET_DIR").unwrap_or_else(|_| String::from("target"))
         });
-        let file_is_target = file_name == target_dir_name && !self.scan_target_folder();
-        is_file_name_ignored || file_is_hidden || file_is_target
+        file_name == target_dir_name && !self.scan_target_folder()
     }
 
     // save struct in the config file
-    fn save_to_config_file(&self) -> Result<()> {
+    fn save(&self) -> Result<()> {
         let mut buffer = String::new();
         let serialized =
             toml::to_string_pretty(&self).context("Config cannot to converted to pretty toml")?;
         buffer.push_str(&serialized);
-        fs::write(&self.config_file, buffer).context("Failed to write a value to config file")?;
+        fs::write(&self.location, buffer).context("Failed to write a value to config file")?;
         Ok(())
     }
 }
