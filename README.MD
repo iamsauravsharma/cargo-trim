@@ -14,13 +14,13 @@ Default \$CARGO_HOME is set as \$HOME/.cargo
 For installation of cargo-trim:-
 You can install from crates.io registry
 ```
-    cargo install cargo-trim
+cargo install cargo-trim
 ```
 __OR__
 
 For bleeding edge latest development version:
 ```
-    cargo install --git https://github.com/iamsauravsharma/cargo-trim
+cargo install --git https://github.com/iamsauravsharma/cargo-trim
 ```
 
 ### Setup
@@ -28,8 +28,8 @@ Initially you need to set up cargo-trim for some commands such as orphan clean t
 To set up cargo-trim to properly work for all projects related to rust lang go to directory where all projects lies and run
 `cargo trim init`. You can even run this command multiple time to add multiple directory.
 Or run command `cargo trim -d <directory-path>`. All projects inside the directory will be used for listing orphan crates. So
-if there are any projects in the other directory then their dependencies will be classified as orphan crates. If not used by any
-other crates.
+if there are any projects in the other directory then their dependencies will be classified as orphan crates if not used by any
+other crates present inside added directory.
 
 ### Command output
 All cargo-trim can be run using `cargo trim <command>`
