@@ -85,11 +85,11 @@ impl CrateList {
         config_file: &ConfigFile,
         crate_detail: &mut CrateDetail,
     ) -> Result<Self> {
-        let bin_dir = dir_path.bin_dir().as_path();
+        let bin_dir = dir_path.bin_dir();
         let cache_dir = dir_path.cache_dir();
         let src_dir = dir_path.src_dir();
-        let checkout_dir = dir_path.checkout_dir().as_path();
-        let db_dir = dir_path.db_dir().as_path();
+        let checkout_dir = dir_path.checkout_dir();
+        let db_dir = dir_path.db_dir();
 
         // list installed crates
         let installed_bin = crate_detail.list_installed_bin(bin_dir)?;
@@ -312,10 +312,9 @@ fn list_old_crates(
         let mut full_name_list = Vec::new();
         for crates in fs::read_dir(db_dir).context("failed to read db dir")? {
             let entry = crates?.path();
-            let path = entry.as_path();
-            let file_name = path.file_name().unwrap().to_str().unwrap();
+            let file_name = entry.file_name().unwrap().to_str().unwrap();
             let name = file_name.rsplitn(2, '-').collect::<Vec<&str>>();
-            let mut rev_value = latest_rev_value(path)?;
+            let mut rev_value = latest_rev_value(&entry)?;
             rev_value.retain(|c| c != '\'');
             let full_name = format!("{}-{}", name[1], rev_value);
             full_name_list.push(full_name);

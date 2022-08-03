@@ -187,12 +187,11 @@ impl CrateDetail {
             // read checkout dir to list crate name in form of crate_name-rev_sha
             for entry in fs::read_dir(checkout_dir).context("failed to read checkout directory")? {
                 let entry = entry?.path();
-                let path = entry.as_path();
-                let file_path = path
+                let file_path = entry
                     .file_name()
                     .context("failed to obtain checkout directory sub folder file name")?;
                 for git_sha_entry in
-                    fs::read_dir(path).context("failed to read checkout dir sub folder")?
+                    fs::read_dir(&entry).context("failed to read checkout dir sub folder")?
                 {
                     let git_sha_entry = git_sha_entry?.path();
                     let crate_size =

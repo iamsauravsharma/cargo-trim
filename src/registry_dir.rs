@@ -30,10 +30,7 @@ impl<'a> RegistryDir<'a> {
         if index_dir.exists() {
             for entry in fs::read_dir(index_dir).context("failed to read index directory")? {
                 let entry = entry?.path();
-                let registry_dir = entry.as_path();
-                for folder in
-                    fs::read_dir(registry_dir).context("failed to read registry directory")?
-                {
+                for folder in fs::read_dir(entry).context("failed to read registry directory")? {
                     let folder = folder?.path();
                     let folder_name = folder
                         .file_name()
@@ -166,7 +163,7 @@ fn remove_empty_index_cache_dir(path: &Path, dry_run: bool) -> Result<()> {
         for entry in fs::read_dir(path)? {
             let path = entry?.path();
             if path.is_dir() {
-                remove_empty_index_cache_dir(path.as_path(), dry_run)?;
+                remove_empty_index_cache_dir(&path, dry_run)?;
             }
         }
     }
