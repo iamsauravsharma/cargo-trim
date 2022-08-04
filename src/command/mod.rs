@@ -8,7 +8,6 @@ use owo_colors::OwoColorize;
 
 use crate::config_file::ConfigFile;
 use crate::crate_detail::CrateDetail;
-use crate::dir_path;
 use crate::dir_path::DirPath;
 use crate::git_dir::GitDir;
 use crate::list_crate::CrateList;
@@ -159,7 +158,7 @@ impl Command {
         let dry_run = self.dry_run;
 
         // List out all required path
-        let dir_path = dir_path::DirPath::new()?;
+        let dir_path = DirPath::new()?;
 
         // Read config file data
         let mut config_file = ConfigFile::init(dir_path.config_file())?;

@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::list_crate::CargoTomlLocation;
 
-// Stores config file information
+/// Stores config file information
 #[derive(Serialize, Deserialize, Default)]
 pub(crate) struct ConfigFile {
     #[serde(default)]
@@ -25,7 +25,7 @@ pub(crate) struct ConfigFile {
 }
 
 impl ConfigFile {
-    // Perform initial config file actions
+    /// Perform initial config file actions
     pub(crate) fn init(config_file: &Path) -> Result<Self> {
         let mut buffer = String::new();
         let mut file = fs::File::open(config_file).context("failed to open config file")?;
@@ -43,27 +43,27 @@ impl ConfigFile {
         Ok(deserialize_config)
     }
 
-    // return vector of directory value in config file
+    /// return vector of directory value in config file
     pub(crate) fn directory(&self) -> &Vec<String> {
         &self.directory
     }
 
-    // return vector of ignore file name value in config file
+    /// return vector of ignore file name value in config file
     pub(crate) fn ignore_file_name(&self) -> &Vec<String> {
         &self.ignore_file_name
     }
 
-    // scan hidden folder
+    /// scan hidden folder
     pub(crate) fn scan_hidden_folder(&self) -> bool {
         self.scan_hidden_folder
     }
 
-    // scan target folder
+    /// scan target folder
     pub(crate) fn scan_target_folder(&self) -> bool {
         self.scan_target_folder
     }
 
-    // Set scan hidden folder to value
+    /// Set scan hidden folder to value
     pub(crate) fn set_scan_hidden_folder(
         &mut self,
         value: bool,
@@ -86,7 +86,7 @@ impl ConfigFile {
         Ok(())
     }
 
-    // Set scan target folder to value
+    /// Set scan target folder to value
     pub(crate) fn set_scan_target_folder(
         &mut self,
         value: bool,
@@ -109,7 +109,7 @@ impl ConfigFile {
         Ok(())
     }
 
-    // add directory
+    /// add directory
     pub(crate) fn add_directory(&mut self, path: &str, dry_run: bool, save: bool) -> Result<()> {
         if dry_run {
             println!("{} Added {:?}", "Dry run:".yellow(), path);
@@ -123,7 +123,7 @@ impl ConfigFile {
         Ok(())
     }
 
-    // add ignore file name
+    /// add ignore file name
     pub(crate) fn add_ignore_file_name(
         &mut self,
         file_name: &str,
@@ -142,7 +142,7 @@ impl ConfigFile {
         Ok(())
     }
 
-    // remove directory
+    /// remove directory
     pub(crate) fn remove_directory(&mut self, path: &str, dry_run: bool, save: bool) -> Result<()> {
         if dry_run {
             println!("{} {} {:?}", "Dry run:".yellow(), "Removed".red(), path);
@@ -156,7 +156,7 @@ impl ConfigFile {
         Ok(())
     }
 
-    // remove ignore file name
+    /// remove ignore file name
     pub(crate) fn remove_ignore_file_name(
         &mut self,
         file_name: &str,
@@ -180,8 +180,8 @@ impl ConfigFile {
         Ok(())
     }
 
-    // List out cargo.toml file present directories by recursively analyze all
-    // folder present in directory
+    /// List out cargo.toml file present directories by recursively analyze all
+    /// folder present in directory
     pub(crate) fn list_cargo_toml(&self, path: &Path) -> Result<CargoTomlLocation> {
         let mut cargo_trim_list = CargoTomlLocation::new();
         if path.exists() {
@@ -208,7 +208,7 @@ impl ConfigFile {
         Ok(cargo_trim_list)
     }
 
-    // check if directory should be scanned for listing crates or not
+    /// check if directory should be scanned for listing crates or not
     fn need_to_be_ignored(&self, path: &Path) -> bool {
         let file_name = path.file_name().unwrap().to_str().unwrap();
         if self.ignore_file_name().contains(&file_name.to_owned()) {
@@ -223,7 +223,7 @@ impl ConfigFile {
         file_name == target_dir_name && !self.scan_target_folder()
     }
 
-    // save struct in the config file
+    /// save struct in the config file
     fn save(&self) -> Result<()> {
         let mut buffer = String::new();
         let serialized =

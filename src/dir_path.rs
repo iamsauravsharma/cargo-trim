@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 
-// Struct for storing Directory path
+/// Struct for storing Directory path
 pub(crate) struct DirPath {
     bin_dir: PathBuf,
     config_file: PathBuf,
@@ -17,7 +17,7 @@ pub(crate) struct DirPath {
 }
 
 impl DirPath {
-    // set directory path
+    /// set directory path
     pub(crate) fn new() -> Result<Self> {
         // set config file directory path
         let config_dir = dirs_next::config_dir().context("Cannot get config directory location")?;
@@ -65,47 +65,47 @@ impl DirPath {
         })
     }
 
-    // return path of bin dir
+    /// return path of bin dir
     pub(crate) fn bin_dir(&self) -> &PathBuf {
         &self.bin_dir
     }
 
-    // return path of config file
+    /// return path of config file
     pub(crate) fn config_file(&self) -> &PathBuf {
         &self.config_file
     }
 
-    // return path of git dir
+    /// return path of git dir
     pub(crate) fn git_dir(&self) -> &PathBuf {
         &self.git_dir
     }
 
-    // return path of checkout dir
+    /// return path of checkout dir
     pub(crate) fn checkout_dir(&self) -> &PathBuf {
         &self.checkout_dir
     }
 
-    // return path of db dir
+    /// return path of db dir
     pub(crate) fn db_dir(&self) -> &PathBuf {
         &self.db_dir
     }
 
-    // return path of registry dir
+    /// return path of registry dir
     pub(crate) fn registry_dir(&self) -> &PathBuf {
         &self.registry_dir
     }
 
-    // return path of cache dir
+    /// return path of cache dir
     pub(crate) fn cache_dir(&self) -> &PathBuf {
         &self.cache_dir
     }
 
-    // return path of index dir
+    /// return path of index dir
     pub(crate) fn index_dir(&self) -> &PathBuf {
         &self.index_dir
     }
 
-    // return path of src dir
+    /// return path of src dir
     pub(crate) fn src_dir(&self) -> &PathBuf {
         &self.src_dir
     }

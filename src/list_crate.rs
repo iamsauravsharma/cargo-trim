@@ -7,9 +7,9 @@ use serde::Deserialize;
 use crate::config_file::ConfigFile;
 use crate::crate_detail::CrateDetail;
 use crate::dir_path::DirPath;
-use crate::utils::clear_version_value;
+use crate::utils::split_name_version;
 
-// struct store Cargo.toml file location
+/// struct store Cargo.toml file location
 pub(crate) struct CargoTomlLocation {
     path: Vec<PathBuf>,
 }
@@ -64,7 +64,7 @@ impl Package {
     }
 }
 
-// struct to store all crate list detail with its type
+/// struct to store all crate list detail with its type
 pub(crate) struct CrateList {
     installed_bin: Vec<String>,
     installed_crate_registry: Vec<String>,
@@ -79,7 +79,7 @@ pub(crate) struct CrateList {
 }
 
 impl CrateList {
-    // create list of all types of crate present in directory
+    /// create list of all types of crate present in directory
     pub(crate) fn create_list(
         dir_path: &DirPath,
         config_file: &ConfigFile,
@@ -127,57 +127,57 @@ impl CrateList {
         })
     }
 
-    // provide list of installed bin
+    /// provide list of installed bin
     pub(crate) fn installed_bin(&self) -> &Vec<String> {
         &self.installed_bin
     }
 
-    // provide list of installed registry
+    /// provide list of installed registry
     pub(crate) fn installed_registry(&self) -> &Vec<String> {
         &self.installed_crate_registry
     }
 
-    // provide list of old registry
+    /// provide list of old registry
     pub(crate) fn old_registry(&self) -> &Vec<String> {
         &self.old_crate_registry
     }
 
-    // provide list of used registry
+    /// provide list of used registry
     pub(crate) fn used_registry(&self) -> &Vec<String> {
         &self.used_crate_registry
     }
 
-    // provide list o orphan registry
+    /// provide list o orphan registry
     pub(crate) fn orphan_registry(&self) -> &Vec<String> {
         &self.orphan_crate_registry
     }
 
-    // provide list of installed git
+    /// provide list of installed git
     pub(crate) fn installed_git(&self) -> &Vec<String> {
         &self.installed_crate_git
     }
 
-    // provide list of old git
+    /// provide list of old git
     pub(crate) fn old_git(&self) -> &Vec<String> {
         &self.old_crate_git
     }
 
-    // provide list of used git
+    /// provide list of used git
     pub(crate) fn used_git(&self) -> &Vec<String> {
         &self.used_crate_git
     }
 
-    // provide list of orphan git
+    /// provide list of orphan git
     pub(crate) fn orphan_git(&self) -> &Vec<String> {
         &self.orphan_crate_git
     }
 
-    // list out path of directory which contains cargo lock file
+    /// list out path of directory which contains cargo lock file
     pub(crate) fn cargo_toml_location(&self) -> &CargoTomlLocation {
         &self.cargo_toml_location
     }
 
-    // list crates which is both old and orphan
+    /// list crates which is both old and orphan
     pub(crate) fn list_old_orphan_registry(&self) -> Vec<String> {
         let mut old_orphan_registry = Vec::new();
         let orphan_list = self.orphan_registry();
@@ -189,7 +189,7 @@ impl CrateList {
         old_orphan_registry
     }
 
-    // list out git crates which is both old and orphan
+    /// list out git crates which is both old and orphan
     pub(crate) fn list_old_orphan_git(&self) -> Vec<String> {
         let mut old_orphan_git = Vec::new();
         let orphan_list = self.orphan_git();
@@ -202,8 +202,8 @@ impl CrateList {
     }
 }
 
-// Read out content of cargo.lock file to list out crates present so can be used
-// for orphan clean
+/// Read out content of cargo.lock file to list out crates present so can be
+/// used for orphan clean
 fn read_content(list: &[PathBuf]) -> Result<(Vec<String>, Vec<String>)> {
     let mut present_crate_registry = Vec::new();
     let mut present_crate_git = Vec::new();
@@ -257,7 +257,7 @@ fn read_content(list: &[PathBuf]) -> Result<(Vec<String>, Vec<String>)> {
     Ok((present_crate_registry, present_crate_git))
 }
 
-// List old crates
+/// List old crates
 fn list_old_crates(
     db_dir: &Path,
     installed_crate_registry: &[String],
@@ -334,7 +334,7 @@ fn list_old_crates(
     Ok((old_crate_registry, old_crate_git))
 }
 
-// list used crates
+/// list used crates
 fn list_used_crates(
     config_file: &ConfigFile,
 ) -> Result<(CargoTomlLocation, Vec<String>, Vec<String>)> {
@@ -357,7 +357,7 @@ fn list_used_crates(
     Ok((cargo_toml_location, used_crate_registry, used_crate_git))
 }
 
-// list orphan crates
+/// list orphan crates
 fn list_orphan_crates(
     installed_crate_registry: &[String],
     installed_crate_git: &[String],
@@ -399,18 +399,18 @@ fn list_orphan_crates(
     (orphan_crate_registry, orphan_crate_git)
 }
 
-// Function used to remove version from installed_crate_registry list so can be
-// used for old clean flag
-fn remove_version(installed_crate_registry: &[String]) -> Vec<(String, String)> {
+/// Function used to remove version from crates list so can be
+/// used for old clean flag
+fn remove_version(crates_full_name: &[String]) -> Vec<(String, String)> {
     let mut removed_version = Vec::new();
-    for crate_full_name in installed_crate_registry {
-        let data = clear_version_value(crate_full_name);
+    for crate_full_name in crates_full_name {
+        let data = split_name_version(crate_full_name);
         removed_version.push(data);
     }
     removed_version
 }
 
-// get latest commit rev value from git repository
+/// get latest commit rev value from git repository
 fn latest_rev_value(path: &Path) -> Result<String> {
     let output = std::process::Command::new("git")
         .arg("log")

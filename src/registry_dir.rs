@@ -5,9 +5,9 @@ use anyhow::{Context, Result};
 use owo_colors::OwoColorize;
 
 use crate::crate_detail::CrateDetail;
-use crate::utils::{clear_version_value, delete_folder};
+use crate::utils::{delete_folder, split_name_version};
 
-// Stores .cargo/registry cache & src information
+/// Stores .cargo/registry cache & src information
 pub(crate) struct RegistryDir<'a> {
     cache_dir: &'a str,
     src_dir: &'a str,
@@ -16,7 +16,7 @@ pub(crate) struct RegistryDir<'a> {
 }
 
 impl<'a> RegistryDir<'a> {
-    // Create new RegistryDir
+    /// Create new registry dir
     pub(crate) fn new(
         cache_dir: &'a Path,
         src_dir: &'a Path,
@@ -50,14 +50,14 @@ impl<'a> RegistryDir<'a> {
         })
     }
 
-    // Remove crate from src & cache directory
+    /// Remove crate from src & cache directory
     pub(crate) fn remove_crate(&mut self, crate_name: &str, dry_run: bool) {
         // remove crate from cache dir
         let mut is_success = remove_crate(Path::new(&self.cache_dir), crate_name, dry_run).is_ok();
         // remove crate from index dir
         is_success =
             remove_crate(Path::new(&self.src_dir), crate_name, dry_run).is_ok() && is_success;
-        let split_value = clear_version_value(crate_name);
+        let split_value = split_name_version(crate_name);
         let name = split_value.0;
         let index_cache = self.index_cache_dir.clone();
         // remove index cache dir if their is only one crate. It will also clean crate
@@ -91,7 +91,7 @@ impl<'a> RegistryDir<'a> {
         }
     }
 
-    // Remove list of crates
+    /// Remove list of crates
     pub(crate) fn remove_crate_list(
         &mut self,
         crate_detail: &CrateDetail,
@@ -107,7 +107,7 @@ impl<'a> RegistryDir<'a> {
     }
 }
 
-// Remove crates which name is provided to delete
+/// Remove crates which name is provided to delete
 fn remove_crate(path: &Path, value: &str, dry_run: bool) -> Result<()> {
     if path.exists() {
         for entry in fs::read_dir(path)? {
@@ -123,10 +123,10 @@ fn remove_crate(path: &Path, value: &str, dry_run: bool) -> Result<()> {
     Ok(())
 }
 
-// determine crate index cache location and remove crate index cache
+/// determine crate index cache location and remove crate index cache
 fn remove_index_cache(path: &Path, crate_name: &str, dry_run: bool) -> Result<()> {
     let mut crate_index_cache_location = path.to_path_buf();
-    let split_value = clear_version_value(crate_name);
+    let split_value = split_name_version(crate_name);
     let name = split_value.0;
     match name.len() {
         1 => {
@@ -152,7 +152,7 @@ fn remove_index_cache(path: &Path, crate_name: &str, dry_run: bool) -> Result<()
     Ok(())
 }
 
-// check if any index cache folder is empty if it is it is removed out
+/// check if any index cache folder is empty if it is it is removed out
 fn remove_empty_index_cache_dir(path: &Path, dry_run: bool) -> Result<()> {
     if fs::read_dir(path)
         .map(|mut i| i.next().is_none())

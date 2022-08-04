@@ -7,14 +7,14 @@ use owo_colors::OwoColorize;
 use crate::crate_detail::CrateDetail;
 use crate::utils::delete_folder;
 
-// Store git dir folder information
+/// Store git dir folder information
 pub(crate) struct GitDir<'a> {
     checkout_dir: &'a str,
     db_dir: &'a str,
 }
 
 impl<'a> GitDir<'a> {
-    // create new GitDir
+    /// create new git dir
     pub(crate) fn new(checkout_dir: &'a Path, db_dir: &'a Path) -> Self {
         let checkout_dir = checkout_dir.to_str().unwrap();
         let db_dir = db_dir.to_str().unwrap();
@@ -24,7 +24,7 @@ impl<'a> GitDir<'a> {
         }
     }
 
-    // remove crates
+    /// remove crates
     pub(crate) fn remove_crate(&self, crate_name: &str, dry_run: bool) {
         let is_success = if crate_name.contains("-HEAD") {
             remove_crate(Path::new(&self.db_dir), crate_name, dry_run).is_ok()
@@ -45,7 +45,7 @@ impl<'a> GitDir<'a> {
         }
     }
 
-    // Remove list of crates
+    /// Remove list of crates
     pub(crate) fn remove_crate_list(
         &self,
         crate_detail: &CrateDetail,
@@ -61,7 +61,7 @@ impl<'a> GitDir<'a> {
     }
 }
 
-// preform remove operation
+/// preform remove operation
 fn remove_crate(location: &Path, crate_name: &str, dry_run: bool) -> Result<()> {
     for entry in fs::read_dir(location)? {
         let path = entry?.path();

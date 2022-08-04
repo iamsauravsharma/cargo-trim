@@ -5,8 +5,10 @@ use std::path::Path;
 use anyhow::Result;
 use owo_colors::OwoColorize;
 
-// remove semver version part from crates full name
-pub(crate) fn clear_version_value(full_name: &str) -> (String, String) {
+use crate::crate_detail::CrateInfo;
+
+/// split name and semver version part from crates full name
+pub(crate) fn split_name_version(full_name: &str) -> (String, String) {
     let version_split: Vec<&str> = full_name.split('-').collect();
     let mut version_start_position = version_split.len();
     // check a split part to check from where a semver start for crate
@@ -22,7 +24,7 @@ pub(crate) fn clear_version_value(full_name: &str) -> (String, String) {
     (clear_name, version)
 }
 
-// delete folder with folder path provided
+/// delete folder with folder path provided
 pub(crate) fn delete_folder(path: &Path, dry_run: bool) -> Result<()> {
     if path.exists() {
         if path.is_file() {
@@ -42,7 +44,7 @@ pub(crate) fn delete_folder(path: &Path, dry_run: bool) -> Result<()> {
     Ok(())
 }
 
-// delete index .cache file
+/// delete index .cache file
 pub(crate) fn delete_index_cache(index_dir: &Path, dry_run: bool) -> Result<()> {
     for entry in fs::read_dir(index_dir)? {
         let registry_dir = entry?.path();
@@ -57,7 +59,7 @@ pub(crate) fn delete_index_cache(index_dir: &Path, dry_run: bool) -> Result<()> 
     Ok(())
 }
 
-//  get size of directory
+///  get size of directory
 pub(crate) fn get_size(path: &Path) -> Result<u64> {
     let mut total_size = 0;
     if path.is_dir() {
@@ -75,6 +77,7 @@ pub(crate) fn get_size(path: &Path) -> Result<u64> {
     Ok(total_size)
 }
 
+/// Convert size to pretty number
 #[allow(
     clippy::cast_precision_loss,
     clippy::cast_possible_truncation,
@@ -99,7 +102,7 @@ pub(crate) fn convert_pretty(num: u64) -> String {
     format!("{} {}", pretty_bytes, unit)
 }
 
-// show title
+/// show title
 pub(crate) fn show_title(title: &str, first_width: usize, second_width: usize, dash_len: usize) {
     print_dash(dash_len);
     println!(
@@ -110,7 +113,7 @@ pub(crate) fn show_title(title: &str, first_width: usize, second_width: usize, d
     print_dash(dash_len);
 }
 
-// show total count using data and size
+/// show total count using data and size
 pub(crate) fn show_total_count(
     data: &[String],
     size: f64,
@@ -134,41 +137,41 @@ pub(crate) fn show_total_count(
     print_dash(dash_len);
 }
 
-// print dash
+/// print dash
 pub(crate) fn print_dash(len: usize) {
     println!("{}", "-".repeat(len));
 }
 
-// top_crates() help to list out top n crates
+/// top crates help to list out top n crates
 pub(crate) fn show_top_number_crates(
-    crates: &HashMap<String, u64>,
+    crates: &HashMap<String, CrateInfo>,
     crate_type: &str,
     number: usize,
 ) {
     // sort crates by size
-    let mut vector = crates.iter().collect::<Vec<_>>();
-    vector.sort_by(|a, b| (b.1).cmp(a.1));
-    let top_number = std::cmp::min(vector.len(), number);
+    let mut crates = crates.iter().collect::<Vec<_>>();
+    crates.sort_by(|a, b| (b.1.size()).cmp(&a.1.size()));
+    let top_number = std::cmp::min(crates.len(), number);
     let title = format!("Top {} {}", top_number, crate_type);
     let first_width = 40;
     let second_width = 10;
     let dash_len = first_width + second_width + 3;
     show_title(title.as_str(), first_width, second_width, dash_len);
     // check n size and determine if to print n number of output NONE for 0 crates
-    if vector.is_empty() {
+    if crates.is_empty() {
         println!("|{:^40}|{:^10}|", "NONE".red(), "0.000".red());
     } else {
-        (0..top_number).for_each(|i| print_index_value_crate(&vector, i));
+        (0..top_number).for_each(|i| print_index_value_crate(&crates, i));
     }
     print_dash(dash_len);
 }
 
-// print crate name
+/// print crate name
 #[allow(clippy::cast_precision_loss)]
-pub(crate) fn print_index_value_crate(vector: &[(&String, &u64)], i: usize) {
-    let crate_name = vector[i].0;
-    let size = vector[i].1;
-    let size = (*size as f64) / 1000_f64.powi(2);
+pub(crate) fn print_index_value_crate(crates: &[(&String, &CrateInfo)], i: usize) {
+    let crate_name = crates[i].0;
+    let info = crates[i].1;
+    let size = (info.size() as f64) / 1000_f64.powi(2);
     println!("|{:^40}|{:^10.3}|", crate_name, size);
 }
 
@@ -194,32 +197,32 @@ pub(crate) fn query_print(first_param: &str, second_param: &str) {
 
 #[cfg(test)]
 mod test {
-    use super::{clear_version_value, convert_pretty};
+    use super::{convert_pretty, split_name_version};
 
     #[test]
-    fn test_clear_version_value() {
+    fn test_split_name_version() {
         assert_eq!(
-            clear_version_value("sample_crate-0.12.0"),
+            split_name_version("sample_crate-0.12.0"),
             ("sample_crate".to_string(), "0.12.0".to_string())
         );
         assert_eq!(
-            clear_version_value("another-crate-name-1.4.5"),
+            split_name_version("another-crate-name-1.4.5"),
             ("another-crate-name".to_string(), "1.4.5".to_string())
         );
         assert_eq!(
-            clear_version_value("crate-name-12-123-0.1.0"),
+            split_name_version("crate-name-12-123-0.1.0"),
             ("crate-name-12-123".to_string(), "0.1.0".to_string())
         );
         assert_eq!(
-            clear_version_value("complex_name-12.0.0-rc.1"),
+            split_name_version("complex_name-12.0.0-rc.1"),
             ("complex_name".to_string(), "12.0.0-rc.1".to_string())
         );
         assert_eq!(
-            clear_version_value("build-number-2.3.4+was0-5"),
+            split_name_version("build-number-2.3.4+was0-5"),
             ("build-number".to_string(), "2.3.4+was0-5".to_string())
         );
         assert_eq!(
-            clear_version_value("complex_spec-0.12.0-rc.1+name0.4.6"),
+            split_name_version("complex_spec-0.12.0-rc.1+name0.4.6"),
             (
                 "complex_spec".to_string(),
                 "0.12.0-rc.1+name0.4.6".to_string()
