@@ -524,9 +524,9 @@ fn old_clean(
     println!(
         "{}",
         format!(
-            "{} old crates removed which had occupied {:.3} MB",
+            "{} old crates removed which had occupied {}",
             total_git_crate_removed + total_registry_crate_removed,
-            git_sized_cleaned + registry_sized_cleaned
+            convert_pretty(git_sized_cleaned + registry_sized_cleaned)
         )
         .blue()
     );
@@ -575,9 +575,9 @@ fn old_orphan_clean(
     println!(
         "{}",
         format!(
-            "{} crates which are both old and orphan crate removed which had {:.3} MB",
+            "{} crates which are both old and orphan crate removed which had {}",
             total_git_crate_removed + total_registry_crate_removed,
-            git_sized_cleaned + registry_sized_cleaned
+            convert_pretty(git_sized_cleaned + registry_sized_cleaned)
         )
         .blue()
     );
@@ -626,9 +626,9 @@ fn orphan_clean(
     println!(
         "{}",
         format!(
-            "{} orphan crates removed which had occupied {:.3} MB",
+            "{} orphan crates removed which had occupied {}",
             total_git_crate_removed + total_registry_crate_removed,
-            git_sized_cleaned + registry_sized_cleaned
+            convert_pretty(git_sized_cleaned + registry_sized_cleaned)
         )
         .blue()
     );
@@ -651,9 +651,9 @@ fn remove_all(
     println!(
         "{}",
         format!(
-            "Total size of  {} crates removed :- {:.3} MB",
+            "Total size of  {} crates removed :- {}",
             total_git_crate_removed + total_registry_crate_removed,
-            git_sized_cleaned + registry_sized_cleaned
+            convert_pretty(git_sized_cleaned + registry_sized_cleaned)
         )
         .blue()
     );

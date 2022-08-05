@@ -101,25 +101,34 @@ fn list_used(crate_list: &CrateList, directory_is_empty: bool) {
 
 // list certain crate type to terminal
 fn crate_list_type(crate_metadata_list: &[CrateMetaData], title: &str) {
-    let first_width = 40;
-    let second_width = 14;
+    let first_width = 104;
+    let second_width = 16;
     let dash_len = first_width + second_width + 3;
     crate::utils::show_title(title, first_width, second_width, dash_len);
 
     let mut total_size = 0;
-    for crates in crate_metadata_list {
-        let size = crates.size();
+    for crate_metadata in crate_metadata_list {
+        let size = crate_metadata.size();
         total_size += size;
-        if let Some(version) = crates.version() {
+        if let Some(version) = crate_metadata.version() {
             println!(
                 "|{:^first_width$}|{:^second_width$}|",
-                format!("{}-{}", crates.name(), version),
+                format!(
+                    "{}-{} ({})",
+                    crate_metadata.name(),
+                    version,
+                    crate_metadata.source().clone().unwrap()
+                ),
                 convert_pretty(size)
             );
         } else {
             println!(
                 "|{:^first_width$}|{:^second_width$}|",
-                crates.name(),
+                format!(
+                    "{} ({})",
+                    crate_metadata.name(),
+                    crate_metadata.source().clone().unwrap()
+                ),
                 convert_pretty(size)
             );
         }

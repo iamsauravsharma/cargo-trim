@@ -56,7 +56,7 @@ impl<'a> RegistryDir<'a> {
         crate_detail: &CrateDetail,
         crate_metadata: &CrateMetaData,
         dry_run: bool,
-    ) {
+    ) -> bool {
         // remove crate from cache dir
         let mut is_success = remove_crate(
             Path::new(&self.cache_dir),
@@ -83,7 +83,9 @@ impl<'a> RegistryDir<'a> {
         // same crate is deleted it properly remove index cache
         for index_cache_dir in &index_cache {
             let index = Path::new(&index_cache_dir);
-            let source = crate_detail.source_url_from_path(index).unwrap();
+            let source = crate_detail
+                .source_url_from_path(index.parent().unwrap())
+                .unwrap();
             if &Some(source) == crate_metadata.source() {
                 let same_name_list = self.installed_crate.iter().filter(|&x| {
                     x.name() == crate_metadata.name() && x.source() == crate_metadata.source()
@@ -98,18 +100,31 @@ impl<'a> RegistryDir<'a> {
         }
         if dry_run {
             println!(
-                "{} {} {:?}",
+                r#"{} {} "{}-{} ({})""#,
                 "Dry run:".yellow(),
                 "Removed".red(),
-                crate_metadata.name()
+                crate_metadata.name(),
+                crate_metadata.version().as_ref().unwrap(),
+                crate_metadata.source().as_ref().unwrap()
             );
+            true
         } else if is_success {
-            println!("{} {:?}", "Removed".red(), crate_metadata.name());
+            println!(
+                r#"{} "{}-{} ({})""#,
+                "Removed".red(),
+                crate_metadata.name(),
+                crate_metadata.version().as_ref().unwrap(),
+                crate_metadata.source().as_ref().unwrap()
+            );
+            true
         } else {
             println!(
-                "Partially failed to remove some directory and file of {:?}",
-                crate_metadata.name()
+                r#"Failed to remove "{}-{} ({})""#,
+                crate_metadata.name(),
+                crate_metadata.version().as_ref().unwrap(),
+                crate_metadata.source().as_ref().unwrap()
             );
+            false
         }
     }
 
@@ -119,13 +134,16 @@ impl<'a> RegistryDir<'a> {
         crate_detail: &CrateDetail,
         list: &Vec<CrateMetaData>,
         dry_run: bool,
-    ) -> u64 {
+    ) -> (u64, usize) {
         let mut size_cleaned = 0;
+        let mut crate_removed = 0;
         for crate_metadata in list {
-            self.remove_crate(crate_detail, crate_metadata, dry_run);
-            size_cleaned += crate_metadata.size();
+            if self.remove_crate(crate_detail, crate_metadata, dry_run) {
+                size_cleaned += crate_metadata.size();
+                crate_removed += 1;
+            }
         }
-        size_cleaned
+        (size_cleaned, crate_removed)
     }
 }
 

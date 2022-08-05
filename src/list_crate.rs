@@ -305,9 +305,8 @@ fn list_old_crates(
         for crates in fs::read_dir(db_dir).context("failed to read db dir")? {
             let entry = crates?.path();
             let file_name = entry.file_name().unwrap().to_str().unwrap();
-            let name = file_name.rsplitn(2, '-').collect::<Vec<&str>>();
             let rev_value = latest_rev_value(&entry)?;
-            let full_name = format!("{}-{}", name[1], rev_value);
+            let full_name = format!("{}-{}", file_name, rev_value);
             full_name_list.push(full_name);
         }
         for crate_metadata in installed_crate_git {

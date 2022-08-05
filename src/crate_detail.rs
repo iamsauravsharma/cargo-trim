@@ -343,8 +343,7 @@ impl CrateDetail {
                         .context("failed to get file name")?;
                     let git_sha = git_sha_file_name.to_str().unwrap();
                     let file_name = file_path.to_str().unwrap();
-                    let split_name = file_name.rsplitn(2, '-').collect::<Vec<&str>>();
-                    let full_name = format!("{}-{}", split_name[1], git_sha);
+                    let full_name = format!("{}-{}", file_name, git_sha);
                     let crate_metadata = CrateMetaData {
                         name: full_name,
                         version: None,
@@ -365,8 +364,7 @@ impl CrateDetail {
                     get_size(&entry).context("failed to get size of db dir folders")?;
                 let file_name = entry.file_name().context("failed to get file name")?;
                 let file_name = file_name.to_str().unwrap();
-                let split_name = file_name.rsplitn(2, '-').collect::<Vec<&str>>();
-                let full_name = format!("{}-HEAD", split_name[1]);
+                let full_name = format!("{}-HEAD", file_name);
                 let crate_metadata = CrateMetaData {
                     name: full_name,
                     version: None,

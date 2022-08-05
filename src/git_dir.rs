@@ -30,7 +30,7 @@ impl<'a> GitDir<'a> {
         crate_detail: &CrateDetail,
         crate_metadata: &CrateMetaData,
         dry_run: bool,
-    ) {
+    ) -> bool {
         let is_success = if crate_metadata.name().contains("-HEAD") {
             remove_crate(
                 Path::new(&self.db_dir),
@@ -50,15 +50,28 @@ impl<'a> GitDir<'a> {
         };
         if dry_run {
             println!(
-                "{} {} {:?}",
+                r#"{} {} "{} ({})""#,
                 "Dry run:".yellow(),
                 "Removed".red(),
-                crate_metadata.name()
+                crate_metadata.name(),
+                crate_metadata.source().as_ref().unwrap()
             );
+            true
         } else if is_success {
-            println!("{} {:?}", "Removed".red(), crate_metadata.name());
+            println!(
+                r#"{} "{} ({})""#,
+                "Removed".red(),
+                crate_metadata.name(),
+                crate_metadata.source().as_ref().unwrap()
+            );
+            true
         } else {
-            println!("Failed to remove {:?}", crate_metadata.name());
+            println!(
+                r#"Failed to remove "{} ({})""#,
+                crate_metadata.name(),
+                crate_metadata.source().as_ref().unwrap()
+            );
+            false
         }
     }
 
@@ -68,13 +81,16 @@ impl<'a> GitDir<'a> {
         crate_detail: &CrateDetail,
         list: &[CrateMetaData],
         dry_run: bool,
-    ) -> u64 {
+    ) -> (u64, usize) {
         let mut size_cleaned = 0;
+        let mut crate_removed = 0;
         for crate_metadata in list {
-            self.remove_crate(crate_detail, crate_metadata, dry_run);
-            size_cleaned += crate_metadata.size();
+            if self.remove_crate(crate_detail, crate_metadata, dry_run) {
+                size_cleaned += crate_metadata.size();
+                crate_removed += 1;
+            }
         }
-        size_cleaned
+        (size_cleaned, crate_removed)
     }
 }
 
@@ -87,7 +103,7 @@ fn remove_crate(
 ) -> Result<()> {
     for entry in fs::read_dir(location)? {
         let path = entry?.path();
-        let source = crate_detail.source_url_from_path(location)?;
+        let source = crate_detail.source_url_from_path(&path)?;
         if &Some(source) == crate_metadata.source() {
             // split name to split crate and rev sha
             let name = crate_metadata.name();
@@ -98,12 +114,15 @@ fn remove_crate(
                 if rev_sha.contains("HEAD") {
                     delete_folder(&path, dry_run)?;
                 } else {
-                    for rev in fs::read_dir(path)? {
+                    for rev in fs::read_dir(&path)? {
                         let path = rev?.path();
                         let file_name = path.file_name().unwrap().to_str().unwrap();
                         if file_name == rev_sha {
                             delete_folder(&path, dry_run)?;
                         }
+                    }
+                    if fs::read_dir(&path)?.next().is_none() {
+                        delete_folder(&path, dry_run)?;
                     }
                 }
             }

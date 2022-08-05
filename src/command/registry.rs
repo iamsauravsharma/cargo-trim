@@ -96,8 +96,9 @@ impl Registry {
             println!(
                 "{}",
                 format!(
-                    "{} old crates removed which had occupied {:.3} MB",
-                    total_crate_removed, sized_cleaned
+                    "{} old crates removed which had occupied {}",
+                    total_crate_removed,
+                    convert_pretty(sized_cleaned)
                 )
                 .blue()
             );
@@ -136,8 +137,9 @@ impl Registry {
             println!(
                 "{}",
                 format!(
-                    "{} crates which are both old and orphan crate removed which had {:.3} MB",
-                    total_crate_removed, sized_cleaned
+                    "{} crates which are both old and orphan crate removed which had {}",
+                    total_crate_removed,
+                    convert_pretty(sized_cleaned)
                 )
                 .blue()
             );
@@ -172,8 +174,9 @@ impl Registry {
             println!(
                 "{}",
                 format!(
-                    "{} orphan crates removed which had occupied {:.3} MB",
-                    total_crate_removed, sized_cleaned
+                    "{} orphan crates removed which had occupied {}",
+                    total_crate_removed,
+                    convert_pretty(sized_cleaned)
                 )
                 .blue()
             );
@@ -185,8 +188,9 @@ impl Registry {
             println!(
                 "{}",
                 format!(
-                    "Total size of  {} crates removed :- {:.3} MB",
-                    total_crate_removed, sized_cleaned
+                    "Total size of  {} crates removed :- {}",
+                    total_crate_removed,
+                    convert_pretty(sized_cleaned)
                 )
                 .blue()
             );
@@ -266,14 +270,7 @@ pub(super) fn old_clean_registry(
     crate_detail: &CrateDetail,
     dry_run: bool,
 ) -> (u64, usize) {
-    (
-        registry_crates_location.remove_crate_list(
-            crate_detail,
-            crate_list.old_registry(),
-            dry_run,
-        ),
-        crate_list.old_registry().len(),
-    )
+    registry_crates_location.remove_crate_list(crate_detail, crate_list.old_registry(), dry_run)
 }
 
 // perform old orphan clean on registry crates
@@ -283,13 +280,10 @@ pub(super) fn old_orphan_clean_registry(
     crate_detail: &CrateDetail,
     dry_run: bool,
 ) -> (u64, usize) {
-    (
-        registry_crates_location.remove_crate_list(
-            crate_detail,
-            &crate_list.list_old_orphan_registry(),
-            dry_run,
-        ),
-        crate_list.list_old_orphan_registry().len(),
+    registry_crates_location.remove_crate_list(
+        crate_detail,
+        &crate_list.list_old_orphan_registry(),
+        dry_run,
     )
 }
 
@@ -300,14 +294,7 @@ pub(super) fn orphan_clean_registry(
     crate_detail: &CrateDetail,
     dry_run: bool,
 ) -> (u64, usize) {
-    (
-        registry_crates_location.remove_crate_list(
-            crate_detail,
-            crate_list.orphan_registry(),
-            dry_run,
-        ),
-        crate_list.orphan_registry().len(),
-    )
+    registry_crates_location.remove_crate_list(crate_detail, crate_list.orphan_registry(), dry_run)
 }
 
 // perform all install clean on registry crates
@@ -317,12 +304,9 @@ pub(super) fn all_clean_registry(
     crate_detail: &CrateDetail,
     dry_run: bool,
 ) -> (u64, usize) {
-    (
-        registry_crates_location.remove_crate_list(
-            crate_detail,
-            crate_list.installed_registry(),
-            dry_run,
-        ),
-        crate_list.installed_registry().len(),
+    registry_crates_location.remove_crate_list(
+        crate_detail,
+        crate_list.installed_registry(),
+        dry_run,
     )
 }
