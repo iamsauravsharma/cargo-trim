@@ -56,13 +56,6 @@ pub(crate) struct Registry {
     )]
     query: bool,
     #[clap(
-        long = "remove",
-        short = 'r',
-        help = "Remove provided crates from registry",
-        value_name = "crate"
-    )]
-    remove: Option<Vec<String>>,
-    #[clap(
         long = "top",
         short = 't',
         help = "Show certain number of top crates which have highest size",
@@ -199,16 +192,6 @@ impl Registry {
             );
         }
 
-        if let Some(crates) = &self.remove {
-            remove_crates(
-                crates,
-                crate_list,
-                registry_crates_location,
-                crate_detail,
-                dry_run,
-            );
-        }
-
         Ok(())
     }
 }
@@ -282,7 +265,7 @@ pub(super) fn old_clean_registry(
     crate_list: &CrateList,
     crate_detail: &CrateDetail,
     dry_run: bool,
-) -> (f64, usize) {
+) -> (u64, usize) {
     (
         registry_crates_location.remove_crate_list(
             crate_detail,
@@ -299,7 +282,7 @@ pub(super) fn old_orphan_clean_registry(
     crate_list: &CrateList,
     crate_detail: &CrateDetail,
     dry_run: bool,
-) -> (f64, usize) {
+) -> (u64, usize) {
     (
         registry_crates_location.remove_crate_list(
             crate_detail,
@@ -316,7 +299,7 @@ pub(super) fn orphan_clean_registry(
     crate_list: &CrateList,
     crate_detail: &CrateDetail,
     dry_run: bool,
-) -> (f64, usize) {
+) -> (u64, usize) {
     (
         registry_crates_location.remove_crate_list(
             crate_detail,
@@ -333,7 +316,7 @@ pub(super) fn all_clean_registry(
     crate_list: &CrateList,
     crate_detail: &CrateDetail,
     dry_run: bool,
-) -> (f64, usize) {
+) -> (u64, usize) {
     (
         registry_crates_location.remove_crate_list(
             crate_detail,
@@ -342,25 +325,4 @@ pub(super) fn all_clean_registry(
         ),
         crate_list.installed_registry().len(),
     )
-}
-
-// Remove certain registry crates
-fn remove_crates(
-    crates: &[String],
-    crate_list: &CrateList,
-    registry_crates_location: &mut RegistryDir,
-    crate_detail: &CrateDetail,
-    dry_run: bool,
-) {
-    let mut size_cleaned = 0.0;
-    for crate_name in crates {
-        if crate_list.installed_registry().contains(crate_name) {
-            registry_crates_location.remove_crate(crate_name, dry_run);
-            size_cleaned += crate_detail.find_size_registry_all(crate_name);
-        }
-    }
-    println!(
-        "{}",
-        format!("Total size removed :- {:.3} MB", size_cleaned).blue()
-    );
 }

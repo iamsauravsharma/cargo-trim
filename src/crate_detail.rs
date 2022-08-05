@@ -1,27 +1,104 @@
-use std::collections::HashMap;
+use std::cmp::Ordering;
+use std::collections::{HashMap, HashSet};
 use std::default::Default;
 use std::fs;
+use std::hash::Hash;
 use std::path::Path;
 
 use anyhow::{Context, Result};
+use semver::Version;
 
-use crate::utils::get_size;
+use crate::utils::{get_size, split_name_version};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) struct CrateMetaData {
+    name: String,
+    version: Option<Version>,
     size: u64,
     source: Option<String>,
 }
 
 impl CrateMetaData {
+    pub(crate) fn new(
+        name: String,
+        version: Option<Version>,
+        size: u64,
+        source: Option<String>,
+    ) -> Self {
+        Self {
+            name,
+            version,
+            size,
+            source,
+        }
+    }
+
+    pub(crate) fn name(&self) -> &String {
+        &self.name
+    }
+
+    pub(crate) fn version(&self) -> &Option<Version> {
+        &self.version
+    }
+
     pub(crate) fn size(&self) -> u64 {
         self.size
+    }
+
+    pub(crate) fn source(&self) -> &Option<String> {
+        &self.source
+    }
+}
+
+impl PartialOrd for CrateMetaData {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        match self.name.partial_cmp(&other.name) {
+            Some(Ordering::Equal) => {}
+            ord => return ord,
+        }
+        match self.source.partial_cmp(&other.source) {
+            Some(Ordering::Equal) => {}
+            ord => return ord,
+        }
+        match self.version.partial_cmp(&other.version) {
+            Some(Ordering::Equal) => {}
+            ord => return ord,
+        }
+        self.size.partial_cmp(&other.size)
+    }
+}
+
+impl Ord for CrateMetaData {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match self.name.cmp(&other.name) {
+            Ordering::Equal => {}
+            ord => return ord,
+        }
+        match self.source.cmp(&other.source) {
+            Ordering::Equal => {}
+            ord => return ord,
+        }
+        match self.version.cmp(&other.version) {
+            Ordering::Equal => {}
+            ord => return ord,
+        }
+        self.size.cmp(&other.size)
     }
 }
 
 impl PartialEq for CrateMetaData {
     fn eq(&self, other: &Self) -> bool {
-        self.size == other.size && self.source == other.source
+        self.name == other.name && self.version == other.version && self.source == other.source
+    }
+}
+
+impl Eq for CrateMetaData {}
+
+impl Hash for CrateMetaData {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.name.hash(state);
+        self.version.hash(state);
+        self.source.hash(state);
     }
 }
 
@@ -29,11 +106,11 @@ impl PartialEq for CrateMetaData {
 #[derive(Default)]
 pub(crate) struct CrateDetail {
     source_info: HashMap<String, String>,
-    bin: HashMap<String, CrateMetaData>,
-    git_crates_source: HashMap<String, CrateMetaData>,
-    registry_crates_source: HashMap<String, CrateMetaData>,
-    git_crates_archive: HashMap<String, CrateMetaData>,
-    registry_crates_archive: HashMap<String, CrateMetaData>,
+    bin: HashSet<CrateMetaData>,
+    git_crates_source: HashSet<CrateMetaData>,
+    registry_crates_source: HashSet<CrateMetaData>,
+    git_crates_archive: HashSet<CrateMetaData>,
+    registry_crates_archive: HashSet<CrateMetaData>,
 }
 
 impl CrateDetail {
@@ -99,100 +176,58 @@ impl CrateDetail {
             .to_string())
     }
 
-    /// return bin crates size information
-    pub(crate) fn bin(&self) -> &HashMap<String, CrateMetaData> {
+    /// return bin crates metadata
+    pub(crate) fn bin(&self) -> &HashSet<CrateMetaData> {
         &self.bin
     }
 
-    /// return git crates source size information
-    pub(crate) fn git_crates_source(&self) -> &HashMap<String, CrateMetaData> {
+    /// return git crates source
+    pub(crate) fn git_crates_source(&self) -> &HashSet<CrateMetaData> {
         &self.git_crates_source
     }
 
-    /// return registry crates source size information
-    pub(crate) fn registry_crates_source(&self) -> &HashMap<String, CrateMetaData> {
+    /// return registry crates source metadata
+    pub(crate) fn registry_crates_source(&self) -> &HashSet<CrateMetaData> {
         &self.registry_crates_source
     }
 
-    /// return git crates archive size information
-    pub(crate) fn git_crates_archive(&self) -> &HashMap<String, CrateMetaData> {
+    /// return git crates archive metadata
+    pub(crate) fn git_crates_archive(&self) -> &HashSet<CrateMetaData> {
         &self.git_crates_archive
     }
 
-    /// return registry crates archive size information
-    pub(crate) fn registry_crates_archive(&self) -> &HashMap<String, CrateMetaData> {
+    /// return registry crates archive metadata
+    pub(crate) fn registry_crates_archive(&self) -> &HashSet<CrateMetaData> {
         &self.registry_crates_archive
     }
 
     /// add bin information to crate detail
-    fn add_bin(&mut self, bin_name: String, size: u64) {
-        self.bin
-            .insert(bin_name, CrateMetaData { size, source: None });
+    fn add_bin(&mut self, bin_metadata: &CrateMetaData) {
+        self.bin.insert(bin_metadata.clone());
     }
 
     /// add git crate source information to crate detail
-    fn add_git_crate_source(&mut self, crate_name: String, size: u64, source: String) {
-        add_crate_to_hash_map(&mut self.git_crates_source, crate_name, size, source);
+    fn add_git_crate_source(&mut self, crate_metadata: &CrateMetaData) {
+        self.git_crates_source.insert(crate_metadata.clone());
     }
 
     /// add registry crate source information to crate detail
-    fn add_registry_crate_source(&mut self, crate_name: String, size: u64, source: String) {
-        add_crate_to_hash_map(&mut self.registry_crates_source, crate_name, size, source);
+    fn add_registry_crate_source(&mut self, crate_metadata: &CrateMetaData) {
+        self.registry_crates_source.insert(crate_metadata.clone());
     }
 
     /// add git crate archive information to crate detail
-    fn add_git_crate_archive(&mut self, crate_name: String, size: u64, source: String) {
-        add_crate_to_hash_map(&mut self.git_crates_archive, crate_name, size, source);
+    fn add_git_crate_archive(&mut self, crate_metadata: &CrateMetaData) {
+        self.git_crates_archive.insert(crate_metadata.clone());
     }
 
     /// add registry crate archive information to crate detail
-    fn add_registry_crate_archive(&mut self, crate_name: String, size: u64, source: String) {
-        add_crate_to_hash_map(&mut self.registry_crates_archive, crate_name, size, source);
-    }
-
-    /// find size of certain git crate source in KB
-    fn find_size_git_source(&self, crate_name: &str) -> f64 {
-        get_hashmap_crate_size(&self.git_crates_source, crate_name)
-    }
-
-    /// find size of certain registry source in KB
-    fn find_size_registry_source(&self, crate_name: &str) -> f64 {
-        get_hashmap_crate_size(&self.registry_crates_source, crate_name)
-    }
-
-    /// find size of certain git crate archive in KB
-    fn find_size_git_archive(&self, crate_name: &str) -> f64 {
-        get_hashmap_crate_size(&self.git_crates_archive, crate_name)
-    }
-
-    /// find size of certain registry archive in KB
-    fn find_size_registry_archive(&self, crate_name: &str) -> f64 {
-        get_hashmap_crate_size(&self.registry_crates_archive, crate_name)
-    }
-
-    /// return certain git crate total size in KB
-    pub(crate) fn find_size_git_all(&self, crate_name: &str) -> f64 {
-        self.find_size_git_archive(crate_name) + self.find_size_git_source(crate_name)
-    }
-
-    /// return certain registry crate total size in KB
-    pub(crate) fn find_size_registry_all(&self, crate_name: &str) -> f64 {
-        self.find_size_registry_archive(crate_name) + self.find_size_registry_source(crate_name)
-    }
-
-    /// find crate size if location/title is given in KB
-    pub(crate) fn find(&self, crate_name: &str, location: &str) -> f64 {
-        if location.contains("REGISTRY") {
-            self.find_size_registry_all(crate_name)
-        } else if location.contains("GIT") {
-            self.find_size_git_all(crate_name)
-        } else {
-            0.0
-        }
+    fn add_registry_crate_archive(&mut self, crate_metadata: &CrateMetaData) {
+        self.registry_crates_archive.insert(crate_metadata.clone());
     }
 
     /// list installed bin
-    pub(crate) fn list_installed_bin(&mut self, bin_dir: &Path) -> Result<Vec<String>> {
+    pub(crate) fn list_installed_bin(&mut self, bin_dir: &Path) -> Result<Vec<CrateMetaData>> {
         let mut installed_bin = Vec::new();
         if bin_dir.exists() {
             for entry in fs::read_dir(bin_dir).context("failed to read bin directory")? {
@@ -202,8 +237,14 @@ impl CrateDetail {
                     .file_name()
                     .context("failed to get file name from bin directory")?;
                 let bin_name = file_name.to_str().unwrap().to_string();
-                self.add_bin(bin_name.clone(), bin_size);
-                installed_bin.push(bin_name);
+                let bin_metadata = CrateMetaData {
+                    name: bin_name,
+                    version: None,
+                    size: bin_size,
+                    source: None,
+                };
+                self.add_bin(&bin_metadata);
+                installed_bin.push(bin_metadata);
             }
         }
         installed_bin.sort();
@@ -215,8 +256,8 @@ impl CrateDetail {
         &mut self,
         src_dir: &Path,
         cache_dir: &Path,
-    ) -> Result<Vec<String>> {
-        let mut installed_crate_registry = Vec::new();
+    ) -> Result<Vec<CrateMetaData>> {
+        let mut installed_crate_registry = HashSet::new();
         // read src dir to get installed crate
         if src_dir.exists() {
             for entry in fs::read_dir(src_dir).context("failed to read src directory")? {
@@ -230,12 +271,15 @@ impl CrateDetail {
                         .file_name()
                         .context("failed to get file name form main entry")?;
                     let crate_name = file_name.to_str().unwrap();
-                    self.add_registry_crate_source(
-                        crate_name.to_owned(),
-                        crate_size,
-                        source.clone(),
-                    );
-                    installed_crate_registry.push(crate_name.to_owned());
+                    let (name, version) = split_name_version(crate_name);
+                    let crate_metadata = CrateMetaData {
+                        name,
+                        version: Some(version),
+                        size: crate_size,
+                        source: Some(source.clone()),
+                    };
+                    self.add_registry_crate_source(&crate_metadata);
+                    update_crate_list(&mut installed_crate_registry, &crate_metadata);
                 }
             }
         }
@@ -253,19 +297,24 @@ impl CrateDetail {
                         .context("failed to get file name from cache dir")?;
                     let crate_size = get_size(&entry).context("failed to get size")?;
                     let crate_name = file_name.to_str().unwrap();
-                    let split_name = crate_name.rsplitn(2, '.').collect::<Vec<&str>>();
-                    self.add_registry_crate_archive(
-                        split_name[1].to_owned(),
-                        crate_size,
-                        source.clone(),
-                    );
-                    installed_crate_registry.push(split_name[1].to_owned());
+                    let (name, version) = split_name_version(crate_name);
+                    let crate_metadata = CrateMetaData {
+                        name,
+                        version: Some(version),
+                        size: crate_size,
+                        source: Some(source.clone()),
+                    };
+                    self.add_registry_crate_archive(&crate_metadata);
+                    update_crate_list(&mut installed_crate_registry, &crate_metadata);
                 }
             }
         }
-        installed_crate_registry.sort();
-        installed_crate_registry.dedup();
-        Ok(installed_crate_registry)
+        let mut installed_crates = Vec::new();
+        for crate_metadata in installed_crate_registry {
+            installed_crates.push(crate_metadata);
+        }
+        installed_crates.sort();
+        Ok(installed_crates)
     }
 
     /// list all installed git crates
@@ -273,8 +322,8 @@ impl CrateDetail {
         &mut self,
         checkout_dir: &Path,
         db_dir: &Path,
-    ) -> Result<Vec<String>> {
-        let mut installed_crate_git = Vec::new();
+    ) -> Result<Vec<CrateMetaData>> {
+        let mut installed_crate_git = HashSet::new();
         if checkout_dir.exists() {
             // read checkout dir to list crate name in form of crate_name-rev_sha
             for entry in fs::read_dir(checkout_dir).context("failed to read checkout directory")? {
@@ -296,8 +345,14 @@ impl CrateDetail {
                     let file_name = file_path.to_str().unwrap();
                     let split_name = file_name.rsplitn(2, '-').collect::<Vec<&str>>();
                     let full_name = format!("{}-{}", split_name[1], git_sha);
-                    self.add_git_crate_archive(full_name.clone(), crate_size, source.clone());
-                    installed_crate_git.push(full_name);
+                    let crate_metadata = CrateMetaData {
+                        name: full_name,
+                        version: None,
+                        size: crate_size,
+                        source: Some(source.clone()),
+                    };
+                    self.add_git_crate_archive(&crate_metadata);
+                    update_crate_list(&mut installed_crate_git, &crate_metadata);
                 }
             }
         }
@@ -312,129 +367,34 @@ impl CrateDetail {
                 let file_name = file_name.to_str().unwrap();
                 let split_name = file_name.rsplitn(2, '-').collect::<Vec<&str>>();
                 let full_name = format!("{}-HEAD", split_name[1]);
-                self.add_git_crate_source(full_name.clone(), crate_size, source.clone());
-                installed_crate_git.push(full_name);
+                let crate_metadata = CrateMetaData {
+                    name: full_name,
+                    version: None,
+                    size: crate_size,
+                    source: Some(source),
+                };
+                self.add_git_crate_source(&crate_metadata);
+                update_crate_list(&mut installed_crate_git, &crate_metadata);
             }
         }
-        installed_crate_git.sort();
-        installed_crate_git.dedup();
-        Ok(installed_crate_git)
+        let mut installed_crates = Vec::new();
+        for crate_metadata in installed_crate_git {
+            installed_crates.push(crate_metadata);
+        }
+        installed_crates.sort();
+        Ok(installed_crates)
     }
 }
 
-/// Convert stored bytes size to KB and return f64 for crate from hashmap
-#[allow(clippy::cast_precision_loss)]
-fn get_hashmap_crate_size(hashmap: &HashMap<String, CrateMetaData>, crate_name: &str) -> f64 {
-    hashmap
-        .get(crate_name)
-        .map_or(0.0, |info| (info.size as f64) / 1000_f64.powi(2))
-}
-
-fn add_crate_to_hash_map(
-    hashmap: &mut HashMap<String, CrateMetaData>,
-    crate_name: String,
-    size: u64,
-    source: String,
-) {
-    if let Some(info) = hashmap.get_mut(&crate_name) {
-        info.size += size;
-    } else {
-        hashmap.insert(
-            crate_name,
-            CrateMetaData {
-                size,
-                source: Some(source),
-            },
-        );
+fn update_crate_list(hash_set: &mut HashSet<CrateMetaData>, temp_crate_metadata: &CrateMetaData) {
+    let meta_data_exists = hash_set.get(temp_crate_metadata).is_some();
+    let mut current_size = temp_crate_metadata.size;
+    if meta_data_exists {
+        current_size += hash_set.get(temp_crate_metadata).unwrap().size;
     }
-}
-
-#[cfg(test)]
-mod test {
-    use std::collections::HashMap;
-
-    use super::{add_crate_to_hash_map, get_hashmap_crate_size};
-    use crate::crate_detail::CrateMetaData;
-    #[test]
-    fn test_get_hashmap_crate_size() {
-        let mut hashmap_content = HashMap::new();
-        hashmap_content.insert(
-            "sample_crate".to_string(),
-            CrateMetaData {
-                size: 1000,
-                source: Some("test".to_string()),
-            },
-        );
-        hashmap_content.insert(
-            "sample_crate_2".to_string(),
-            CrateMetaData {
-                size: 20,
-                source: Some("test".to_string()),
-            },
-        );
-
-        assert_eq!(
-            get_hashmap_crate_size(&hashmap_content, "sample_crate_2"),
-            0.00002
-        );
-        assert_eq!(
-            get_hashmap_crate_size(&hashmap_content, "sample_crate_3"),
-            0.0
-        );
-    }
-    #[test]
-    fn test_add_crate_to_hashmap() {
-        let mut hashmap_content = HashMap::new();
-        hashmap_content.insert(
-            "sample_crate".to_string(),
-            CrateMetaData {
-                size: 10000,
-                source: Some("test".to_string()),
-            },
-        );
-        hashmap_content.insert(
-            "sample_crate_2".to_string(),
-            CrateMetaData {
-                size: 20,
-                source: Some("test".to_string()),
-            },
-        );
-        add_crate_to_hash_map(
-            &mut hashmap_content,
-            "sample_crate_2".to_string(),
-            3000,
-            "test".to_string(),
-        );
-        add_crate_to_hash_map(
-            &mut hashmap_content,
-            "sample_crate_3".to_string(),
-            2500,
-            "test".to_string(),
-        );
-
-        let mut another_hashmap = HashMap::new();
-        another_hashmap.insert(
-            "sample_crate".to_string(),
-            CrateMetaData {
-                size: 10000,
-                source: Some("test".to_string()),
-            },
-        );
-        another_hashmap.insert(
-            "sample_crate_2".to_string(),
-            CrateMetaData {
-                size: 3020,
-                source: Some("test".to_string()),
-            },
-        );
-        another_hashmap.insert(
-            "sample_crate_3".to_string(),
-            CrateMetaData {
-                size: 2500,
-                source: Some("test".to_string()),
-            },
-        );
-
-        assert_eq!(hashmap_content, another_hashmap);
-    }
+    hash_set.remove(temp_crate_metadata);
+    hash_set.insert(CrateMetaData {
+        size: current_size,
+        ..temp_crate_metadata.clone()
+    });
 }

@@ -104,13 +104,6 @@ pub(crate) struct Command {
     )]
     query: bool,
     #[clap(
-        long = "remove",
-        short = 'r',
-        help = "Remove provided crates from registry or git",
-        value_name = "crate"
-    )]
-    remove: Option<Vec<String>>,
-    #[clap(
         long = "scan-hidden-folder",
         help = "Whether to scan hidden folder for current command",
         possible_values = &["true", "false"],
@@ -283,28 +276,13 @@ impl Command {
             );
         }
 
-        if let Some(crates) = &self.remove {
-            remove_crates(
-                crates,
-                &crate_list,
-                &mut registry_crates_location,
-                &git_crates_location,
-                &crate_detail,
-                dry_run,
-            );
-        }
-
         if let Some(sub_command) = &self.sub_command {
             match &sub_command {
                 SubCommand::Init(init) => init.run(&mut config_file)?,
                 SubCommand::Clear(clear) => clear.run(&mut config_file)?,
                 SubCommand::Config(config) => config.run(&config_file, dir_path.config_file())?,
                 SubCommand::List(list) => {
-                    list.run(
-                        &crate_detail,
-                        &crate_list,
-                        config_file.directory().is_empty(),
-                    );
+                    list.run(&crate_list, config_file.directory().is_empty());
                 }
                 SubCommand::Set(set) => set.run(&mut config_file)?,
                 SubCommand::Unset(unset) => unset.run(&mut config_file)?,
@@ -678,32 +656,5 @@ fn remove_all(
             git_sized_cleaned + registry_sized_cleaned
         )
         .blue()
-    );
-}
-
-// Remove certain crates
-fn remove_crates(
-    crates: &[String],
-    crate_list: &CrateList,
-    registry_crates_location: &mut RegistryDir,
-    git_crates_location: &GitDir,
-    crate_detail: &CrateDetail,
-    dry_run: bool,
-) {
-    let mut size_cleaned = 0.0;
-    for crate_name in crates {
-        if crate_list.installed_registry().contains(crate_name) {
-            registry_crates_location.remove_crate(crate_name, dry_run);
-            size_cleaned += crate_detail.find_size_registry_all(crate_name);
-        }
-
-        if crate_list.installed_git().contains(crate_name) {
-            git_crates_location.remove_crate(crate_name, dry_run);
-            size_cleaned += crate_detail.find_size_git_all(crate_name);
-        }
-    }
-    println!(
-        "{}",
-        format!("Total size removed :- {:.3} MB", size_cleaned).blue()
     );
 }

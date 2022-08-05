@@ -4,7 +4,7 @@ use std::path::Path;
 use anyhow::Result;
 use owo_colors::OwoColorize;
 
-use crate::crate_detail::CrateDetail;
+use crate::crate_detail::{CrateDetail, CrateMetaData};
 use crate::utils::delete_folder;
 
 /// Store git dir folder information
@@ -25,23 +25,40 @@ impl<'a> GitDir<'a> {
     }
 
     /// remove crates
-    pub(crate) fn remove_crate(&self, crate_name: &str, dry_run: bool) {
-        let is_success = if crate_name.contains("-HEAD") {
-            remove_crate(Path::new(&self.db_dir), crate_name, dry_run).is_ok()
+    pub(crate) fn remove_crate(
+        &self,
+        crate_detail: &CrateDetail,
+        crate_metadata: &CrateMetaData,
+        dry_run: bool,
+    ) {
+        let is_success = if crate_metadata.name().contains("-HEAD") {
+            remove_crate(
+                Path::new(&self.db_dir),
+                crate_detail,
+                crate_metadata,
+                dry_run,
+            )
+            .is_ok()
         } else {
-            remove_crate(Path::new(&self.checkout_dir), crate_name, dry_run).is_ok()
+            remove_crate(
+                Path::new(&self.checkout_dir),
+                crate_detail,
+                crate_metadata,
+                dry_run,
+            )
+            .is_ok()
         };
         if dry_run {
             println!(
                 "{} {} {:?}",
                 "Dry run:".yellow(),
                 "Removed".red(),
-                crate_name
+                crate_metadata.name()
             );
         } else if is_success {
-            println!("{} {:?}", "Removed".red(), crate_name);
+            println!("{} {:?}", "Removed".red(), crate_metadata.name());
         } else {
-            println!("Failed to remove {:?}", crate_name);
+            println!("Failed to remove {:?}", crate_metadata.name());
         }
     }
 
@@ -49,35 +66,44 @@ impl<'a> GitDir<'a> {
     pub(crate) fn remove_crate_list(
         &self,
         crate_detail: &CrateDetail,
-        list: &[String],
+        list: &[CrateMetaData],
         dry_run: bool,
-    ) -> f64 {
-        let mut size_cleaned = 0.0;
-        for crate_name in list {
-            self.remove_crate(crate_name, dry_run);
-            size_cleaned += crate_detail.find(crate_name, "GIT");
+    ) -> u64 {
+        let mut size_cleaned = 0;
+        for crate_metadata in list {
+            self.remove_crate(crate_detail, crate_metadata, dry_run);
+            size_cleaned += crate_metadata.size();
         }
         size_cleaned
     }
 }
 
 /// preform remove operation
-fn remove_crate(location: &Path, crate_name: &str, dry_run: bool) -> Result<()> {
+fn remove_crate(
+    location: &Path,
+    crate_detail: &CrateDetail,
+    crate_metadata: &CrateMetaData,
+    dry_run: bool,
+) -> Result<()> {
     for entry in fs::read_dir(location)? {
         let path = entry?.path();
-        // split directory name to split crate and rev sha
-        let name = crate_name.rsplitn(2, '-').collect::<Vec<&str>>();
-        let crate_name = name[1];
-        let rev_sha = name[0];
-        if path.to_str().unwrap().contains(crate_name) {
-            if rev_sha.contains("HEAD") {
-                delete_folder(&path, dry_run)?;
-            } else {
-                for rev in fs::read_dir(path)? {
-                    let path = rev?.path();
-                    let file_name = path.file_name().unwrap().to_str().unwrap();
-                    if file_name == rev_sha {
-                        delete_folder(&path, dry_run)?;
+        let source = crate_detail.source_url_from_path(location)?;
+        if &Some(source) == crate_metadata.source() {
+            // split name to split crate and rev sha
+            let name = crate_metadata.name();
+            let name = name.rsplitn(2, '-').collect::<Vec<&str>>();
+            let crate_name = name[1];
+            let rev_sha = name[0];
+            if path.to_str().unwrap().contains(crate_name) {
+                if rev_sha.contains("HEAD") {
+                    delete_folder(&path, dry_run)?;
+                } else {
+                    for rev in fs::read_dir(path)? {
+                        let path = rev?.path();
+                        let file_name = path.file_name().unwrap().to_str().unwrap();
+                        if file_name == rev_sha {
+                            delete_folder(&path, dry_run)?;
+                        }
                     }
                 }
             }
