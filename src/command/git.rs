@@ -230,7 +230,7 @@ pub(super) fn query_size_git(
             "   \u{2514} Size of {} .cargo/git/db folder",
             crate_detail.git_crates_source().len()
         ),
-        &convert_pretty(get_size(dir_path.checkout_dir()).unwrap_or(0_u64)),
+        &convert_pretty(get_size(dir_path.db_dir()).unwrap_or(0_u64)),
     );
     print_dash(crate::utils::query_full_width());
     git_dir_size

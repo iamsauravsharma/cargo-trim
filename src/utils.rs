@@ -99,9 +99,7 @@ pub(crate) fn convert_pretty(num: u64) -> String {
     } else {
         factor
     };
-    let pretty_bytes = format!("{:.3}", num / 1000_f64.powf(power_factor))
-        .parse::<f64>()
-        .unwrap();
+    let pretty_bytes = format!("{:7.3}", num / 1000_f64.powf(power_factor));
     let unit = units[power_factor as usize];
     format!("{} {}", pretty_bytes, unit)
 }
