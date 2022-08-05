@@ -164,7 +164,7 @@ impl Command {
         let mut config_file = ConfigFile::init(dir_path.config_file())?;
 
         // create new CrateDetail struct
-        let mut crate_detail = CrateDetail::default();
+        let mut crate_detail = CrateDetail::new(dir_path.index_dir(), dir_path.db_dir())?;
 
         // List out crates
         let crate_list =

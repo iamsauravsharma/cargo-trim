@@ -5,7 +5,7 @@ use std::path::Path;
 use anyhow::Result;
 use owo_colors::OwoColorize;
 
-use crate::crate_detail::CrateInfo;
+use crate::crate_detail::CrateMetaData;
 
 /// split name and semver version part from crates full name
 pub(crate) fn split_name_version(full_name: &str) -> (String, String) {
@@ -144,7 +144,7 @@ pub(crate) fn print_dash(len: usize) {
 
 /// top crates help to list out top n crates
 pub(crate) fn show_top_number_crates(
-    crates: &HashMap<String, CrateInfo>,
+    crates: &HashMap<String, CrateMetaData>,
     crate_type: &str,
     number: usize,
 ) {
@@ -168,7 +168,7 @@ pub(crate) fn show_top_number_crates(
 
 /// print crate name
 #[allow(clippy::cast_precision_loss)]
-pub(crate) fn print_index_value_crate(crates: &[(&String, &CrateInfo)], i: usize) {
+pub(crate) fn print_index_value_crate(crates: &[(&String, &CrateMetaData)], i: usize) {
     let crate_name = crates[i].0;
     let info = crates[i].1;
     let size = (info.size() as f64) / 1000_f64.powi(2);
