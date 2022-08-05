@@ -55,13 +55,6 @@ pub(crate) struct Git {
     )]
     query: bool,
     #[clap(
-        long = "remove",
-        short = 'r',
-        help = "Remove provided crates from git",
-        value_name = "crate"
-    )]
-    remove: Option<Vec<String>>,
-    #[clap(
         long = "top",
         short = 't',
         help = "Show certain number of top crates which have highest size",
@@ -196,16 +189,6 @@ impl Git {
             );
         }
 
-        if let Some(crates) = &self.remove {
-            remove_crates(
-                crates,
-                crate_list,
-                git_crates_location,
-                crate_detail,
-                dry_run,
-            );
-        }
-
         Ok(())
     }
 }
@@ -259,7 +242,7 @@ pub(super) fn old_clean_git(
     crate_list: &CrateList,
     crate_detail: &CrateDetail,
     dry_run: bool,
-) -> (f64, usize) {
+) -> (u64, usize) {
     (
         git_crates_location.remove_crate_list(crate_detail, crate_list.old_git(), dry_run),
         crate_list.old_registry().len(),
@@ -272,7 +255,7 @@ pub(super) fn old_orphan_clean_git(
     crate_list: &CrateList,
     crate_detail: &CrateDetail,
     dry_run: bool,
-) -> (f64, usize) {
+) -> (u64, usize) {
     (
         git_crates_location.remove_crate_list(
             crate_detail,
@@ -289,7 +272,7 @@ pub(super) fn orphan_clean_git(
     crate_list: &CrateList,
     crate_detail: &CrateDetail,
     dry_run: bool,
-) -> (f64, usize) {
+) -> (u64, usize) {
     (
         git_crates_location.remove_crate_list(crate_detail, crate_list.orphan_git(), dry_run),
         crate_list.orphan_git().len(),
@@ -302,30 +285,9 @@ pub(super) fn all_clean_git(
     crate_list: &CrateList,
     crate_detail: &CrateDetail,
     dry_run: bool,
-) -> (f64, usize) {
+) -> (u64, usize) {
     (
         git_crates_location.remove_crate_list(crate_detail, crate_list.installed_git(), dry_run),
         crate_list.installed_git().len(),
     )
-}
-
-// Remove certain git crates
-fn remove_crates(
-    crates: &[String],
-    crate_list: &CrateList,
-    git_crates_location: &GitDir,
-    crate_detail: &CrateDetail,
-    dry_run: bool,
-) {
-    let mut size_cleaned = 0.0;
-    for crate_name in crates {
-        if crate_list.installed_git().contains(crate_name) {
-            git_crates_location.remove_crate(crate_name, dry_run);
-            size_cleaned += crate_detail.find_size_git_all(crate_name);
-        }
-    }
-    println!(
-        "{}",
-        format!("Total size removed :- {:.3} MB", size_cleaned).blue()
-    );
 }

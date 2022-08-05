@@ -73,9 +73,6 @@ OPTIONS:
     -q, --query
             Return size of different .cargo/cache folders
 
-    -r, --remove <crate>
-            Remove provided crates from registry or git
-
         --scan-hidden-folder <SCAN_HIDDEN_FOLDER>
             Whether to scan hidden folder for current command [env: TRIM_SCAN_HIDDEN_FOLDER=]
             [possible values: true, false]

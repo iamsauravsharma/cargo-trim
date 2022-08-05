@@ -1,26 +1,30 @@
-use std::collections::HashMap;
+use std::collections::HashSet;
 use std::fs;
 use std::path::Path;
+use std::str::FromStr;
 
 use anyhow::Result;
 use owo_colors::OwoColorize;
+use semver::Version;
 
 use crate::crate_detail::CrateMetaData;
 
 /// split name and semver version part from crates full name
-pub(crate) fn split_name_version(full_name: &str) -> (String, String) {
-    let version_split: Vec<&str> = full_name.split('-').collect();
+pub(crate) fn split_name_version(full_name: &str) -> (String, Version) {
+    let mut name = full_name.to_string();
+    name = name.replace(".crate", "");
+    let version_split: Vec<&str> = name.split('-').collect();
     let mut version_start_position = version_split.len();
     // check a split part to check from where a semver start for crate
     for (pos, split_part) in version_split.iter().enumerate() {
-        if semver::Version::parse(split_part).is_ok() {
+        if Version::parse(split_part).is_ok() {
             version_start_position = pos;
             break;
         }
     }
     let (clear_name_vec, version_vec) = version_split.split_at(version_start_position);
     let clear_name = clear_name_vec.join("-");
-    let version = version_vec.join("-");
+    let version = Version::from_str(version_vec.join("-").as_str()).unwrap();
     (clear_name, version)
 }
 
@@ -108,15 +112,15 @@ pub(crate) fn show_title(title: &str, first_width: usize, second_width: usize, d
     println!(
         "|{:^first_width$}|{:^second_width$}|",
         title.bold(),
-        "SIZE(MB)".bold(),
+        "SIZE".bold(),
     );
     print_dash(dash_len);
 }
 
 /// show total count using data and size
 pub(crate) fn show_total_count(
-    data: &[String],
-    size: f64,
+    data: &[CrateMetaData],
+    size: u64,
     first_width: usize,
     second_width: usize,
     dash_len: usize,
@@ -125,14 +129,14 @@ pub(crate) fn show_total_count(
         println!(
             "|{:^first_width$}|{:^second_width$}|",
             "NONE".red(),
-            "0.000".red(),
+            convert_pretty(0).red(),
         );
     }
     print_dash(dash_len);
     println!(
         "|{:^first_width$}|{:^second_width$}|",
         format!("Total no of crates:- {}", data.len()).blue(),
-        format!("{:.3}", size).blue(),
+        convert_pretty(size).blue(),
     );
     print_dash(dash_len);
 }
@@ -144,13 +148,13 @@ pub(crate) fn print_dash(len: usize) {
 
 /// top crates help to list out top n crates
 pub(crate) fn show_top_number_crates(
-    crates: &HashMap<String, CrateMetaData>,
+    crates: &HashSet<CrateMetaData>,
     crate_type: &str,
     number: usize,
 ) {
     // sort crates by size
     let mut crates = crates.iter().collect::<Vec<_>>();
-    crates.sort_by(|a, b| (b.1.size()).cmp(&a.1.size()));
+    crates.sort_by_key(|a| std::cmp::Reverse(a.size()));
     let top_number = std::cmp::min(crates.len(), number);
     let title = format!("Top {} {}", top_number, crate_type);
     let first_width = 40;
@@ -168,10 +172,9 @@ pub(crate) fn show_top_number_crates(
 
 /// print crate name
 #[allow(clippy::cast_precision_loss)]
-pub(crate) fn print_index_value_crate(crates: &[(&String, &CrateMetaData)], i: usize) {
-    let crate_name = crates[i].0;
-    let info = crates[i].1;
-    let size = (info.size() as f64) / 1000_f64.powi(2);
+pub(crate) fn print_index_value_crate(crates: &[&CrateMetaData], i: usize) {
+    let crate_name = crates[i].name();
+    let size = (crates[i].size() as f64) / 1000_f64.powi(2);
     println!("|{:^40}|{:^10.3}|", crate_name, size);
 }
 
@@ -197,35 +200,52 @@ pub(crate) fn query_print(first_param: &str, second_param: &str) {
 
 #[cfg(test)]
 mod test {
+    use semver::Version;
+
     use super::{convert_pretty, split_name_version};
 
     #[test]
     fn test_split_name_version() {
         assert_eq!(
             split_name_version("sample_crate-0.12.0"),
-            ("sample_crate".to_string(), "0.12.0".to_string())
+            (
+                "sample_crate".to_string(),
+                Version::parse("0.12.0").unwrap()
+            )
         );
         assert_eq!(
             split_name_version("another-crate-name-1.4.5"),
-            ("another-crate-name".to_string(), "1.4.5".to_string())
+            (
+                "another-crate-name".to_string(),
+                Version::parse("1.4.5").unwrap()
+            )
         );
         assert_eq!(
             split_name_version("crate-name-12-123-0.1.0"),
-            ("crate-name-12-123".to_string(), "0.1.0".to_string())
+            (
+                "crate-name-12-123".to_string(),
+                Version::parse("0.1.0").unwrap()
+            )
         );
         assert_eq!(
             split_name_version("complex_name-12.0.0-rc.1"),
-            ("complex_name".to_string(), "12.0.0-rc.1".to_string())
+            (
+                "complex_name".to_string(),
+                Version::parse("12.0.0-rc.1").unwrap()
+            )
         );
         assert_eq!(
             split_name_version("build-number-2.3.4+was0-5"),
-            ("build-number".to_string(), "2.3.4+was0-5".to_string())
+            (
+                "build-number".to_string(),
+                Version::parse("2.3.4+was0-5").unwrap()
+            )
         );
         assert_eq!(
             split_name_version("complex_spec-0.12.0-rc.1+name0.4.6"),
             (
                 "complex_spec".to_string(),
-                "0.12.0-rc.1+name0.4.6".to_string()
+                Version::parse("0.12.0-rc.1+name0.4.6").unwrap()
             )
         );
     }

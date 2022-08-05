@@ -1,8 +1,9 @@
 use clap::Parser;
 use owo_colors::OwoColorize;
 
-use crate::crate_detail::CrateDetail;
+use crate::crate_detail::CrateMetaData;
 use crate::list_crate::CrateList;
+use crate::utils::convert_pretty;
 
 #[derive(Debug, Parser)]
 #[clap(about = "List out crates", arg_required_else_help = true)]
@@ -25,63 +26,41 @@ pub(crate) struct List {
 }
 
 impl List {
-    pub(super) fn run(
-        &self,
-        crate_detail: &CrateDetail,
-        crate_list: &CrateList,
-        directory_is_empty: bool,
-    ) {
+    pub(super) fn run(&self, crate_list: &CrateList, directory_is_empty: bool) {
         if self.all {
-            list_all(crate_detail, crate_list);
+            list_all(crate_list);
         }
         if self.old {
-            list_old(crate_detail, crate_list);
+            list_old(crate_list);
         }
         if self.old_orphan {
-            list_old_orphan(crate_detail, crate_list, directory_is_empty);
+            list_old_orphan(crate_list, directory_is_empty);
         }
         if self.orphan {
-            list_orphan(crate_detail, crate_list, directory_is_empty);
+            list_orphan(crate_list, directory_is_empty);
         }
         if self.used {
-            list_used(crate_detail, crate_list, directory_is_empty);
+            list_used(crate_list, directory_is_empty);
         }
     }
 }
 
-fn list_all(crate_detail: &CrateDetail, crate_list: &CrateList) {
-    crate_list_type(
-        crate_detail,
-        crate_list.installed_registry(),
-        "REGISTRY INSTALLED CRATE",
-    );
-    crate_list_type(
-        crate_detail,
-        crate_list.installed_git(),
-        "GIT INSTALLED CRATE",
-    );
+fn list_all(crate_list: &CrateList) {
+    crate_list_type(crate_list.installed_registry(), "REGISTRY INSTALLED CRATE");
+    crate_list_type(crate_list.installed_git(), "GIT INSTALLED CRATE");
 }
 
-fn list_old(crate_detail: &CrateDetail, crate_list: &CrateList) {
-    crate_list_type(
-        crate_detail,
-        crate_list.old_registry(),
-        "REGISTRY OLD CRATE",
-    );
-    crate_list_type(crate_detail, crate_list.old_git(), "GIT OLD CRATE");
+fn list_old(crate_list: &CrateList) {
+    crate_list_type(crate_list.old_registry(), "REGISTRY OLD CRATE");
+    crate_list_type(crate_list.old_git(), "GIT OLD CRATE");
 }
 
-fn list_old_orphan(crate_detail: &CrateDetail, crate_list: &CrateList, directory_is_empty: bool) {
+fn list_old_orphan(crate_list: &CrateList, directory_is_empty: bool) {
     crate_list_type(
-        crate_detail,
         &crate_list.list_old_orphan_registry(),
         "REGISTRY OLD+ORPHAN CRATE",
     );
-    crate_list_type(
-        crate_detail,
-        &crate_list.list_old_orphan_git(),
-        "GIT OLD+ORPHAN CRATE",
-    );
+    crate_list_type(&crate_list.list_old_orphan_git(), "GIT OLD+ORPHAN CRATE");
     // print waning if no directory present in config file
     if directory_is_empty {
         let warning_text = "WARNING: You have not initialized any directory as rust project \
@@ -93,13 +72,9 @@ fn list_old_orphan(crate_detail: &CrateDetail, crate_list: &CrateList, directory
     }
 }
 
-fn list_orphan(crate_detail: &CrateDetail, crate_list: &CrateList, directory_is_empty: bool) {
-    crate_list_type(
-        crate_detail,
-        crate_list.orphan_registry(),
-        "REGISTRY ORPHAN CRATE",
-    );
-    crate_list_type(crate_detail, crate_list.orphan_git(), "GIT ORPHAN CRATE");
+fn list_orphan(crate_list: &CrateList, directory_is_empty: bool) {
+    crate_list_type(crate_list.orphan_registry(), "REGISTRY ORPHAN CRATE");
+    crate_list_type(crate_list.orphan_git(), "GIT ORPHAN CRATE");
     // print warning if directory config is empty
     if directory_is_empty {
         let warning_text = "WARNING: You have not initialized any directory as rust project \
@@ -111,13 +86,9 @@ fn list_orphan(crate_detail: &CrateDetail, crate_list: &CrateList, directory_is_
     }
 }
 
-fn list_used(crate_detail: &CrateDetail, crate_list: &CrateList, directory_is_empty: bool) {
-    crate_list_type(
-        crate_detail,
-        crate_list.used_registry(),
-        "REGISTRY USED CRATE",
-    );
-    crate_list_type(crate_detail, crate_list.used_git(), "GIT USED CRATE");
+fn list_used(crate_list: &CrateList, directory_is_empty: bool) {
+    crate_list_type(crate_list.used_registry(), "REGISTRY USED CRATE");
+    crate_list_type(crate_list.used_git(), "GIT USED CRATE");
     // print warning if directory config is empty
     if directory_is_empty {
         let warning_text = "WARNING: You have not initialized any directory as rust project \
@@ -129,21 +100,35 @@ fn list_used(crate_detail: &CrateDetail, crate_list: &CrateList, directory_is_em
 }
 
 // list certain crate type to terminal
-fn crate_list_type(crate_detail: &CrateDetail, crate_type: &[String], title: &str) {
+fn crate_list_type(crate_metadata_list: &[CrateMetaData], title: &str) {
     let first_width = 40;
-    let second_width = 10;
-    let precision = 3;
+    let second_width = 14;
     let dash_len = first_width + second_width + 3;
     crate::utils::show_title(title, first_width, second_width, dash_len);
 
-    let mut total_size = 0.0;
-    for crates in crate_type {
-        let size = crate_detail.find(crates, title);
+    let mut total_size = 0;
+    for crates in crate_metadata_list {
+        let size = crates.size();
         total_size += size;
-        println!(
-            "|{:^first_width$}|{:^second_width$.precision$}|",
-            crates, size
-        );
+        if let Some(version) = crates.version() {
+            println!(
+                "|{:^first_width$}|{:^second_width$}|",
+                format!("{}-{}", crates.name(), version),
+                convert_pretty(size)
+            );
+        } else {
+            println!(
+                "|{:^first_width$}|{:^second_width$}|",
+                crates.name(),
+                convert_pretty(size)
+            );
+        }
     }
-    crate::utils::show_total_count(crate_type, total_size, first_width, second_width, dash_len);
+    crate::utils::show_total_count(
+        crate_metadata_list,
+        total_size,
+        first_width,
+        second_width,
+        dash_len,
+    );
 }
