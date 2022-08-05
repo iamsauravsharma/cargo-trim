@@ -89,7 +89,7 @@ pub(crate) fn get_size(path: &Path) -> Result<u64> {
 )]
 pub(crate) fn convert_pretty(num: u64) -> String {
     if num == 0 {
-        return "0 B".to_string();
+        return "  0.000 B".to_string();
     }
     let num = num as f64;
     let units = ["B", "kB", "MB", "GB", "TB"];
@@ -250,13 +250,13 @@ mod test {
 
     #[test]
     fn test_convert_pretty() {
-        assert_eq!(convert_pretty(0), "0 B".to_string());
-        assert_eq!(convert_pretty(12), "12 B".to_string());
-        assert_eq!(convert_pretty(1234), "1.234 kB".to_string());
-        assert_eq!(convert_pretty(23908), "23.908 kB".to_string());
-        assert_eq!(convert_pretty(874940334), "874.94 MB".to_string());
-        assert_eq!(convert_pretty(8849909404), "8.85 GB".to_string());
-        assert_eq!(convert_pretty(3417849409404), "3.418 TB".to_string());
+        assert_eq!(convert_pretty(0), "  0.000 B".to_string());
+        assert_eq!(convert_pretty(12), " 12.000 B".to_string());
+        assert_eq!(convert_pretty(1234), "  1.234 kB".to_string());
+        assert_eq!(convert_pretty(23908), " 23.908 kB".to_string());
+        assert_eq!(convert_pretty(874940334), "874.940 MB".to_string());
+        assert_eq!(convert_pretty(8849909404), "  8.850 GB".to_string());
+        assert_eq!(convert_pretty(3417849409404), "  3.418 TB".to_string());
         assert_eq!(
             convert_pretty(93453982182159417),
             "93453.982 TB".to_string()
