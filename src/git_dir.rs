@@ -50,27 +50,17 @@ impl<'a> GitDir<'a> {
         };
         if dry_run {
             println!(
-                r#"{} {} "{} ({})""#,
+                "{} {} {:?}",
                 "Dry run:".yellow(),
                 "Removed".red(),
                 crate_metadata.name(),
-                crate_metadata.source().as_ref().unwrap()
             );
             true
         } else if is_success {
-            println!(
-                r#"{} "{} ({})""#,
-                "Removed".red(),
-                crate_metadata.name(),
-                crate_metadata.source().as_ref().unwrap()
-            );
+            println!("{} {:?}", "Removed".red(), crate_metadata.name(),);
             true
         } else {
-            println!(
-                r#"Failed to remove "{} ({})""#,
-                crate_metadata.name(),
-                crate_metadata.source().as_ref().unwrap()
-            );
+            println!(r#"Failed to remove {:?}"#, crate_metadata.name(),);
             false
         }
     }

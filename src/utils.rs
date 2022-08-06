@@ -155,25 +155,45 @@ pub(crate) fn show_top_number_crates(
     crates.sort_by_key(|a| std::cmp::Reverse(a.size()));
     let top_number = std::cmp::min(crates.len(), number);
     let title = format!("Top {} {}", top_number, crate_type);
-    let first_width = 40;
-    let second_width = 10;
-    let dash_len = first_width + second_width + 3;
-    show_title(title.as_str(), first_width, second_width, dash_len);
-    // check n size and determine if to print n number of output NONE for 0 crates
-    if crates.is_empty() {
-        println!("|{:^40}|{:^10}|", "NONE".red(), "0.000".red());
-    } else {
-        (0..top_number).for_each(|i| print_index_value_crate(&crates, i));
+    let mut listed_crates = Vec::new();
+    for i in 0..top_number {
+        listed_crates.push(crates[i].clone());
     }
-    print_dash(dash_len);
+    crate_list_type(&listed_crates[..top_number], &title);
 }
 
-/// print crate name
-#[allow(clippy::cast_precision_loss)]
-pub(crate) fn print_index_value_crate(crates: &[&CrateMetaData], i: usize) {
-    let crate_name = crates[i].name();
-    let size = (crates[i].size() as f64) / 1000_f64.powi(2);
-    println!("|{:^40}|{:^10.3}|", crate_name, size);
+// list certain crate type to terminal
+pub(crate) fn crate_list_type(crate_metadata_list: &[CrateMetaData], title: &str) {
+    let first_width = 44;
+    let second_width = 16;
+    let dash_len = first_width + second_width + 3;
+    crate::utils::show_title(title, first_width, second_width, dash_len);
+
+    let mut total_size = 0;
+    for crate_metadata in crate_metadata_list {
+        let size = crate_metadata.size();
+        total_size += size;
+        if let Some(version) = crate_metadata.version() {
+            println!(
+                "|{:^first_width$}|{:^second_width$}|",
+                format!("{}-{}", crate_metadata.name(), version),
+                convert_pretty(size)
+            );
+        } else {
+            println!(
+                "|{:^first_width$}|{:^second_width$}|",
+                format!("{}", crate_metadata.name()),
+                convert_pretty(size)
+            );
+        }
+    }
+    crate::utils::show_total_count(
+        crate_metadata_list,
+        total_size,
+        first_width,
+        second_width,
+        dash_len,
+    );
 }
 
 fn query_param_widths() -> (usize, usize) {

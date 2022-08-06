@@ -1,9 +1,8 @@
 use clap::Parser;
 use owo_colors::OwoColorize;
 
-use crate::crate_detail::CrateMetaData;
 use crate::list_crate::CrateList;
-use crate::utils::convert_pretty;
+use crate::utils::crate_list_type;
 
 #[derive(Debug, Parser)]
 #[clap(about = "List out crates", arg_required_else_help = true)]
@@ -97,47 +96,4 @@ fn list_used(crate_list: &CrateList, directory_is_empty: bool) {
                             or pass cargo trim -d <directory> for setting rust project directory";
         println!("{}", warning_text.yellow());
     }
-}
-
-// list certain crate type to terminal
-fn crate_list_type(crate_metadata_list: &[CrateMetaData], title: &str) {
-    let first_width = 104;
-    let second_width = 16;
-    let dash_len = first_width + second_width + 3;
-    crate::utils::show_title(title, first_width, second_width, dash_len);
-
-    let mut total_size = 0;
-    for crate_metadata in crate_metadata_list {
-        let size = crate_metadata.size();
-        total_size += size;
-        if let Some(version) = crate_metadata.version() {
-            println!(
-                "|{:^first_width$}|{:^second_width$}|",
-                format!(
-                    "{}-{} ({})",
-                    crate_metadata.name(),
-                    version,
-                    crate_metadata.source().clone().unwrap()
-                ),
-                convert_pretty(size)
-            );
-        } else {
-            println!(
-                "|{:^first_width$}|{:^second_width$}|",
-                format!(
-                    "{} ({})",
-                    crate_metadata.name(),
-                    crate_metadata.source().clone().unwrap()
-                ),
-                convert_pretty(size)
-            );
-        }
-    }
-    crate::utils::show_total_count(
-        crate_metadata_list,
-        total_size,
-        first_width,
-        second_width,
-        dash_len,
-    );
 }

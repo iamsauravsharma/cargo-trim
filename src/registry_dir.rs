@@ -100,29 +100,26 @@ impl<'a> RegistryDir<'a> {
         }
         if dry_run {
             println!(
-                r#"{} {} "{}-{} ({})""#,
+                r#"{} {} "{}-{}""#,
                 "Dry run:".yellow(),
                 "Removed".red(),
                 crate_metadata.name(),
                 crate_metadata.version().as_ref().unwrap(),
-                crate_metadata.source().as_ref().unwrap()
             );
             true
         } else if is_success {
             println!(
-                r#"{} "{}-{} ({})""#,
+                r#"{} "{}-{}""#,
                 "Removed".red(),
                 crate_metadata.name(),
                 crate_metadata.version().as_ref().unwrap(),
-                crate_metadata.source().as_ref().unwrap()
             );
             true
         } else {
             println!(
-                r#"Failed to remove "{}-{} ({})""#,
+                r#"Failed to remove "{}-{}""#,
                 crate_metadata.name(),
                 crate_metadata.version().as_ref().unwrap(),
-                crate_metadata.source().as_ref().unwrap()
             );
             false
         }
