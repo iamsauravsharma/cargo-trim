@@ -156,8 +156,8 @@ pub(crate) fn show_top_number_crates(
     let top_number = std::cmp::min(crates.len(), number);
     let title = format!("Top {} {}", top_number, crate_type);
     let mut listed_crates = Vec::new();
-    for i in 0..top_number {
-        listed_crates.push(crates[i].clone());
+    for &crate_metadata in crates.iter().take(top_number) {
+        listed_crates.push(crate_metadata.clone());
     }
     crate_list_type(&listed_crates[..top_number], &title);
 }
