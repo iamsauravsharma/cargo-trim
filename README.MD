@@ -27,7 +27,7 @@ cargo install --git https://github.com/iamsauravsharma/cargo-trim
 Initially you need to set up cargo-trim for some commands such as orphan clean to work properly.
 To set up cargo-trim to properly work for all projects related to rust lang go to directory where all projects lies and run
 `cargo trim init`. You can even run this command multiple time to add multiple directory.
-Or run command `cargo trim -d <directory-path>`. All projects inside the directory will be used for listing orphan crates. So
+Or run command `cargo trim set -d <directory-path>`. All projects inside the directory will be used for listing orphan crates. So
 if there are any projects in the other directory then their dependencies will be classified as orphan crates if not used by any
 other crates present inside added directory.
 

@@ -110,8 +110,8 @@ impl Registry {
                                     project directory. This command will clean all old crates \
                                     even if they are not orphan crates. Run command 'cargo trim \
                                     init' to initialize current directory as rust project \
-                                    directory or pass cargo trim -d <directory> for setting rust \
-                                    project directory";
+                                    directory or pass cargo trim set -d <directory> for setting \
+                                    rust project directory";
                 println!("{}", warning_text.yellow());
                 let mut input = String::new();
                 print!("Do you want to continue? (y/N) ");
@@ -151,8 +151,8 @@ impl Registry {
                                     project directory. This command will clean all crates since \
                                     all crates are classified as orphan crate. Run command 'cargo \
                                     trim init' to initialize current directory as rust project \
-                                    directory or pass cargo trim -d <directory> for setting rust \
-                                    project directory";
+                                    directory or pass cargo trim set -d <directory> for setting \
+                                    rust project directory";
                 println!("{}", warning_text.yellow());
                 let mut input = String::new();
                 print!("Do you want to continue? (y/N) ");

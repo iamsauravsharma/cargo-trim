@@ -66,7 +66,7 @@ fn list_old_orphan(crate_list: &CrateList, directory_is_empty: bool) {
                             directory. This will list all old crates as old orphan crates even if \
                             they are not orphan crates. Run command 'cargo trim init' to \
                             initialize current directory as rust project directory or pass cargo \
-                            trim -d <directory> for setting rust project directory";
+                            trim set -d <directory> for setting rust project directory";
         println!("{}", warning_text.yellow());
     }
 }
@@ -79,8 +79,8 @@ fn list_orphan(crate_list: &CrateList, directory_is_empty: bool) {
         let warning_text = "WARNING: You have not initialized any directory as rust project \
                             directory. This will list all crates as orphan crate. Run command \
                             'cargo trim init' to initialize current directory as rust project \
-                            directory or pass cargo trim -d <directory> for setting rust project \
-                            directory";
+                            directory or pass cargo trim set -d <directory> for setting rust \
+                            project directory";
         println!("{}", warning_text.yellow());
     }
 }
@@ -93,7 +93,8 @@ fn list_used(crate_list: &CrateList, directory_is_empty: bool) {
         let warning_text = "WARNING: You have not initialized any directory as rust project \
                             directory. This will list no crates as used crate. Run command 'cargo \
                             trim init' to initialize current directory as rust project directory \
-                            or pass cargo trim -d <directory> for setting rust project directory";
+                            or pass cargo trim set -d <directory> for setting rust project \
+                            directory";
         println!("{}", warning_text.yellow());
     }
 }
