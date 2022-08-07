@@ -5,7 +5,7 @@ use anyhow::{Context, Result};
 use clap::Parser;
 use owo_colors::OwoColorize;
 
-use crate::crate_detail::CrateDetail;
+use crate::crate_detail::{CrateDetail, CrateMetaData};
 use crate::dir_path::DirPath;
 use crate::git_dir::GitDir;
 use crate::list_crate::CrateList;
@@ -92,8 +92,12 @@ impl Git {
         }
 
         if self.old {
-            let (sized_cleaned, total_crate_removed) =
-                old_clean_git(git_crates_location, crate_list, crate_detail, dry_run);
+            let (sized_cleaned, total_crate_removed) = clean_git(
+                git_crates_location,
+                crate_list.old_git(),
+                crate_detail,
+                dry_run,
+            );
             println!(
                 "{}",
                 format!(
@@ -111,8 +115,8 @@ impl Git {
                                     project directory. This command will clean all old crates \
                                     even if they are not orphan crates. Run command 'cargo trim \
                                     init' to initialize current directory as rust project \
-                                    directory or pass cargo trim set -d <directory> for setting rust \
-                                    project directory";
+                                    directory or pass cargo trim set -d <directory> for setting \
+                                    rust project directory";
                 println!("{}", warning_text.yellow());
                 let mut input = String::new();
                 print!("Do you want to continue? (y/N) ");
@@ -128,8 +132,12 @@ impl Git {
                     return Ok(());
                 }
             }
-            let (sized_cleaned, total_crate_removed) =
-                old_orphan_clean_git(git_crates_location, crate_list, crate_detail, dry_run);
+            let (sized_cleaned, total_crate_removed) = clean_git(
+                git_crates_location,
+                &crate_list.list_old_orphan_git(),
+                crate_detail,
+                dry_run,
+            );
 
             println!(
                 "{}",
@@ -148,8 +156,8 @@ impl Git {
                                     project directory. This command will clean all crates since \
                                     all crates are classified as orphan crate. Run command 'cargo \
                                     trim init' to initialize current directory as rust project \
-                                    directory or pass cargo trim set -d <directory> for setting rust \
-                                    project directory";
+                                    directory or pass cargo trim set -d <directory> for setting \
+                                    rust project directory";
                 println!("{}", warning_text.yellow());
                 let mut input = String::new();
                 print!("Do you want to continue? (y/N) ");
@@ -165,8 +173,12 @@ impl Git {
                     return Ok(());
                 }
             }
-            let (sized_cleaned, total_crate_removed) =
-                orphan_clean_git(git_crates_location, crate_list, crate_detail, dry_run);
+            let (sized_cleaned, total_crate_removed) = clean_git(
+                git_crates_location,
+                crate_list.orphan_git(),
+                crate_detail,
+                dry_run,
+            );
 
             println!(
                 "{}",
@@ -180,8 +192,12 @@ impl Git {
         }
 
         if self.all {
-            let (sized_cleaned, total_crate_removed) =
-                all_clean_git(git_crates_location, crate_list, crate_detail, dry_run);
+            let (sized_cleaned, total_crate_removed) = clean_git(
+                git_crates_location,
+                crate_list.installed_git(),
+                crate_detail,
+                dry_run,
+            );
             println!(
                 "{}",
                 format!(
@@ -240,42 +256,12 @@ pub(super) fn query_size_git(
     git_dir_size
 }
 
-// perform old clean on git crates
-pub(super) fn old_clean_git(
+// perform clean on git crates
+pub(super) fn clean_git(
     git_crates_location: &GitDir,
-    crate_list: &CrateList,
+    crate_metadata_list: &[CrateMetaData],
     crate_detail: &CrateDetail,
     dry_run: bool,
 ) -> (u64, usize) {
-    git_crates_location.remove_crate_list(crate_detail, crate_list.old_git(), dry_run)
-}
-
-// perform old orphan clean on git crates
-pub(super) fn old_orphan_clean_git(
-    git_crates_location: &GitDir,
-    crate_list: &CrateList,
-    crate_detail: &CrateDetail,
-    dry_run: bool,
-) -> (u64, usize) {
-    git_crates_location.remove_crate_list(crate_detail, &crate_list.list_old_orphan_git(), dry_run)
-}
-
-// perform orphan clean on git crates
-pub(super) fn orphan_clean_git(
-    git_crates_location: &GitDir,
-    crate_list: &CrateList,
-    crate_detail: &CrateDetail,
-    dry_run: bool,
-) -> (u64, usize) {
-    git_crates_location.remove_crate_list(crate_detail, crate_list.orphan_git(), dry_run)
-}
-
-// perform all install clean on git crates
-pub(super) fn all_clean_git(
-    git_crates_location: &GitDir,
-    crate_list: &CrateList,
-    crate_detail: &CrateDetail,
-    dry_run: bool,
-) -> (u64, usize) {
-    git_crates_location.remove_crate_list(crate_detail, crate_list.installed_git(), dry_run)
+    git_crates_location.remove_crate_list(crate_detail, crate_metadata_list, dry_run)
 }

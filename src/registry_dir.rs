@@ -129,7 +129,7 @@ impl<'a> RegistryDir<'a> {
     pub(crate) fn remove_crate_list(
         &mut self,
         crate_detail: &CrateDetail,
-        list: &Vec<CrateMetaData>,
+        list: &[CrateMetaData],
         dry_run: bool,
     ) -> (u64, usize) {
         let mut size_cleaned = 0;

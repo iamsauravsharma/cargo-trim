@@ -6,6 +6,8 @@ use anyhow::{Context, Result};
 use clap::Parser;
 use owo_colors::OwoColorize;
 
+use crate::command::git::clean_git;
+use crate::command::registry::clean_registry;
 use crate::config_file::ConfigFile;
 use crate::crate_detail::CrateDetail;
 use crate::dir_path::DirPath;
@@ -517,10 +519,18 @@ fn old_clean(
     crate_detail: &CrateDetail,
     dry_run: bool,
 ) {
-    let (registry_sized_cleaned, total_registry_crate_removed) =
-        registry::old_clean_registry(registry_crates_location, crate_list, crate_detail, dry_run);
-    let (git_sized_cleaned, total_git_crate_removed) =
-        git::old_clean_git(git_crates_location, crate_list, crate_detail, dry_run);
+    let (registry_sized_cleaned, total_registry_crate_removed) = clean_registry(
+        registry_crates_location,
+        crate_list.old_registry(),
+        crate_detail,
+        dry_run,
+    );
+    let (git_sized_cleaned, total_git_crate_removed) = clean_git(
+        git_crates_location,
+        crate_list.old_git(),
+        crate_detail,
+        dry_run,
+    );
     println!(
         "{}",
         format!(
@@ -562,15 +572,18 @@ fn old_orphan_clean(
             return Ok(());
         }
     }
-    let (registry_sized_cleaned, total_registry_crate_removed) =
-        registry::old_orphan_clean_registry(
-            registry_crates_location,
-            crate_list,
-            crate_detail,
-            dry_run,
-        );
-    let (git_sized_cleaned, total_git_crate_removed) =
-        git::old_orphan_clean_git(git_crates_location, crate_list, crate_detail, dry_run);
+    let (registry_sized_cleaned, total_registry_crate_removed) = clean_registry(
+        registry_crates_location,
+        &crate_list.list_old_orphan_registry(),
+        crate_detail,
+        dry_run,
+    );
+    let (git_sized_cleaned, total_git_crate_removed) = clean_git(
+        git_crates_location,
+        &crate_list.list_old_orphan_git(),
+        crate_detail,
+        dry_run,
+    );
 
     println!(
         "{}",
@@ -614,14 +627,18 @@ fn orphan_clean(
             return Ok(());
         }
     }
-    let (registry_sized_cleaned, total_registry_crate_removed) = registry::orphan_clean_registry(
+    let (registry_sized_cleaned, total_registry_crate_removed) = clean_registry(
         registry_crates_location,
-        crate_list,
+        crate_list.orphan_registry(),
         crate_detail,
         dry_run,
     );
-    let (git_sized_cleaned, total_git_crate_removed) =
-        git::orphan_clean_git(git_crates_location, crate_list, crate_detail, dry_run);
+    let (git_sized_cleaned, total_git_crate_removed) = clean_git(
+        git_crates_location,
+        crate_list.orphan_git(),
+        crate_detail,
+        dry_run,
+    );
 
     println!(
         "{}",
@@ -643,10 +660,18 @@ fn remove_all(
     crate_detail: &CrateDetail,
     dry_run: bool,
 ) {
-    let (registry_sized_cleaned, total_registry_crate_removed) =
-        registry::all_clean_registry(registry_crates_location, crate_list, crate_detail, dry_run);
-    let (git_sized_cleaned, total_git_crate_removed) =
-        git::all_clean_git(git_crates_location, crate_list, crate_detail, dry_run);
+    let (registry_sized_cleaned, total_registry_crate_removed) = clean_registry(
+        registry_crates_location,
+        crate_list.installed_registry(),
+        crate_detail,
+        dry_run,
+    );
+    let (git_sized_cleaned, total_git_crate_removed) = clean_git(
+        git_crates_location,
+        crate_list.installed_git(),
+        crate_detail,
+        dry_run,
+    );
 
     println!(
         "{}",

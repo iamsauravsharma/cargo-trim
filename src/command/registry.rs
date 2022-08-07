@@ -5,7 +5,7 @@ use anyhow::{Context, Result};
 use clap::Parser;
 use owo_colors::OwoColorize;
 
-use crate::crate_detail::CrateDetail;
+use crate::crate_detail::{CrateDetail, CrateMetaData};
 use crate::dir_path::DirPath;
 use crate::list_crate::CrateList;
 use crate::registry_dir::RegistryDir;
@@ -91,8 +91,12 @@ impl Registry {
         }
 
         if self.old {
-            let (sized_cleaned, total_crate_removed) =
-                old_clean_registry(registry_crates_location, crate_list, crate_detail, dry_run);
+            let (sized_cleaned, total_crate_removed) = clean_registry(
+                registry_crates_location,
+                crate_list.old_registry(),
+                crate_detail,
+                dry_run,
+            );
             println!(
                 "{}",
                 format!(
@@ -127,9 +131,9 @@ impl Registry {
                     return Ok(());
                 }
             }
-            let (sized_cleaned, total_crate_removed) = old_orphan_clean_registry(
+            let (sized_cleaned, total_crate_removed) = clean_registry(
                 registry_crates_location,
-                crate_list,
+                &crate_list.list_old_orphan_registry(),
                 crate_detail,
                 dry_run,
             );
@@ -168,8 +172,12 @@ impl Registry {
                     return Ok(());
                 }
             }
-            let (sized_cleaned, total_crate_removed) =
-                orphan_clean_registry(registry_crates_location, crate_list, crate_detail, dry_run);
+            let (sized_cleaned, total_crate_removed) = clean_registry(
+                registry_crates_location,
+                crate_list.orphan_registry(),
+                crate_detail,
+                dry_run,
+            );
 
             println!(
                 "{}",
@@ -183,8 +191,12 @@ impl Registry {
         }
 
         if self.all {
-            let (sized_cleaned, total_crate_removed) =
-                all_clean_registry(registry_crates_location, crate_list, crate_detail, dry_run);
+            let (sized_cleaned, total_crate_removed) = clean_registry(
+                registry_crates_location,
+                crate_list.installed_registry(),
+                crate_detail,
+                dry_run,
+            );
             println!(
                 "{}",
                 format!(
@@ -263,50 +275,12 @@ pub(super) fn query_size_registry(
     registry_dir_size
 }
 
-// perform old clean on registry crates
-pub(super) fn old_clean_registry(
+// perform clean on git crates
+pub(super) fn clean_registry(
     registry_crates_location: &mut RegistryDir,
-    crate_list: &CrateList,
+    crate_metadata_list: &[CrateMetaData],
     crate_detail: &CrateDetail,
     dry_run: bool,
 ) -> (u64, usize) {
-    registry_crates_location.remove_crate_list(crate_detail, crate_list.old_registry(), dry_run)
-}
-
-// perform old orphan clean on registry crates
-pub(super) fn old_orphan_clean_registry(
-    registry_crates_location: &mut RegistryDir,
-    crate_list: &CrateList,
-    crate_detail: &CrateDetail,
-    dry_run: bool,
-) -> (u64, usize) {
-    registry_crates_location.remove_crate_list(
-        crate_detail,
-        &crate_list.list_old_orphan_registry(),
-        dry_run,
-    )
-}
-
-// perform orphan clean on registry crates
-pub(super) fn orphan_clean_registry(
-    registry_crates_location: &mut RegistryDir,
-    crate_list: &CrateList,
-    crate_detail: &CrateDetail,
-    dry_run: bool,
-) -> (u64, usize) {
-    registry_crates_location.remove_crate_list(crate_detail, crate_list.orphan_registry(), dry_run)
-}
-
-// perform all install clean on registry crates
-pub(super) fn all_clean_registry(
-    registry_crates_location: &mut RegistryDir,
-    crate_list: &CrateList,
-    crate_detail: &CrateDetail,
-    dry_run: bool,
-) -> (u64, usize) {
-    registry_crates_location.remove_crate_list(
-        crate_detail,
-        crate_list.installed_registry(),
-        dry_run,
-    )
+    registry_crates_location.remove_crate_list(crate_detail, crate_metadata_list, dry_run)
 }
