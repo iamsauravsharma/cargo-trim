@@ -226,7 +226,10 @@ fn read_content(list: &[PathBuf]) -> Result<(Vec<CrateMetaData>, Vec<CrateMetaDa
                         if source.contains("registry+") {
                             present_crate_registry.push(CrateMetaData::new(
                                 name.to_string(),
-                                Some(Version::parse(version).unwrap()),
+                                Some(
+                                    Version::parse(version)
+                                        .context("failed Cargo.lock semver version parse")?,
+                                ),
                                 0,
                                 Some(source.replace("registry+", "")),
                             ));
@@ -304,7 +307,11 @@ fn list_old_crates(
         let mut full_name_list = Vec::new();
         for crates in fs::read_dir(db_dir).context("failed to read db dir")? {
             let entry = crates?.path();
-            let file_name = entry.file_name().unwrap().to_str().unwrap();
+            let file_name = entry
+                .file_name()
+                .context("failed to get sold crate db dir file name")?
+                .to_str()
+                .context("Failed to convert db dir entry file name to str")?;
             let rev_value = latest_rev_value(&entry)?;
             let full_name = format!("{}-{}", file_name, rev_value);
             full_name_list.push(full_name);

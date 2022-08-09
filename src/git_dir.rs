@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::Path;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use owo_colors::OwoColorize;
 
 use crate::crate_detail::{CrateDetail, CrateMetaData};
@@ -15,13 +15,15 @@ pub(crate) struct GitDir<'a> {
 
 impl<'a> GitDir<'a> {
     /// create new git dir
-    pub(crate) fn new(checkout_dir: &'a Path, db_dir: &'a Path) -> Self {
-        let checkout_dir = checkout_dir.to_str().unwrap();
-        let db_dir = db_dir.to_str().unwrap();
-        Self {
+    pub(crate) fn new(checkout_dir: &'a Path, db_dir: &'a Path) -> Result<Self> {
+        let checkout_dir = checkout_dir
+            .to_str()
+            .context("Failed checkout dir path conversion")?;
+        let db_dir = db_dir.to_str().context("Failed db dir path conversion")?;
+        Ok(Self {
             checkout_dir,
             db_dir,
-        }
+        })
     }
 
     /// remove crates
@@ -100,13 +102,21 @@ fn remove_crate(
             let name = name.rsplitn(2, '-').collect::<Vec<&str>>();
             let crate_name = name[1];
             let rev_sha = name[0];
-            if path.to_str().unwrap().contains(crate_name) {
+            if path
+                .to_str()
+                .context("failed git directory crate path to str")?
+                .contains(crate_name)
+            {
                 if rev_sha.contains("HEAD") {
                     delete_folder(&path, dry_run)?;
                 } else {
                     for rev in fs::read_dir(&path)? {
                         let path = rev?.path();
-                        let file_name = path.file_name().unwrap().to_str().unwrap();
+                        let file_name = path
+                            .file_name()
+                            .context("Failed to get file name to check rev sha")?
+                            .to_str()
+                            .context("Failed rev sha file name to str conversion")?;
                         if file_name == rev_sha {
                             delete_folder(&path, dry_run)?;
                         }

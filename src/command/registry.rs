@@ -96,7 +96,7 @@ impl Registry {
                 crate_list.old_registry(),
                 crate_detail,
                 dry_run,
-            );
+            )?;
             println!(
                 "{}",
                 format!(
@@ -136,7 +136,7 @@ impl Registry {
                 &crate_list.list_old_orphan_registry(),
                 crate_detail,
                 dry_run,
-            );
+            )?;
 
             println!(
                 "{}",
@@ -177,7 +177,7 @@ impl Registry {
                 crate_list.orphan_registry(),
                 crate_detail,
                 dry_run,
-            );
+            )?;
 
             println!(
                 "{}",
@@ -196,7 +196,7 @@ impl Registry {
                 crate_list.installed_registry(),
                 crate_detail,
                 dry_run,
-            );
+            )?;
             println!(
                 "{}",
                 format!(
@@ -281,6 +281,6 @@ pub(super) fn clean_registry(
     crate_metadata_list: &[CrateMetaData],
     crate_detail: &CrateDetail,
     dry_run: bool,
-) -> (u64, usize) {
+) -> Result<(u64, usize)> {
     registry_crates_location.remove_crate_list(crate_detail, crate_metadata_list, dry_run)
 }

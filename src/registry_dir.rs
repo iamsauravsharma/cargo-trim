@@ -23,8 +23,12 @@ impl<'a> RegistryDir<'a> {
         index_dir: &Path,
         installed_crate: &[CrateMetaData],
     ) -> Result<Self> {
-        let cache_dir = cache_dir.to_str().unwrap();
-        let src_dir = src_dir.to_str().unwrap();
+        let cache_dir = cache_dir
+            .to_str()
+            .context("failed to convert cache dir to str")?;
+        let src_dir = src_dir
+            .to_str()
+            .context("failed to convert src dir to str")?;
         let mut index_cache_dir = Vec::new();
         // read a index .cache dir folder for each registry by analyzing index folder
         if index_dir.exists() {
@@ -36,7 +40,12 @@ impl<'a> RegistryDir<'a> {
                         .file_name()
                         .context("failed to get file name form registry sub directory")?;
                     if folder_name == ".cache" {
-                        index_cache_dir.push(folder.to_str().unwrap().to_string());
+                        index_cache_dir.push(
+                            folder
+                                .to_str()
+                                .context("Unable to convert index cache folder to str")?
+                                .to_string(),
+                        );
                     }
                 }
             }
@@ -56,7 +65,7 @@ impl<'a> RegistryDir<'a> {
         crate_detail: &CrateDetail,
         crate_metadata: &CrateMetaData,
         dry_run: bool,
-    ) -> bool {
+    ) -> Result<bool> {
         // remove crate from cache dir
         let mut is_success = remove_crate(
             Path::new(&self.cache_dir),
@@ -84,8 +93,7 @@ impl<'a> RegistryDir<'a> {
         for index_cache_dir in &index_cache {
             let index = Path::new(&index_cache_dir);
             let source = crate_detail
-                .source_url_from_path(index.parent().unwrap())
-                .unwrap();
+                .source_url_from_path(index.parent().context("Failed to get index parent")?)?;
             if &Some(source) == crate_metadata.source() {
                 let same_name_list = self.installed_crate.iter().filter(|&x| {
                     x.name() == crate_metadata.name() && x.source() == crate_metadata.source()
@@ -104,24 +112,33 @@ impl<'a> RegistryDir<'a> {
                 "Dry run:".yellow(),
                 "Removed".red(),
                 crate_metadata.name(),
-                crate_metadata.version().as_ref().unwrap(),
+                crate_metadata
+                    .version()
+                    .clone()
+                    .context("Failed to convert crate version")?,
             );
-            true
+            Ok(true)
         } else if is_success {
             println!(
                 r#"{} "{}-{}""#,
                 "Removed".red(),
                 crate_metadata.name(),
-                crate_metadata.version().as_ref().unwrap(),
+                crate_metadata
+                    .version()
+                    .clone()
+                    .context("Failed to convert crate version")?,
             );
-            true
+            Ok(true)
         } else {
             println!(
                 r#"Failed to remove "{}-{}""#,
                 crate_metadata.name(),
-                crate_metadata.version().as_ref().unwrap(),
+                crate_metadata
+                    .version()
+                    .clone()
+                    .context("Failed to convert crate version")?,
             );
-            false
+            Ok(false)
         }
     }
 
@@ -131,16 +148,16 @@ impl<'a> RegistryDir<'a> {
         crate_detail: &CrateDetail,
         list: &[CrateMetaData],
         dry_run: bool,
-    ) -> (u64, usize) {
+    ) -> Result<(u64, usize)> {
         let mut size_cleaned = 0;
         let mut crate_removed = 0;
         for crate_metadata in list {
-            if self.remove_crate(crate_detail, crate_metadata, dry_run) {
+            if self.remove_crate(crate_detail, crate_metadata, dry_run)? {
                 size_cleaned += crate_metadata.size();
                 crate_removed += 1;
             }
         }
-        (size_cleaned, crate_removed)
+        Ok((size_cleaned, crate_removed))
     }
 }
 
@@ -158,7 +175,11 @@ fn remove_crate(
             if &Some(source) == crate_metadata.source() {
                 for entry in fs::read_dir(path)? {
                     let path = entry?.path();
-                    if path.to_str().unwrap().contains(crate_metadata.name()) {
+                    if path
+                        .to_str()
+                        .context("Failed to get crate name path to str")?
+                        .contains(crate_metadata.name())
+                    {
                         delete_folder(&path, dry_run)?;
                     }
                 }

@@ -236,7 +236,10 @@ impl CrateDetail {
                 let file_name = entry
                     .file_name()
                     .context("failed to get file name from bin directory")?;
-                let bin_name = file_name.to_str().unwrap().to_string();
+                let bin_name = file_name
+                    .to_str()
+                    .context("failed to convert file name of bin to str")?
+                    .to_string();
                 let bin_metadata = CrateMetaData {
                     name: bin_name,
                     version: None,
@@ -269,9 +272,11 @@ impl CrateDetail {
                         get_size(&entry).context("failed to get registry crate size")?;
                     let file_name = entry
                         .file_name()
-                        .context("failed to get file name form main entry")?;
-                    let crate_name = file_name.to_str().unwrap();
-                    let (name, version) = split_name_version(crate_name);
+                        .context("failed to get file name from main entry")?;
+                    let crate_name = file_name
+                        .to_str()
+                        .context("Failed to convert crate file name to str")?;
+                    let (name, version) = split_name_version(crate_name)?;
                     let crate_metadata = CrateMetaData {
                         name,
                         version: Some(version),
@@ -279,7 +284,7 @@ impl CrateDetail {
                         source: Some(source.clone()),
                     };
                     self.add_registry_crate_source(&crate_metadata);
-                    update_crate_list(&mut installed_crate_registry, &crate_metadata);
+                    update_crate_list(&mut installed_crate_registry, &crate_metadata)?;
                 }
             }
         }
@@ -296,8 +301,10 @@ impl CrateDetail {
                         .file_name()
                         .context("failed to get file name from cache dir")?;
                     let crate_size = get_size(&entry).context("failed to get size")?;
-                    let crate_name = file_name.to_str().unwrap();
-                    let (name, version) = split_name_version(crate_name);
+                    let crate_name = file_name
+                        .to_str()
+                        .context("Failed to convert crate file name to str")?;
+                    let (name, version) = split_name_version(crate_name)?;
                     let crate_metadata = CrateMetaData {
                         name,
                         version: Some(version),
@@ -305,7 +312,7 @@ impl CrateDetail {
                         source: Some(source.clone()),
                     };
                     self.add_registry_crate_archive(&crate_metadata);
-                    update_crate_list(&mut installed_crate_registry, &crate_metadata);
+                    update_crate_list(&mut installed_crate_registry, &crate_metadata)?;
                 }
             }
         }
@@ -341,8 +348,12 @@ impl CrateDetail {
                     let git_sha_file_name = git_sha_entry
                         .file_name()
                         .context("failed to get file name")?;
-                    let git_sha = git_sha_file_name.to_str().unwrap();
-                    let file_name = file_path.to_str().unwrap();
+                    let git_sha = git_sha_file_name
+                        .to_str()
+                        .context("Failed to convert git sha name to str")?;
+                    let file_name = file_path
+                        .to_str()
+                        .context("Failed to convert file path file name to str")?;
                     let full_name = format!("{}-{}", file_name, git_sha);
                     let crate_metadata = CrateMetaData {
                         name: full_name,
@@ -351,7 +362,7 @@ impl CrateDetail {
                         source: Some(source.clone()),
                     };
                     self.add_git_crate_archive(&crate_metadata);
-                    update_crate_list(&mut installed_crate_git, &crate_metadata);
+                    update_crate_list(&mut installed_crate_git, &crate_metadata)?;
                 }
             }
         }
@@ -363,7 +374,9 @@ impl CrateDetail {
                 let crate_size =
                     get_size(&entry).context("failed to get size of db dir folders")?;
                 let file_name = entry.file_name().context("failed to get file name")?;
-                let file_name = file_name.to_str().unwrap();
+                let file_name = file_name
+                    .to_str()
+                    .context("Failed to convert db dir file name to str")?;
                 let full_name = format!("{}-HEAD", file_name);
                 let crate_metadata = CrateMetaData {
                     name: full_name,
@@ -372,7 +385,7 @@ impl CrateDetail {
                     source: Some(source),
                 };
                 self.add_git_crate_source(&crate_metadata);
-                update_crate_list(&mut installed_crate_git, &crate_metadata);
+                update_crate_list(&mut installed_crate_git, &crate_metadata)?;
             }
         }
         let mut installed_crates = Vec::new();
@@ -384,15 +397,22 @@ impl CrateDetail {
     }
 }
 
-fn update_crate_list(hash_set: &mut HashSet<CrateMetaData>, temp_crate_metadata: &CrateMetaData) {
+fn update_crate_list(
+    hash_set: &mut HashSet<CrateMetaData>,
+    temp_crate_metadata: &CrateMetaData,
+) -> Result<()> {
     let meta_data_exists = hash_set.get(temp_crate_metadata).is_some();
     let mut current_size = temp_crate_metadata.size;
     if meta_data_exists {
-        current_size += hash_set.get(temp_crate_metadata).unwrap().size;
+        current_size += hash_set
+            .get(temp_crate_metadata)
+            .context("failed to get metadata from hash set")?
+            .size;
     }
     hash_set.remove(temp_crate_metadata);
     hash_set.insert(CrateMetaData {
         size: current_size,
         ..temp_crate_metadata.clone()
     });
+    Ok(())
 }

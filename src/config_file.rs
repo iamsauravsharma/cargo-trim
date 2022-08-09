@@ -191,7 +191,7 @@ impl ConfigFile {
                 {
                     let sub = entry?.path();
                     if sub.is_dir() {
-                        if self.need_to_be_ignored(path) {
+                        if self.need_to_be_ignored(path)? {
                             continue;
                         }
                         let kids_list = self.list_cargo_toml(&sub)?;
@@ -209,18 +209,22 @@ impl ConfigFile {
     }
 
     /// check if directory should be scanned for listing crates or not
-    fn need_to_be_ignored(&self, path: &Path) -> bool {
-        let file_name = path.file_name().unwrap().to_str().unwrap();
+    fn need_to_be_ignored(&self, path: &Path) -> Result<bool> {
+        let file_name = path
+            .file_name()
+            .context("Failed to get need to be ignored path file name")?
+            .to_str()
+            .context("Failed to convert folder name Osstr to str")?;
         if self.ignore_file_name().contains(&file_name.to_owned()) {
-            return true;
+            return Ok(true);
         }
         if file_name.starts_with('.') && !self.scan_hidden_folder() {
-            return true;
+            return Ok(true);
         }
         let target_dir_name = env::var("CARGO_BUILD_TARGET_DIR").unwrap_or_else(|_| {
             env::var("CARGO_TARGET_DIR").unwrap_or_else(|_| String::from("target"))
         });
-        file_name == target_dir_name && !self.scan_target_folder()
+        Ok(file_name == target_dir_name && !self.scan_target_folder())
     }
 
     /// save struct in the config file

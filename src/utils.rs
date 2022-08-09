@@ -3,14 +3,14 @@ use std::fs;
 use std::path::Path;
 use std::str::FromStr;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use owo_colors::OwoColorize;
 use semver::Version;
 
 use crate::crate_detail::CrateMetaData;
 
 /// split name and semver version part from crates full name
-pub(crate) fn split_name_version(full_name: &str) -> (String, Version) {
+pub(crate) fn split_name_version(full_name: &str) -> Result<(String, Version)> {
     let mut name = full_name.to_string();
     name = name.replace(".crate", "");
     let version_split: Vec<&str> = name.split('-').collect();
@@ -24,8 +24,9 @@ pub(crate) fn split_name_version(full_name: &str) -> (String, Version) {
     }
     let (clear_name_vec, version_vec) = version_split.split_at(version_start_position);
     let clear_name = clear_name_vec.join("-");
-    let version = Version::from_str(version_vec.join("-").as_str()).unwrap();
-    (clear_name, version)
+    let version = Version::from_str(version_vec.join("-").as_str())
+        .context("Failed to parse semver version from splitted parts")?;
+    Ok((clear_name, version))
 }
 
 /// delete folder with folder path provided
@@ -54,7 +55,9 @@ pub(crate) fn delete_index_cache(index_dir: &Path, dry_run: bool) -> Result<()> 
         let registry_dir = entry?.path();
         for folder in fs::read_dir(registry_dir)? {
             let folder = folder?.path();
-            let folder_name = folder.file_name().unwrap();
+            let folder_name = folder
+                .file_name()
+                .context("Failed to obtain index .cache file name")?;
             if folder_name == ".cache" {
                 delete_folder(&folder, dry_run)?;
             }
@@ -225,42 +228,42 @@ mod test {
     #[test]
     fn test_split_name_version() {
         assert_eq!(
-            split_name_version("sample_crate-0.12.0"),
+            split_name_version("sample_crate-0.12.0").unwrap(),
             (
                 "sample_crate".to_string(),
                 Version::parse("0.12.0").unwrap()
             )
         );
         assert_eq!(
-            split_name_version("another-crate-name-1.4.5"),
+            split_name_version("another-crate-name-1.4.5").unwrap(),
             (
                 "another-crate-name".to_string(),
                 Version::parse("1.4.5").unwrap()
             )
         );
         assert_eq!(
-            split_name_version("crate-name-12-123-0.1.0"),
+            split_name_version("crate-name-12-123-0.1.0").unwrap(),
             (
                 "crate-name-12-123".to_string(),
                 Version::parse("0.1.0").unwrap()
             )
         );
         assert_eq!(
-            split_name_version("complex_name-12.0.0-rc.1"),
+            split_name_version("complex_name-12.0.0-rc.1").unwrap(),
             (
                 "complex_name".to_string(),
                 Version::parse("12.0.0-rc.1").unwrap()
             )
         );
         assert_eq!(
-            split_name_version("build-number-2.3.4+was0-5"),
+            split_name_version("build-number-2.3.4+was0-5").unwrap(),
             (
                 "build-number".to_string(),
                 Version::parse("2.3.4+was0-5").unwrap()
             )
         );
         assert_eq!(
-            split_name_version("complex_spec-0.12.0-rc.1+name0.4.6"),
+            split_name_version("complex_spec-0.12.0-rc.1+name0.4.6").unwrap(),
             (
                 "complex_spec".to_string(),
                 Version::parse("0.12.0-rc.1+name0.4.6").unwrap()

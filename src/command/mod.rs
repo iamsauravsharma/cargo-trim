@@ -2,7 +2,7 @@ use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Ok, Result};
 use clap::Parser;
 use owo_colors::OwoColorize;
 
@@ -234,7 +234,7 @@ impl Command {
         )?;
 
         let git_crates_location =
-            crate::git_dir::GitDir::new(dir_path.checkout_dir(), dir_path.db_dir());
+            crate::git_dir::GitDir::new(dir_path.checkout_dir(), dir_path.db_dir())?;
 
         if self.old {
             old_clean(
@@ -243,7 +243,7 @@ impl Command {
                 &git_crates_location,
                 &crate_detail,
                 dry_run,
-            );
+            )?;
         }
 
         if self.old_orphan {
@@ -275,7 +275,7 @@ impl Command {
                 &git_crates_location,
                 &crate_detail,
                 dry_run,
-            );
+            )?;
         }
 
         if let Some(sub_command) = &self.sub_command {
@@ -330,7 +330,13 @@ fn git_compress(
             if !dry_run {
                 println!(
                     "{}",
-                    format!("Compressing {} registry index", file_name.to_str().unwrap()).blue()
+                    format!(
+                        "Compressing {} registry index",
+                        file_name
+                            .to_str()
+                            .context("Failed to get compress file name")?
+                    )
+                    .blue()
                 );
             }
             run_git_compress_commands(&repo_path, dry_run)?;
@@ -469,7 +475,13 @@ fn update_cargo_toml(cargo_toml_location: &[PathBuf], dry_run: bool) -> Result<(
                     location
                 );
             } else {
-                let message = format!("Updating {}", cargo_lock.to_str().unwrap().blue());
+                let message = format!(
+                    "Updating {}",
+                    cargo_lock
+                        .to_str()
+                        .context("Failed to convert Cargo.lock file path to str")?
+                        .blue()
+                );
                 println!("{}", message);
                 std::process::Command::new("cargo")
                     .arg("update")
@@ -518,13 +530,13 @@ fn old_clean(
     git_crates_location: &GitDir,
     crate_detail: &CrateDetail,
     dry_run: bool,
-) {
+) -> Result<()> {
     let (registry_sized_cleaned, total_registry_crate_removed) = clean_registry(
         registry_crates_location,
         crate_list.old_registry(),
         crate_detail,
         dry_run,
-    );
+    )?;
     let (git_sized_cleaned, total_git_crate_removed) = clean_git(
         git_crates_location,
         crate_list.old_git(),
@@ -540,6 +552,7 @@ fn old_clean(
         )
         .blue()
     );
+    Ok(())
 }
 
 // Clean out crates which is both old and orphan
@@ -577,7 +590,7 @@ fn old_orphan_clean(
         &crate_list.list_old_orphan_registry(),
         crate_detail,
         dry_run,
-    );
+    )?;
     let (git_sized_cleaned, total_git_crate_removed) = clean_git(
         git_crates_location,
         &crate_list.list_old_orphan_git(),
@@ -632,7 +645,7 @@ fn orphan_clean(
         crate_list.orphan_registry(),
         crate_detail,
         dry_run,
-    );
+    )?;
     let (git_sized_cleaned, total_git_crate_removed) = clean_git(
         git_crates_location,
         crate_list.orphan_git(),
@@ -659,13 +672,13 @@ fn remove_all(
     git_crates_location: &GitDir,
     crate_detail: &CrateDetail,
     dry_run: bool,
-) {
+) -> Result<()> {
     let (registry_sized_cleaned, total_registry_crate_removed) = clean_registry(
         registry_crates_location,
         crate_list.installed_registry(),
         crate_detail,
         dry_run,
-    );
+    )?;
     let (git_sized_cleaned, total_git_crate_removed) = clean_git(
         git_crates_location,
         crate_list.installed_git(),
@@ -682,4 +695,5 @@ fn remove_all(
         )
         .blue()
     );
+    Ok(())
 }
