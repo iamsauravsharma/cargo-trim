@@ -175,10 +175,15 @@ fn remove_crate(
             if &Some(source) == crate_metadata.source() {
                 for entry in fs::read_dir(path)? {
                     let path = entry?.path();
+                    let crate_name = crate_metadata.name();
+                    let crate_version = crate_metadata
+                        .version()
+                        .clone()
+                        .context("Failed to get crate version")?;
                     if path
                         .to_str()
                         .context("Failed to get crate name path to str")?
-                        .contains(crate_metadata.name())
+                        .contains(&format!("{}-{}", crate_name, crate_version))
                     {
                         delete_folder(&path, dry_run)?;
                     }
@@ -219,10 +224,7 @@ fn remove_index_cache(path: &Path, crate_metadata: &CrateMetaData, dry_run: bool
 
 /// check if any index cache folder is empty if it is it is removed out
 fn remove_empty_index_cache_dir(path: &Path, dry_run: bool) -> Result<()> {
-    if fs::read_dir(path)
-        .map(|mut i| i.next().is_none())
-        .unwrap_or(false)
-    {
+    if fs::read_dir(path).map(|mut i| i.next().is_none())? {
         delete_folder(path, dry_run)?;
     } else {
         for entry in fs::read_dir(path)? {

@@ -2,7 +2,7 @@ use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
-use anyhow::{Context, Ok, Result};
+use anyhow::{Context, Result};
 use clap::Parser;
 use owo_colors::OwoColorize;
 
