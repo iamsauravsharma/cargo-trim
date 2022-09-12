@@ -36,7 +36,7 @@ pub(crate) fn delete_folder(path: &Path, dry_run: bool) -> Result<()> {
             if dry_run {
                 println!("{} {} {:?}", "Dry run:".yellow(), "Removed".red(), path);
             } else {
-                fs::remove_file(&path)?;
+                fs::remove_file(path)?;
             }
         } else if path.is_dir() {
             if dry_run {

@@ -384,7 +384,7 @@ fn run_git_compress_commands(repo_path: &Path, dry_run: bool) -> Result<()> {
             .arg("--expire=now")
             .arg("--all")
             .current_dir(repo_path)
-            .output()
+            .status()
             .context("Failed to execute git reflog command")?;
         println!("{:70}.......Step 1/3", "  \u{251c} Completed git reflog");
 
@@ -395,7 +395,7 @@ fn run_git_compress_commands(repo_path: &Path, dry_run: bool) -> Result<()> {
             .arg("--all")
             .arg("--prune")
             .current_dir(repo_path)
-            .output()
+            .status()
             .context("Failed to execute git pack-refs command")?;
         println!(
             "{:70}.......Step 2/3",
@@ -408,7 +408,7 @@ fn run_git_compress_commands(repo_path: &Path, dry_run: bool) -> Result<()> {
             .arg("--aggressive")
             .arg("--prune=now")
             .current_dir(repo_path)
-            .output()
+            .status()
             .context("Failed to execute git gc command")?;
         println!(
             "{:70}.......Step 3/3",
@@ -463,7 +463,7 @@ fn update_cargo_toml(cargo_toml_location: &[PathBuf], dry_run: bool) -> Result<(
             std::process::Command::new("cargo")
                 .arg("generate-lockfile")
                 .current_dir(location)
-                .output()
+                .status()
                 .context("Failed to generate Cargo.lock")?;
         }
         // helps so we may not need to generate lock file again for workspace project
@@ -486,10 +486,8 @@ fn update_cargo_toml(cargo_toml_location: &[PathBuf], dry_run: bool) -> Result<(
                 std::process::Command::new("cargo")
                     .arg("update")
                     .current_dir(location)
-                    .spawn()
-                    .context("Cannot run command")?
-                    .wait()
-                    .context("Failed to wait for child")?;
+                    .status()
+                    .context("Failed to run cargo update command")?;
             }
         }
     }
