@@ -7,23 +7,23 @@ use owo_colors::OwoColorize;
 use crate::config_file::ConfigFile;
 
 #[derive(Debug, Parser)]
-#[clap(
+#[command(
     about = "Query about config file data used by CLI",
     arg_required_else_help = true
 )]
 #[allow(clippy::struct_excessive_bools)]
 pub(crate) struct Config {
-    #[clap(long = "directory", short = 'd', help = "Query about directory data")]
+    #[arg(long = "directory", short = 'd', help = "Query about directory data")]
     directory: bool,
-    #[clap(
+    #[arg(
         long = "ignore",
         short = 'i',
         help = "Query about ignored file name data"
     )]
     ignore: bool,
-    #[clap(long = "location", short = 'l', help = "Return config file location")]
+    #[arg(long = "location", short = 'l', help = "Return config file location")]
     location: bool,
-    #[clap(long = "print", short = 'p', help = "Display config file content")]
+    #[arg(long = "print", short = 'p', help = "Display config file content")]
     print: bool,
 }
 

@@ -4,9 +4,9 @@ use clap::Parser;
 use crate::config_file::ConfigFile;
 
 #[derive(Debug, Parser)]
-#[clap(about = "Clear current working directory from cargo cache config")]
+#[command(about = "Clear current working directory from cargo cache config")]
 pub(crate) struct Clear {
-    #[clap(
+    #[arg(
         long = "dry-run",
         short = 'n',
         help = "Run command in dry run mode to see what would be done"

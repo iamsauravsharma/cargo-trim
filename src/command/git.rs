@@ -11,36 +11,36 @@ use crate::git_dir::GitDir;
 use crate::list_crate::CrateList;
 use crate::utils::{convert_pretty, get_size, print_dash, query_print, show_top_number_crates};
 #[derive(Debug, Parser)]
-#[clap(
+#[command(
     about = "Perform operation only to git related cache file",
     arg_required_else_help = true
 )]
 #[allow(clippy::struct_excessive_bools)]
 pub(crate) struct Git {
-    #[clap(long = "all", short = 'a', help = "Clean up all git crates")]
+    #[arg(long = "all", short = 'a', help = "Clean up all git crates")]
     all: bool,
-    #[clap(
+    #[arg(
         long = "dry-run",
         short = 'n',
         help = "Run command in dry run mode to see what would be done"
     )]
     dry_run: bool,
-    #[clap(
+    #[arg(
         long = "light",
         short = 'l',
         help = "Light cleanup repo by removing git checkout but stores git db for future \
                 compilation"
     )]
     light_cleanup: bool,
-    #[clap(long = "old", short = 'o', help = "Clean old git cache crates")]
+    #[arg(long = "old", short = 'o', help = "Clean old git cache crates")]
     old: bool,
-    #[clap(
+    #[arg(
         long = "old-orphan",
         short = 'z',
         help = "Clean git crates which is both old and orphan"
     )]
     old_orphan: bool,
-    #[clap(
+    #[arg(
         long = "orphan",
         short = 'x',
         help = "Clean orphan cache git crates i.e all crates which are not present in lock file \
@@ -48,13 +48,13 @@ pub(crate) struct Git {
                 file"
     )]
     orphan: bool,
-    #[clap(
+    #[arg(
         long = "query",
         short = 'q',
         help = "Return size of different .cargo/git cache folders"
     )]
     query: bool,
-    #[clap(
+    #[arg(
         long = "top",
         short = 't',
         help = "Show certain number of top crates which have highest size",

@@ -3,7 +3,7 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use owo_colors::OwoColorize;
 
 use crate::command::git::clean_git;
@@ -38,7 +38,7 @@ enum SubCommand {
 }
 
 #[derive(Debug, Parser)]
-#[clap(name= clap::crate_name!(),
+#[command(name= clap::crate_name!(),
     version=clap::crate_version!(),
     propagate_version=true,
     arg_required_else_help=true,
@@ -47,104 +47,123 @@ enum SubCommand {
 )]
 #[allow(clippy::struct_excessive_bools)]
 pub(crate) struct Command {
-    #[clap(long = "all", short = 'a', help = "Clean up all registry & git crates")]
+    #[arg(long = "all", short = 'a', help = "Clean up all registry & git crates")]
     all: bool,
-    #[clap(
+    #[arg(
         long = "directory",
         short = 'd',
         help = "Extra list of directory of Rust projects for current command",
         env = "TRIM_DIRECTORY"
     )]
     directory: Option<Vec<String>>,
-    #[clap(
+    #[arg(
         long = "dry-run",
         short = 'n',
         help = "Run command in dry run mode to see what would be done"
     )]
     dry_run: bool,
-    #[clap(
-        long="gc",
-        short='g',
-        help="Git compress to reduce size of .cargo (git command required)",
-        possible_values=&["all", "index", "git", "git-checkout", "git-db"]
+    #[arg(
+        long = "gc",
+        short = 'g',
+        value_enum,
+        help = "Git compress to reduce size of .cargo (git command required)"
     )]
-    git_compress: Option<String>,
-    #[clap(
+    git_compress: Option<Vec<GitCompress>>,
+    #[arg(
         long = "ignore",
         short = 'i',
         help = "Extra list of ignore file name which should be ignored for current command",
         env = "TRIM_IGNORE"
     )]
     ignore: Option<Vec<String>>,
-    #[clap(
+    #[arg(
         long = "light",
         short = 'l',
-        help = "Light cleanup repo by removing git checkout and registry source but stores git db \
-                and registry archive for future compilation without internet requirement"
+        help = "Light cleanup without removing files required for future compilation without \
+                internet"
     )]
     light_cleanup: bool,
-    #[clap(long = "old", short = 'o', help = "Clean old cache crates")]
+    #[arg(
+        long,
+        help = "Not scan hidden folder for current command. Takes precedence over \
+                scan-hidden-folder",
+        env = "TRIM_NOT_SCAN_HIDDEN_FOLDER"
+    )]
+    no_scan_hidden_folder: bool,
+    #[arg(
+        long,
+        help = "Not scan target folder for current command. Takes precedence over \
+                scan-target-folder",
+        env = "TRIM_NOT_SCAN_TARGET_FOLDER"
+    )]
+    no_scan_target_folder: bool,
+    #[arg(long = "old", short = 'o', help = "Clean old cache crates")]
     old: bool,
-    #[clap(
+    #[arg(
         long = "old-orphan",
         short = 'z',
         help = "Clean crates which is both old and orphan"
     )]
     old_orphan: bool,
-    #[clap(
+    #[arg(
         long = "orphan",
         short = 'x',
         help = "Clean orphan cache crates i.e all crates which are not present in lock file \
-                generated till now use cargo trim -u to guarantee your all project generate lock \
-                file"
+                generated till now"
     )]
     orphan: bool,
-    #[clap(
+    #[arg(
         long = "query",
         short = 'q',
         help = "Return size of different .cargo/cache folders"
     )]
     query: bool,
-    #[clap(
+    #[arg(
         long = "scan-hidden-folder",
-        help = "Whether to scan hidden folder for current command",
-        possible_values = &["true", "false"],
-        env = "TRIM_SCAN_HIDDEN_FOLDER",
+        help = "Scan hidden folder for current command",
+        env = "TRIM_SCAN_HIDDEN_FOLDER"
     )]
-    scan_hidden_folder: Option<String>,
-    #[clap(
+    scan_hidden_folder: bool,
+    #[arg(
         long = "scan-target-folder",
-        help = "Whether to scan target folder for current command",
-        possible_values = &["true", "false"],
-        env = "TRIM_SCAN_TARGET_FOLDER",
+        help = "Scan target folder for current command",
+        env = "TRIM_SCAN_TARGET_FOLDER"
     )]
-    scan_target_folder: Option<String>,
-    #[clap(
+    scan_target_folder: bool,
+    #[arg(
         long = "top",
         short = 't',
-        help = "Show certain number of top crates which have highest size",
-        value_name = "number"
+        help = "Show certain number of top crates which have highest size"
     )]
     top: Option<usize>,
-    #[clap(
+    #[arg(
         long = "update",
         short = 'u',
         help = "Generate and Update Cargo.lock file present inside config directory folder path"
     )]
     update: bool,
-    #[clap(long="wipe", short='w', help="Wipe folder", possible_values=&[
-        "git",
-        "checkouts",
-        "db",
-        "registry",
-        "cache",
-        "index",
-        "index-cache",
-        "src",
-    ], value_name="folder")]
-    wipe: Option<Vec<String>>,
-    #[clap(subcommand)]
+    #[arg(long = "wipe", short = 'w', help = "Wipe folder", value_enum)]
+    wipe: Option<Vec<Wipe>>,
+    #[command(subcommand)]
     sub_command: Option<SubCommand>,
+}
+
+#[derive(Clone, ValueEnum, Debug)]
+enum Wipe {
+    Git,
+    Checkouts,
+    Db,
+    Registry,
+    Cache,
+    Index,
+    IndexCache,
+    Src,
+}
+#[derive(Clone, ValueEnum, Debug)]
+enum GitCompress {
+    Index,
+    GitCheckout,
+    GitDb,
 }
 
 impl Command {
@@ -175,29 +194,28 @@ impl Command {
                 config_file.add_ignore_file_name(file, dry_run, false)?;
             }
         }
-        if let Some(scan_hidden_folder) = &self.scan_hidden_folder {
-            match scan_hidden_folder.as_str() {
-                "true" => config_file.set_scan_hidden_folder(true, dry_run, false)?,
-                "false" => config_file.set_scan_hidden_folder(false, dry_run, false)?,
-                _ => (),
-            }
+
+        if self.no_scan_hidden_folder {
+            config_file.set_scan_hidden_folder(false, dry_run, false)?;
+        } else if self.scan_hidden_folder {
+            config_file.set_scan_hidden_folder(true, dry_run, false)?;
         }
-        if let Some(scan_target_folder) = &self.scan_target_folder {
-            match scan_target_folder.as_str() {
-                "true" => config_file.set_scan_target_folder(true, dry_run, false)?,
-                "false" => config_file.set_scan_target_folder(false, dry_run, false)?,
-                _ => (),
-            }
+        if self.no_scan_target_folder {
+            config_file.set_scan_target_folder(false, dry_run, false)?;
+        } else if self.scan_target_folder {
+            config_file.set_scan_target_folder(true, dry_run, false)?;
         }
 
-        if let Some(val) = &self.git_compress {
-            git_compress(
-                val,
-                dir_path.index_dir(),
-                dir_path.checkout_dir(),
-                dir_path.db_dir(),
-                dry_run,
-            )?;
+        if let Some(values) = &self.git_compress {
+            for value in values {
+                git_compress(
+                    value,
+                    dir_path.index_dir(),
+                    dir_path.checkout_dir(),
+                    dir_path.db_dir(),
+                    dry_run,
+                )?;
+            }
         }
         if self.light_cleanup {
             light_cleanup(
@@ -207,9 +225,9 @@ impl Command {
                 dry_run,
             );
         }
-        if let Some(folders) = &self.wipe {
-            for folder in folders {
-                wipe_directory(folder, &dir_path, dry_run);
+        if let Some(wipes) = &self.wipe {
+            for wipe in wipes {
+                wipe_directory(wipe, &dir_path, dry_run);
             }
         }
 
@@ -315,13 +333,19 @@ impl Command {
 
 // Git compress git files according to provided value if option
 fn git_compress(
-    value: &str,
+    value: &GitCompress,
     index_dir: &Path,
     checkout_dir: &Path,
     db_dir: &Path,
     dry_run: bool,
 ) -> Result<()> {
-    if (value == "index" || value == "all") && index_dir.exists() {
+    let (do_index, do_git_checkout, do_git_db) = match value {
+        GitCompress::Index if index_dir.exists() => (true, false, false),
+        GitCompress::GitCheckout if checkout_dir.exists() => (false, true, false),
+        GitCompress::GitDb if db_dir.exists() => (false, false, true),
+        _ => (false, false, false),
+    };
+    if do_index {
         for entry in fs::read_dir(index_dir).context("failed to read registry index folder")? {
             let repo_path = entry?.path();
             let file_name = repo_path
@@ -342,30 +366,27 @@ fn git_compress(
             run_git_compress_commands(&repo_path, dry_run)?;
         }
     }
-    // if git is provided it git compress all git folders
-    if value.contains("git") || value == "all" {
-        if (value == "git" || value == "git-checkout") && checkout_dir.exists() {
-            for entry in fs::read_dir(checkout_dir).context("failed to read checkout directory")? {
-                let repo_path = entry?.path();
-                for rev in fs::read_dir(repo_path)
-                    .context("failed to read checkout directory sub directory")?
-                {
-                    let rev_path = rev?.path();
-                    if !dry_run {
-                        println!("{}", "Compressing git checkout".blue());
-                    }
-                    run_git_compress_commands(&rev_path, dry_run)?;
+    if do_git_checkout {
+        for entry in fs::read_dir(checkout_dir).context("failed to read checkout directory")? {
+            let repo_path = entry?.path();
+            for rev in fs::read_dir(repo_path)
+                .context("failed to read checkout directory sub directory")?
+            {
+                let rev_path = rev?.path();
+                if !dry_run {
+                    println!("{}", "Compressing git checkout".blue());
                 }
+                run_git_compress_commands(&rev_path, dry_run)?;
             }
         }
-        if (value == "git" || value == "git-db") && db_dir.exists() {
-            for entry in fs::read_dir(db_dir).context("failed to read db dir")? {
-                let repo_path = entry?.path();
-                if !dry_run {
-                    println!("{}", "Compressing git db".blue());
-                }
-                run_git_compress_commands(&repo_path, dry_run)?;
+    }
+    if do_git_db {
+        for entry in fs::read_dir(db_dir).context("failed to read db dir")? {
+            let repo_path = entry?.path();
+            if !dry_run {
+                println!("{}", "Compressing git db".blue());
             }
+            run_git_compress_commands(&repo_path, dry_run)?;
         }
     }
     println!("{}", "Git compress task completed".blue());
@@ -431,23 +452,22 @@ fn light_cleanup(checkout_dir: &Path, src_dir: &Path, index_dir: &Path, dry_run:
 }
 
 // wipe certain directory
-fn wipe_directory(folder: &str, dir_path: &DirPath, dry_run: bool) {
-    let has_failed = match folder {
-        "git" => delete_folder(dir_path.git_dir(), dry_run),
-        "checkouts" => delete_folder(dir_path.checkout_dir(), dry_run),
-        "db" => delete_folder(dir_path.db_dir(), dry_run),
-        "registry" => delete_folder(dir_path.registry_dir(), dry_run),
-        "cache" => delete_folder(dir_path.cache_dir(), dry_run),
-        "index" => delete_folder(dir_path.index_dir(), dry_run),
-        "index-cache" => crate::utils::delete_index_cache(dir_path.index_dir(), dry_run),
-        "src" => delete_folder(dir_path.src_dir(), dry_run),
-        _ => Ok(()),
+fn wipe_directory(wipe: &Wipe, dir_path: &DirPath, dry_run: bool) {
+    let has_failed = match wipe {
+        Wipe::Git => delete_folder(dir_path.git_dir(), dry_run),
+        Wipe::Checkouts => delete_folder(dir_path.checkout_dir(), dry_run),
+        Wipe::Db => delete_folder(dir_path.db_dir(), dry_run),
+        Wipe::Registry => delete_folder(dir_path.registry_dir(), dry_run),
+        Wipe::Cache => delete_folder(dir_path.cache_dir(), dry_run),
+        Wipe::Index => delete_folder(dir_path.index_dir(), dry_run),
+        Wipe::IndexCache => crate::utils::delete_index_cache(dir_path.index_dir(), dry_run),
+        Wipe::Src => delete_folder(dir_path.src_dir(), dry_run),
     }
     .is_err();
     if has_failed {
-        println!("Failed to remove {:?} directory", folder);
+        println!("Failed to remove {:?} directory", wipe);
     } else {
-        println!("{} {:?} directory", "Removed".red(), folder);
+        println!("{} {:?} directory", "Removed".red(), wipe);
     }
 }
 

@@ -4,9 +4,9 @@ use clap::Parser;
 use crate::config_file::ConfigFile;
 
 #[derive(Debug, Parser)]
-#[clap(about = "Initialize current working directory as cargo trim directory")]
+#[command(about = "Initialize current working directory as cargo trim directory")]
 pub(crate) struct Init {
-    #[clap(
+    #[arg(
         long = "dry-run",
         short = 'n',
         help = "Run command in dry run mode to see what would be done"
