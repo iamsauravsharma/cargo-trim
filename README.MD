@@ -35,82 +35,41 @@ other crates present inside added directory.
 All cargo-trim can be run using `cargo trim <command>`
 `cargo trim --help` will produce out following output which list out all of available command for cargo-trim
 ```
-cargo-trim 0.9.0
-Saurav Sharma <appdroiddeveloper@gmail.com>
 Binary application to cleanup $CARGO_HOME cache
 
-USAGE:
-    cargo-trim [OPTIONS] [SUBCOMMAND]
+Usage: cargo-trim [OPTIONS] [COMMAND]
 
-OPTIONS:
-    -a, --all
-            Clean up all registry & git crates
+Commands:
+  init      Initialize current working directory as cargo trim directory
+  clear     Clear current working directory from cargo cache config
+  config    Query about config file data used by CLI
+  set       Set config file values
+  unset     Unset values from config file
+  list      List out crates
+  git       Perform operation only to git related cache file
+  registry  Perform operation only to registry related cache file
+  help      Print this message or the help of the given subcommand(s)
 
-    -d, --directory <DIRECTORY>
-            Extra list of directory of Rust projects for current command [env: TRIM_DIRECTORY=]
-
-    -g, --gc <GIT_COMPRESS>
-            Git compress to reduce size of .cargo (git command required) [possible values: all,
-            index, git, git-checkout, git-db]
-
-    -h, --help
-            Print help information
-
-    -i, --ignore <IGNORE>
-            Extra list of ignore file name which should be ignored for current command [env:
-            TRIM_IGNORE=]
-
-    -l, --light
-            Light cleanup repo by removing git checkout and registry source but stores git db and
-            registry archive for future compilation without internet requirement
-
-    -n, --dry-run
-            Run command in dry run mode to see what would be done
-
-    -o, --old
-            Clean old cache crates
-
-    -q, --query
-            Return size of different .cargo/cache folders
-
-        --scan-hidden-folder <SCAN_HIDDEN_FOLDER>
-            Whether to scan hidden folder for current command [env: TRIM_SCAN_HIDDEN_FOLDER=]
-            [possible values: true, false]
-
-        --scan-target-folder <SCAN_TARGET_FOLDER>
-            Whether to scan target folder for current command [env: TRIM_SCAN_TARGET_FOLDER=]
-            [possible values: true, false]
-
-    -t, --top <number>
-            Show certain number of top crates which have highest size
-
-    -u, --update
-            Generate and Update Cargo.lock file present inside config directory folder path
-
-    -V, --version
-            Print version information
-
-    -w, --wipe <folder>
-            Wipe folder [possible values: git, checkouts, db, registry, cache, index, index-cache,
-            src]
-
-    -x, --orphan
-            Clean orphan cache crates i.e all crates which are not present in lock file generated
-            till now use cargo trim -u to guarantee your all project generate lock file
-
-    -z, --old-orphan
-            Clean crates which is both old and orphan
-
-SUBCOMMANDS:
-    clear       Clear current working directory from cargo cache config
-    config      Query about config file data used by CLI
-    git         Perform operation only to git related cache file
-    help        Print this message or the help of the given subcommand(s)
-    init        Initialize current working directory as cargo trim directory
-    list        List out crates
-    registry    Perform operation only to registry related cache file
-    set         Set config file values
-    unset       Unset values from config file
+Options:
+  -a, --all                    Clean up all registry & git crates
+  -d, --directory <DIRECTORY>  Extra list of directory of Rust projects for current command [env: TRIM_DIRECTORY=]
+  -n, --dry-run                Run command in dry run mode to see what would be done
+  -g, --gc <GIT_COMPRESS>      Git compress to reduce size of .cargo (git command required) [possible values: index, git-checkout, git-db]
+  -i, --ignore <IGNORE>        Extra list of ignore file name which should be ignored for current command [env: TRIM_IGNORE=]
+  -l, --light                  Light cleanup without removing files required for future compilation without internet
+      --no-scan-hidden-folder  Not scan hidden folder for current command. Takes precedence over scan-hidden-folder [env: TRIM_NOT_SCAN_HIDDEN_FOLDER=]
+      --no-scan-target-folder  Not scan target folder for current command. Takes precedence over scan-target-folder [env: TRIM_NOT_SCAN_TARGET_FOLDER=]
+  -o, --old                    Clean old cache crates
+  -z, --old-orphan             Clean crates which is both old and orphan
+  -x, --orphan                 Clean orphan cache crates i.e all crates which are not present in lock file generated till now
+  -q, --query                  Return size of different .cargo/cache folders
+      --scan-hidden-folder     Scan hidden folder for current command [env: TRIM_SCAN_HIDDEN_FOLDER=]
+      --scan-target-folder     Scan target folder for current command [env: TRIM_SCAN_TARGET_FOLDER=]
+  -t, --top <TOP>              Show certain number of top crates which have highest size
+  -u, --update                 Generate and Update Cargo.lock file present inside config directory folder path
+  -w, --wipe <WIPE>            Wipe folder [possible values: git, checkouts, db, registry, cache, index, index-cache, src]
+  -h, --help                   Print help information
+  -V, --version                Print version information
 ```
 
 ### Configuration

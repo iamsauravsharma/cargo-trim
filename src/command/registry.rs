@@ -12,36 +12,36 @@ use crate::registry_dir::RegistryDir;
 use crate::utils::{convert_pretty, get_size, print_dash, query_print, show_top_number_crates};
 
 #[derive(Debug, Parser)]
-#[clap(
+#[command(
     about = "Perform operation only to registry related cache file",
     arg_required_else_help = true
 )]
 #[allow(clippy::struct_excessive_bools)]
 pub(crate) struct Registry {
-    #[clap(long = "all", short = 'a', help = "Clean up all registry crates")]
+    #[arg(long = "all", short = 'a', help = "Clean up all registry crates")]
     all: bool,
-    #[clap(
+    #[arg(
         long = "dry-run",
         short = 'n',
         help = "Run command in dry run mode to see what would be done"
     )]
     dry_run: bool,
-    #[clap(
+    #[arg(
         long = "light",
         short = 'l',
         help = "Light cleanup repo by removing registry source but stores registry archive for \
                 future compilation"
     )]
     light_cleanup: bool,
-    #[clap(long = "old", short = 'o', help = "Clean old registry cache crates")]
+    #[arg(long = "old", short = 'o', help = "Clean old registry cache crates")]
     old: bool,
-    #[clap(
+    #[arg(
         long = "old-orphan",
         short = 'z',
         help = "Clean registry crates which is both old and orphan"
     )]
     old_orphan: bool,
-    #[clap(
+    #[arg(
         long = "orphan",
         short = 'x',
         help = "Clean orphan cache registry crates i.e all crates which are not present in lock \
@@ -49,13 +49,13 @@ pub(crate) struct Registry {
                 lock file"
     )]
     orphan: bool,
-    #[clap(
+    #[arg(
         long = "query",
         short = 'q',
         help = "Return size of different .cargo/registry cache folders"
     )]
     query: bool,
-    #[clap(
+    #[arg(
         long = "top",
         short = 't',
         help = "Show certain number of top crates which have highest size",

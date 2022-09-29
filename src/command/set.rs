@@ -3,21 +3,21 @@ use clap::Parser;
 
 use crate::config_file::ConfigFile;
 #[derive(Debug, Parser)]
-#[clap(about = "Set config file values", arg_required_else_help = true)]
+#[command(about = "Set config file values", arg_required_else_help = true)]
 pub(crate) struct Set {
-    #[clap(
+    #[arg(
         long = "dry-run",
         short = 'n',
         help = "Run command in dry run mode to see what would be done"
     )]
     dry_run: bool,
-    #[clap(
+    #[arg(
         long = "directory",
         short = 'd',
         help = "Set directory of Rust project"
     )]
     directory: Option<Vec<String>>,
-    #[clap(
+    #[arg(
         long = "ignore",
         short = 'i',
         help = "Add file name/directory name to ignore list in configuration file which are \
@@ -25,9 +25,9 @@ pub(crate) struct Set {
         value_name = "file"
     )]
     ignore: Option<Vec<String>>,
-    #[clap(long = "scan-hidden-folder", help = "Set scan hidden folder as true")]
+    #[arg(long = "scan-hidden-folder", help = "Set scan hidden folder as true")]
     scan_hidden_folder: bool,
-    #[clap(long = "scan-target-folder", help = "Set scan hidden folder as true")]
+    #[arg(long = "scan-target-folder", help = "Set scan hidden folder as true")]
     scan_target_folder: bool,
 }
 
