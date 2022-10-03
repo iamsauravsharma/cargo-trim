@@ -85,14 +85,14 @@ pub(crate) struct Command {
     light_cleanup: bool,
     #[arg(
         long,
-        help = "Not scan hidden folder for current command. Takes precedence over \
+        help = "Do not scan hidden folder for current command. Takes precedence over \
                 scan-hidden-folder",
         env = "TRIM_NOT_SCAN_HIDDEN_FOLDER"
     )]
     no_scan_hidden_folder: bool,
     #[arg(
         long,
-        help = "Not scan target folder for current command. Takes precedence over \
+        help = "Do not scan target folder for current command. Takes precedence over  \
                 scan-target-folder",
         env = "TRIM_NOT_SCAN_TARGET_FOLDER"
     )]

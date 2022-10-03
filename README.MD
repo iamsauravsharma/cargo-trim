@@ -57,8 +57,8 @@ Options:
   -g, --gc <GIT_COMPRESS>      Git compress to reduce size of .cargo (git command required) [possible values: index, git-checkout, git-db]
   -i, --ignore <IGNORE>        Extra list of ignore file name which should be ignored for current command [env: TRIM_IGNORE=]
   -l, --light                  Light cleanup without removing files required for future compilation without internet
-      --no-scan-hidden-folder  Not scan hidden folder for current command. Takes precedence over scan-hidden-folder [env: TRIM_NOT_SCAN_HIDDEN_FOLDER=]
-      --no-scan-target-folder  Not scan target folder for current command. Takes precedence over scan-target-folder [env: TRIM_NOT_SCAN_TARGET_FOLDER=]
+      --no-scan-hidden-folder  Do not scan hidden folder for current command. Takes precedence over scan-hidden-folder [env: TRIM_NOT_SCAN_HIDDEN_FOLDER=]
+      --no-scan-target-folder  Do not scan target folder for current command. Takes precedence over scan-target-folder [env: TRIM_NOT_SCAN_TARGET_FOLDER=]
   -o, --old                    Clean old cache crates
   -z, --old-orphan             Clean crates which is both old and orphan
   -x, --orphan                 Clean orphan cache crates i.e all crates which are not present in lock file generated till now
