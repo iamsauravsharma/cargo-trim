@@ -396,7 +396,7 @@ fn git_compress(
 // run combination of commands which git compress a index of registry
 fn run_git_compress_commands(repo_path: &Path, dry_run: bool) -> Result<()> {
     if dry_run {
-        println!("{} git compressing {:?}", "Dry run:".yellow(), repo_path);
+        println!("{} git compressing {repo_path:?}", "Dry run:".yellow());
     } else {
         // Remove history of all checkout which will help in remove dangling commits
         std::process::Command::new("git")
@@ -465,9 +465,9 @@ fn wipe_directory(wipe: &Wipe, dir_path: &DirPath, dry_run: bool) {
     }
     .is_err();
     if has_failed {
-        println!("Failed to remove {:?} directory", wipe);
+        println!("Failed to remove {wipe:?} directory");
     } else {
-        println!("{} {:?} directory", "Removed".red(), wipe);
+        println!("{} {wipe:?} directory", "Removed".red());
     }
 }
 
@@ -490,9 +490,8 @@ fn update_cargo_toml(cargo_toml_location: &[PathBuf], dry_run: bool) -> Result<(
         if cargo_lock.exists() {
             if dry_run {
                 println!(
-                    "{} Updating lockfile at path {:?}",
+                    "{} Updating lockfile at path {location:?}",
                     "Dry run:".yellow(),
-                    location
                 );
             } else {
                 let message = format!(
@@ -502,7 +501,7 @@ fn update_cargo_toml(cargo_toml_location: &[PathBuf], dry_run: bool) -> Result<(
                         .context("Failed to convert Cargo.lock file path to str")?
                         .blue()
                 );
-                println!("{}", message);
+                println!("{message}");
                 std::process::Command::new("cargo")
                     .arg("update")
                     .current_dir(location)
@@ -707,7 +706,7 @@ fn remove_all(
     println!(
         "{}",
         format!(
-            "Total size of  {} crates removed :- {}",
+            "Total size of {} crates removed :- {}",
             total_git_crate_removed + total_registry_crate_removed,
             convert_pretty(git_sized_cleaned + registry_sized_cleaned)
         )

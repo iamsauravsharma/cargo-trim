@@ -32,26 +32,25 @@ impl Config {
         if self.directory {
             let read_directory = config_file.directory();
             for name in read_directory {
-                println!("{}", name);
+                println!("{name}");
             }
         }
         if self.ignore {
             let read_ignore_file_name = config_file.ignore_file_name();
             for name in read_ignore_file_name {
-                println!("{}", name);
+                println!("{name}");
             }
         }
         if self.location {
             println!(
-                "{}: {:?}",
+                "{}: {config_file_location:?}",
                 "Config file location".blue(),
-                config_file_location
             );
         }
         if self.print {
             let content = toml::to_string_pretty(config_file)
                 .context("Failed to convert struct to pretty toml")?;
-            println!("{}", content);
+            println!("{content}");
         }
         Ok(())
     }

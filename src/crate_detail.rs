@@ -354,7 +354,7 @@ impl CrateDetail {
                     let file_name = file_path
                         .to_str()
                         .context("Failed to convert file path file name to str")?;
-                    let full_name = format!("{}-{}", file_name, git_sha);
+                    let full_name = format!("{file_name}-{git_sha}");
                     let crate_metadata = CrateMetaData {
                         name: full_name,
                         version: None,
@@ -377,7 +377,7 @@ impl CrateDetail {
                 let file_name = file_name
                     .to_str()
                     .context("Failed to convert db dir file name to str")?;
-                let full_name = format!("{}-HEAD", file_name);
+                let full_name = format!("{file_name}-HEAD");
                 let crate_metadata = CrateMetaData {
                     name: full_name,
                     version: None,

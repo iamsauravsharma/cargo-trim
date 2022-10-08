@@ -249,7 +249,7 @@ fn read_content(list: &[PathBuf]) -> Result<(Vec<CrateMetaData>, Vec<CrateMetaDa
                                 let rev_sha: Vec<&str> = split_url[1].split('#').collect();
                                 let rev_value = rev_sha[1];
                                 let rev_short_form = &rev_value[..=6];
-                                let full_name = format!("{}-{}", name, rev_short_form);
+                                let full_name = format!("{name}-{rev_short_form}");
                                 present_crate_git.push(CrateMetaData::new(
                                     full_name,
                                     None,
@@ -260,7 +260,7 @@ fn read_content(list: &[PathBuf]) -> Result<(Vec<CrateMetaData>, Vec<CrateMetaDa
                                 let rev_sha: Vec<&str> = source.split('#').collect();
                                 let rev_value = rev_sha[1];
                                 let rev_short_form = &rev_value[..=6];
-                                let full_name = format!("{}-{}", name, rev_short_form);
+                                let full_name = format!("{name}-{rev_short_form}");
                                 present_crate_git.push(CrateMetaData::new(
                                     full_name,
                                     None,
@@ -313,7 +313,7 @@ fn list_old_crates(
                 .to_str()
                 .context("Failed to convert db dir entry file name to str")?;
             let rev_value = latest_rev_value(&entry)?;
-            let full_name = format!("{}-{}", file_name, rev_value);
+            let full_name = format!("{file_name}-{rev_value}");
             full_name_list.push(full_name);
         }
         for crate_metadata in installed_crate_git {

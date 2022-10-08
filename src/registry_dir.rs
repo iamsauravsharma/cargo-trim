@@ -183,7 +183,7 @@ fn remove_crate(
                     if path
                         .to_str()
                         .context("Failed to get crate name path to str")?
-                        .contains(&format!("{}-{}", crate_name, crate_version))
+                        .contains(&format!("{crate_name}-{crate_version}"))
                     {
                         delete_folder(&path, dry_run)?;
                     }

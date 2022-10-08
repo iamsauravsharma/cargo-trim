@@ -34,13 +34,13 @@ pub(crate) fn delete_folder(path: &Path, dry_run: bool) -> Result<()> {
     if path.exists() {
         if path.is_file() {
             if dry_run {
-                println!("{} {} {:?}", "Dry run:".yellow(), "Removed".red(), path);
+                println!("{} {} {path:?}", "Dry run:".yellow(), "Removed".red());
             } else {
                 fs::remove_file(path)?;
             }
         } else if path.is_dir() {
             if dry_run {
-                println!("{} {} {:?}", "Dry run:".yellow(), "Removed".red(), path);
+                println!("{} {} {path:?}", "Dry run:".yellow(), "Removed".red());
             } else {
                 fs::remove_dir_all(path)?;
             }
@@ -104,7 +104,7 @@ pub(crate) fn convert_pretty(num: u64) -> String {
     };
     let pretty_bytes = format!("{:7.3}", num / 1000_f64.powf(power_factor));
     let unit = units[power_factor as usize];
-    format!("{} {}", pretty_bytes, unit)
+    format!("{pretty_bytes} {unit}")
 }
 
 /// show title
@@ -157,7 +157,7 @@ pub(crate) fn show_top_number_crates(
     let mut crates = crates.iter().collect::<Vec<_>>();
     crates.sort_by_key(|a| std::cmp::Reverse(a.size()));
     let top_number = std::cmp::min(crates.len(), number);
-    let title = format!("Top {} {}", top_number, crate_type);
+    let title = format!("Top {top_number} {crate_type}");
     let mut listed_crates = Vec::new();
     for &crate_metadata in crates.iter().take(top_number) {
         listed_crates.push(crate_metadata.clone());
@@ -179,7 +179,7 @@ pub(crate) fn crate_list_type(crate_metadata_list: &[CrateMetaData], title: &str
         if let Some(version) = crate_metadata.version() {
             println!(
                 "|{:^first_width$}|{:^second_width$}|",
-                format!("{}-{}", crate_metadata.name(), version),
+                format!("{}-{version}", crate_metadata.name()),
                 convert_pretty(size)
             );
         } else {
@@ -210,13 +210,7 @@ pub(crate) fn query_full_width() -> usize {
 
 pub(crate) fn query_print(first_param: &str, second_param: &str) {
     let (first_path_width, second_path_width) = query_param_widths();
-    println!(
-        "{:first_width$} {:>second_width$}",
-        first_param,
-        second_param,
-        first_width = first_path_width,
-        second_width = second_path_width
-    );
+    println!("{first_param:first_path_width$} {second_param:>second_path_width$}",);
 }
 
 #[cfg(test)]
@@ -277,11 +271,11 @@ mod test {
         assert_eq!(convert_pretty(12), " 12.000 B".to_string());
         assert_eq!(convert_pretty(1234), "  1.234 kB".to_string());
         assert_eq!(convert_pretty(23908), " 23.908 kB".to_string());
-        assert_eq!(convert_pretty(874940334), "874.940 MB".to_string());
-        assert_eq!(convert_pretty(8849909404), "  8.850 GB".to_string());
-        assert_eq!(convert_pretty(3417849409404), "  3.418 TB".to_string());
+        assert_eq!(convert_pretty(874_940_334), "874.940 MB".to_string());
+        assert_eq!(convert_pretty(8_849_909_404), "  8.850 GB".to_string());
+        assert_eq!(convert_pretty(3_417_849_409_404), "  3.418 TB".to_string());
         assert_eq!(
-            convert_pretty(93453982182159417),
+            convert_pretty(93_453_982_182_159_417),
             "93453.982 TB".to_string()
         );
     }
