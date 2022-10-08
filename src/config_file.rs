@@ -72,16 +72,15 @@ impl ConfigFile {
     ) -> Result<()> {
         if dry_run {
             println!(
-                "{} Set scan_hidden_folder to {:?}",
+                "{} Set scan_hidden_folder to {value:?}",
                 "Dry run:".yellow(),
-                value
             );
         } else {
             self.scan_hidden_folder = value;
             if save {
                 self.save()?;
             }
-            println!("Set scan_hidden_folder to {:?}", value);
+            println!("Set scan_hidden_folder to {value:?}");
         }
         Ok(())
     }
@@ -95,16 +94,15 @@ impl ConfigFile {
     ) -> Result<()> {
         if dry_run {
             println!(
-                "{} Set scan_target_folder to {:?}",
+                "{} Set scan_target_folder to {value:?}",
                 "Dry run:".yellow(),
-                value
             );
         } else {
             self.scan_target_folder = value;
             if save {
                 self.save()?;
             }
-            println!("Set scan_target_folder to {:?}", value);
+            println!("Set scan_target_folder to {value:?}");
         }
         Ok(())
     }
@@ -112,13 +110,13 @@ impl ConfigFile {
     /// add directory
     pub(crate) fn add_directory(&mut self, path: &str, dry_run: bool, save: bool) -> Result<()> {
         if dry_run {
-            println!("{} Added {:?}", "Dry run:".yellow(), path);
+            println!("{} Added {path:?}", "Dry run:".yellow());
         } else {
             self.directory.push(path.to_string());
             if save {
                 self.save()?;
             }
-            println!("{} {:?}", "Added".red(), path);
+            println!("{} {path:?}", "Added".red());
         }
         Ok(())
     }
@@ -131,13 +129,13 @@ impl ConfigFile {
         save: bool,
     ) -> Result<()> {
         if dry_run {
-            println!("{} Added {:?}", "Dry run:".yellow(), file_name);
+            println!("{} Added {file_name:?}", "Dry run:".yellow());
         } else {
             self.ignore_file_name.push(file_name.to_string());
             if save {
                 self.save()?;
             }
-            println!("{} {:?}", "Added".red(), file_name);
+            println!("{} {file_name:?}", "Added".red());
         }
         Ok(())
     }
@@ -145,13 +143,13 @@ impl ConfigFile {
     /// remove directory
     pub(crate) fn remove_directory(&mut self, path: &str, dry_run: bool, save: bool) -> Result<()> {
         if dry_run {
-            println!("{} {} {:?}", "Dry run:".yellow(), "Removed".red(), path);
+            println!("{} {} {path:?}", "Dry run:".yellow(), "Removed".red());
         } else {
             self.directory.retain(|data| data != path);
             if save {
                 self.save()?;
             }
-            println!("{} {:?}", "Removed".red(), path);
+            println!("{} {path:?}", "Removed".red());
         }
         Ok(())
     }
@@ -164,18 +162,13 @@ impl ConfigFile {
         save: bool,
     ) -> Result<()> {
         if dry_run {
-            println!(
-                "{} {} {:?}",
-                "Dry run:".yellow(),
-                "Removed".red(),
-                file_name
-            );
+            println!("{} {} {file_name:?}", "Dry run:".yellow(), "Removed".red(),);
         } else {
             self.ignore_file_name.retain(|data| data != file_name);
             if save {
                 self.save()?;
             }
-            println!("{} {:?}", "Removed".red(), file_name);
+            println!("{} {file_name:?}", "Removed".red());
         }
         Ok(())
     }

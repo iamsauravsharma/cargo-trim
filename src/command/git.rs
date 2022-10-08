@@ -101,8 +101,7 @@ impl Git {
             println!(
                 "{}",
                 format!(
-                    "{} old crates removed which had occupied {}",
-                    total_crate_removed,
+                    "{total_crate_removed} old crates removed which had occupied {}",
                     convert_pretty(sized_cleaned)
                 )
                 .blue()
@@ -142,8 +141,8 @@ impl Git {
             println!(
                 "{}",
                 format!(
-                    "{} crates which are both old and orphan crate removed which had {}",
-                    total_crate_removed,
+                    "{total_crate_removed} crates which are both old and orphan crate removed \
+                     which had occupied {}",
                     convert_pretty(sized_cleaned)
                 )
                 .blue()
@@ -183,8 +182,7 @@ impl Git {
             println!(
                 "{}",
                 format!(
-                    "{} orphan crates removed which had occupied {}",
-                    total_crate_removed,
+                    "{total_crate_removed} orphan crates removed which had occupied {}",
                     convert_pretty(sized_cleaned)
                 )
                 .blue()
@@ -201,8 +199,7 @@ impl Git {
             println!(
                 "{}",
                 format!(
-                    "Total size of  {} crates removed :- {}",
-                    total_crate_removed,
+                    "Total size of {total_crate_removed} crates removed :- {}",
                     convert_pretty(sized_cleaned)
                 )
                 .blue()
