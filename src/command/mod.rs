@@ -398,43 +398,47 @@ fn run_git_compress_commands(repo_path: &Path, dry_run: bool) -> Result<()> {
     if dry_run {
         println!("{} git compressing {repo_path:?}", "Dry run:".yellow());
     } else {
-        // Remove history of all checkout which will help in remove dangling commits
-        std::process::Command::new("git")
-            .arg("reflog")
-            .arg("expire")
-            .arg("--expire=now")
-            .arg("--all")
-            .current_dir(repo_path)
-            .status()
-            .context("Failed to execute git reflog command")?;
-        println!("{:70}.......Step 1/3", "  \u{251c} Completed git reflog");
-
-        // pack refs of branches/tags etc into one file know as pack-refs file for
-        // effective repo access
-        std::process::Command::new("git")
-            .arg("pack-refs")
-            .arg("--all")
-            .arg("--prune")
-            .current_dir(repo_path)
-            .status()
-            .context("Failed to execute git pack-refs command")?;
-        println!(
-            "{:70}.......Step 2/3",
-            "  \u{251c} Packed refs and tags successfully"
-        );
-
-        // cleanup unnecessary file and optimize a local repo
-        std::process::Command::new("git")
-            .arg("gc")
-            .arg("--aggressive")
-            .arg("--prune=now")
-            .current_dir(repo_path)
-            .status()
-            .context("Failed to execute git gc command")?;
-        println!(
-            "{:70}.......Step 3/3",
-            "  \u{2514} Cleaned up unnecessary files and optimize a files"
-        );
+        let commands = [
+            // Pack unpacked objects in a repository
+            (vec!["repack", "-a", "-d"], "Repack unpacked objects"),
+            // pack refs of branches/tags etc into one file know as pack-refs file for
+            // effective repo access
+            (
+                vec!["pack-refs", "--all", "--prune"],
+                "Packed refs and tags successfully",
+            ),
+            // Remove extra objects that are already in pack files
+            (vec!["prune-packed"], "Prune packed objects"),
+            // Remove history of all checkout which will help in remove dangling commits
+            (
+                vec![
+                    "reflog",
+                    "expire",
+                    "--expire=now",
+                    "--expire-unreachable=now",
+                    "--all",
+                ],
+                "Prune older reflog",
+            ),
+        ];
+        let total_len = commands.len();
+        for (pos, (args, message)) in commands.iter().enumerate() {
+            let position = pos + 1;
+            let symbol = if position == total_len {
+                '\u{2514}'
+            } else {
+                '\u{251c}'
+            };
+            std::process::Command::new("git")
+                .args(args)
+                .current_dir(repo_path)
+                .output()
+                .context(format!("Failed to execute {position} command"))?;
+            println!(
+                "{:70}.......Step {position}/{total_len}",
+                format!("  {symbol} {message}")
+            );
+        }
     }
     Ok(())
 }
