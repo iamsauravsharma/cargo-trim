@@ -92,7 +92,7 @@ pub(crate) struct Command {
     no_scan_hidden_folder: bool,
     #[arg(
         long,
-        help = "Do not scan target folder for current command. Takes precedence over  \
+        help = "Do not scan target folder for current command. Takes precedence over \
                 scan-target-folder",
         env = "TRIM_NOT_SCAN_TARGET_FOLDER"
     )]
@@ -162,8 +162,8 @@ enum Wipe {
 #[derive(Clone, ValueEnum, Debug)]
 enum GitCompress {
     Index,
-    GitCheckout,
-    GitDb,
+    Checkout,
+    Db,
 }
 
 impl Command {
@@ -339,10 +339,10 @@ fn git_compress(
     db_dir: &Path,
     dry_run: bool,
 ) -> Result<()> {
-    let (do_index, do_git_checkout, do_git_db) = match value {
+    let (do_index, do_checkout, do_db) = match value {
         GitCompress::Index if index_dir.exists() => (true, false, false),
-        GitCompress::GitCheckout if checkout_dir.exists() => (false, true, false),
-        GitCompress::GitDb if db_dir.exists() => (false, false, true),
+        GitCompress::Checkout if checkout_dir.exists() => (false, true, false),
+        GitCompress::Db if db_dir.exists() => (false, false, true),
         _ => (false, false, false),
     };
     if do_index {
@@ -366,7 +366,7 @@ fn git_compress(
             run_git_compress_commands(&repo_path, dry_run)?;
         }
     }
-    if do_git_checkout {
+    if do_checkout {
         for entry in fs::read_dir(checkout_dir).context("failed to read checkout directory")? {
             let repo_path = entry?.path();
             for rev in fs::read_dir(repo_path)
@@ -380,7 +380,7 @@ fn git_compress(
             }
         }
     }
-    if do_git_db {
+    if do_db {
         for entry in fs::read_dir(db_dir).context("failed to read db dir")? {
             let repo_path = entry?.path();
             if !dry_run {

@@ -54,7 +54,7 @@ Options:
   -a, --all                    Clean up all registry & git crates
   -d, --directory <DIRECTORY>  Extra list of directory of Rust projects for current command [env: TRIM_DIRECTORY=]
   -n, --dry-run                Run command in dry run mode to see what would be done
-  -g, --gc <GIT_COMPRESS>      Git compress to reduce size of .cargo (git command required) [possible values: index, git-checkout, git-db]
+  -g, --gc <GIT_COMPRESS>      Git compress to reduce size of .cargo (git command required) [possible values: index, checkout, db]
   -i, --ignore <IGNORE>        Extra list of ignore file name which should be ignored for current command [env: TRIM_IGNORE=]
   -l, --light                  Light cleanup without removing files required for future compilation without internet
       --no-scan-hidden-folder  Do not scan hidden folder for current command. Takes precedence over scan-hidden-folder [env: TRIM_NOT_SCAN_HIDDEN_FOLDER=]
