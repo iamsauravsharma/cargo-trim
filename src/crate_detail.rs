@@ -52,37 +52,26 @@ impl CrateMetaData {
 
 impl PartialOrd for CrateMetaData {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        match self.name.partial_cmp(&other.name) {
-            Some(Ordering::Equal) => {}
-            ord => return ord,
-        }
-        match self.source.partial_cmp(&other.source) {
-            Some(Ordering::Equal) => {}
-            ord => return ord,
-        }
-        match self.version.partial_cmp(&other.version) {
-            Some(Ordering::Equal) => {}
-            ord => return ord,
-        }
-        self.size.partial_cmp(&other.size)
+        Some(self.cmp(other))
     }
 }
 
 impl Ord for CrateMetaData {
     fn cmp(&self, other: &Self) -> Ordering {
         match self.name.cmp(&other.name) {
-            Ordering::Equal => {}
-            ord => return ord,
+            Ordering::Equal => {
+                match self.source.cmp(&other.source) {
+                    Ordering::Equal => {
+                        match self.version.cmp(&other.version) {
+                            Ordering::Equal => self.size.cmp(&other.size),
+                            ord => ord,
+                        }
+                    }
+                    ord => ord,
+                }
+            }
+            ord => ord,
         }
-        match self.source.cmp(&other.source) {
-            Ordering::Equal => {}
-            ord => return ord,
-        }
-        match self.version.cmp(&other.version) {
-            Ordering::Equal => {}
-            ord => return ord,
-        }
-        self.size.cmp(&other.size)
     }
 }
 
