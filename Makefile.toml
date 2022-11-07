@@ -16,10 +16,7 @@ condition = { env_not_set = ["TARGET_TRIPLE_FLAG"] }
 [tasks.clean]
 description = "Clean target directory"
 command = "cargo"
-args = [
-    "clean",
-    "@@remove-empty(VERBOSE_FLAG)",
-]
+args = ["clean", "@@remove-empty(VERBOSE_FLAG)"]
 
 [tasks.build]
 description = "Run cargo build"
@@ -29,20 +26,17 @@ args = [
     "--workspace",
     "@@split(FEATURES_FLAG, )",
     "@@remove-empty(VERBOSE_FLAG)",
-    "@@split(TARGET_TRIPLE_FLAG, )"
+    "@@split(TARGET_TRIPLE_FLAG, )",
 ]
 
 [tasks.fmt]
+condition = { channels = ["nightly"] }
 description = "Check whether rust code is properly formatted or not"
 command = "cargo"
-args = [
-    "fmt",
-    "@@remove-empty(VERBOSE_FLAG)",
-    "--",
-    "--check"
-]
+args = ["fmt", "@@remove-empty(VERBOSE_FLAG)", "--", "--check"]
 
 [tasks.clippy]
+condition = { channels = ["nightly"] }
 description = "Check if clippy return any warnings or error"
 command = "cargo"
 args = [
@@ -53,7 +47,7 @@ args = [
     "@@split(TARGET_TRIPLE_FLAG, )",
     "--",
     "-D",
-    "warnings"
+    "warnings",
 ]
 
 [tasks.test]
@@ -64,14 +58,8 @@ args = [
     "--workspace",
     "@@split(FEATURES_FLAG, )",
     "@@remove-empty(VERBOSE_FLAG)",
-    "@@split(TARGET_TRIPLE_FLAG, )"
+    "@@split(TARGET_TRIPLE_FLAG, )",
 ]
 
 [tasks.ci]
-dependencies = [
-    "clean",
-    "fmt",
-    "build",
-    "clippy",
-    "test"
-]
+dependencies = ["clean", "fmt", "build", "clippy", "test"]
