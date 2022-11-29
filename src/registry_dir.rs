@@ -217,7 +217,8 @@ fn remove_index_cache(path: &Path, crate_metadata: &CrateMetaData, dry_run: bool
     Ok(())
 }
 
-/// check if any index cache folder is empty if it is it is removed out
+/// check if any index cache folder is empty if it is removed directory. First
+/// remove all dir entry than only remove main file if it is empty
 fn remove_empty_index_cache_dir(path: &Path, dry_run: bool) -> Result<()> {
     for entry in fs::read_dir(path)? {
         let path = entry?.path();

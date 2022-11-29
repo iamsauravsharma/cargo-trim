@@ -241,6 +241,8 @@ fn read_content(list: &[PathBuf]) -> Result<(Vec<CrateMetaData>, Vec<CrateMetaDa
                         if source.contains("git+") {
                             let url_with_kind;
                             let rev_sha_vec: Vec<&str>;
+                            // determine url with kind according to git source have query param or
+                            // not
                             if source.contains("?rev=")
                                 || source.contains("?branch=")
                                 || source.contains("?tag=")

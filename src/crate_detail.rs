@@ -97,7 +97,6 @@ impl Hash for CrateMetaData {
 #[derive(Deserialize)]
 struct IndexConfig {
     dl: Url,
-    #[allow(dead_code)]
     api: Option<Url>,
 }
 
@@ -127,6 +126,7 @@ impl CrateDetail {
                 let mut fetch_head_file = registry_dir.clone();
                 fetch_head_file.push(".git");
                 fetch_head_file.push("FETCH_HEAD");
+                // Check if fetch head file exists if it exists than index is registry based
                 if fetch_head_file.exists() {
                     let content = fs::read_to_string(fetch_head_file)
                         .context("Failed to read FETCH_HEAD file")?;
@@ -138,6 +138,7 @@ impl CrateDetail {
                         registry_file_name.to_string(),
                         Url::from_str(url_path).context("Fail FETCH_HEAD url conversion")?,
                     );
+                // Else it is based on sparse registry
                 } else {
                     let domain = registry_file_name
                         .rsplitn(2, '-')
@@ -148,7 +149,8 @@ impl CrateDetail {
                     let content = fs::read_to_string(config_file)
                         .context("Failed to read config.json file")?;
                     let json: IndexConfig = serde_json::from_str(&content)?;
-                    let scheme = json.dl.scheme();
+                    let scheme_url = json.api.unwrap_or(json.dl);
+                    let scheme = scheme_url.scheme();
                     let url = Url::from_str(&format!("{scheme}://{domain}"))
                         .context("Failed sparse registry index url")?;
                     source_info.insert(registry_file_name.to_string(), url);
