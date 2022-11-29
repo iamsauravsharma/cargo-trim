@@ -1,9 +1,11 @@
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 
 use anyhow::{Context, Result};
 use semver::Version;
 use serde::Deserialize;
+use url::Url;
 
 use crate::config_file::ConfigFile;
 use crate::crate_detail::{CrateDetail, CrateMetaData};
@@ -224,6 +226,8 @@ fn read_content(list: &[PathBuf]) -> Result<(Vec<CrateMetaData>, Vec<CrateMetaDa
                         let name = package.name();
                         let version = package.version();
                         if source.contains("registry+") {
+                            let url = Url::from_str(&source.replace("registry+", ""))
+                                .context("Failed registry source url kind conversion")?;
                             present_crate_registry.push(CrateMetaData::new(
                                 name.to_string(),
                                 Some(
@@ -231,10 +235,12 @@ fn read_content(list: &[PathBuf]) -> Result<(Vec<CrateMetaData>, Vec<CrateMetaDa
                                         .context("failed Cargo.lock semver version parse")?,
                                 ),
                                 0,
-                                Some(source.replace("registry+", "")),
+                                Some(url),
                             ));
                         }
                         if source.contains("git+") {
+                            let url_with_kind;
+                            let rev_sha_vec: Vec<&str>;
                             if source.contains("?rev=")
                                 || source.contains("?branch=")
                                 || source.contains("?tag=")
@@ -246,28 +252,36 @@ fn read_content(list: &[PathBuf]) -> Result<(Vec<CrateMetaData>, Vec<CrateMetaDa
                                 } else {
                                     source.split("?tag=").collect()
                                 };
-                                let rev_sha: Vec<&str> = split_url[1].split('#').collect();
-                                let rev_value = rev_sha[1];
-                                let rev_short_form = &rev_value[..=6];
-                                let full_name = format!("{name}-{rev_short_form}");
-                                present_crate_git.push(CrateMetaData::new(
-                                    full_name,
-                                    None,
-                                    0,
-                                    Some(split_url[0].replace("git+", "")),
-                                ));
+                                rev_sha_vec = split_url[1].split('#').collect();
+                                url_with_kind = split_url[0];
                             } else {
-                                let rev_sha: Vec<&str> = source.split('#').collect();
-                                let rev_value = rev_sha[1];
-                                let rev_short_form = &rev_value[..=6];
-                                let full_name = format!("{name}-{rev_short_form}");
-                                present_crate_git.push(CrateMetaData::new(
-                                    full_name,
-                                    None,
-                                    0,
-                                    Some(rev_sha[0].replace("git+", "")),
-                                ));
+                                rev_sha_vec = source.split('#').collect();
+                                url_with_kind = rev_sha_vec[0];
                             }
+                            let rev_short_form = &rev_sha_vec[1][..=6];
+                            let full_name = format!("{name}-{rev_short_form}");
+                            let url = Url::from_str(&url_with_kind.replace("git+", "")).context(
+                                "Failed git source url kind with query params conversion",
+                            )?;
+                            present_crate_git.push(CrateMetaData::new(
+                                full_name,
+                                None,
+                                0,
+                                Some(url),
+                            ));
+                        }
+                        if source.contains("sparse+") {
+                            let url = Url::from_str(&source.replace("sparse+", ""))
+                                .context("Failed sparse source url kind conversion")?;
+                            present_crate_registry.push(CrateMetaData::new(
+                                name.to_string(),
+                                Some(
+                                    Version::parse(version)
+                                        .context("failed Cargo.lock semver version parse")?,
+                                ),
+                                0,
+                                Some(url),
+                            ));
                         }
                     }
                 }

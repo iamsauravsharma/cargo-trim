@@ -4,9 +4,12 @@ use std::default::Default;
 use std::fs;
 use std::hash::Hash;
 use std::path::Path;
+use std::str::FromStr;
 
 use anyhow::{Context, Result};
 use semver::Version;
+use serde::Deserialize;
+use url::Url;
 
 use crate::utils::{get_size, split_name_version};
 
@@ -15,7 +18,7 @@ pub(crate) struct CrateMetaData {
     name: String,
     version: Option<Version>,
     size: u64,
-    source: Option<String>,
+    source: Option<Url>,
 }
 
 impl CrateMetaData {
@@ -23,7 +26,7 @@ impl CrateMetaData {
         name: String,
         version: Option<Version>,
         size: u64,
-        source: Option<String>,
+        source: Option<Url>,
     ) -> Self {
         Self {
             name,
@@ -45,7 +48,7 @@ impl CrateMetaData {
         self.size
     }
 
-    pub(crate) fn source(&self) -> &Option<String> {
+    pub(crate) fn source(&self) -> &Option<Url> {
         &self.source
     }
 }
@@ -91,10 +94,17 @@ impl Hash for CrateMetaData {
     }
 }
 
+#[derive(Deserialize)]
+struct IndexConfig {
+    dl: Url,
+    #[allow(dead_code)]
+    api: Option<Url>,
+}
+
 /// stores different crate size and name information
 #[derive(Default)]
 pub(crate) struct CrateDetail {
-    source_info: HashMap<String, String>,
+    source_info: HashMap<String, Url>,
     bin: HashSet<CrateMetaData>,
     git_crates_source: HashSet<CrateMetaData>,
     registry_crates_source: HashSet<CrateMetaData>,
@@ -117,13 +127,32 @@ impl CrateDetail {
                 let mut fetch_head_file = registry_dir.clone();
                 fetch_head_file.push(".git");
                 fetch_head_file.push("FETCH_HEAD");
-                let content = fs::read_to_string(fetch_head_file)
-                    .context("Failed to read FETCH_HEAD file")?;
-                let url_path = content
-                    .split_whitespace()
-                    .last()
-                    .context("Failed to get url part from content")?;
-                source_info.insert(registry_file_name.to_string(), url_path.to_string());
+                if fetch_head_file.exists() {
+                    let content = fs::read_to_string(fetch_head_file)
+                        .context("Failed to read FETCH_HEAD file")?;
+                    let url_path = content
+                        .split_whitespace()
+                        .last()
+                        .context("Failed to get url part from content")?;
+                    source_info.insert(
+                        registry_file_name.to_string(),
+                        Url::from_str(url_path).context("Fail FETCH_HEAD url conversion")?,
+                    );
+                } else {
+                    let domain = registry_file_name
+                        .rsplitn(2, '-')
+                        .last()
+                        .context("Failed to get url for sparse registry")?;
+                    let mut config_file = registry_dir.clone();
+                    config_file.push("config.json");
+                    let content = fs::read_to_string(config_file)
+                        .context("Failed to read config.json file")?;
+                    let json: IndexConfig = serde_json::from_str(&content)?;
+                    let scheme = json.dl.scheme();
+                    let url = Url::from_str(&format!("{scheme}://{domain}"))
+                        .context("Failed sparse registry index url")?;
+                    source_info.insert(registry_file_name.to_string(), url);
+                }
             }
         }
         if db_dir.exists() {
@@ -142,7 +171,10 @@ impl CrateDetail {
                     .split_whitespace()
                     .last()
                     .context("Failed to get url part from content")?;
-                source_info.insert(git_file_name.to_string(), url_path.to_string());
+                source_info.insert(
+                    git_file_name.to_string(),
+                    Url::from_str(url_path).context("Failed to convert db dir FETCH_HEAD")?,
+                );
             }
         }
         Ok(Self {
@@ -152,7 +184,7 @@ impl CrateDetail {
     }
 
     /// Get source value from path
-    pub(crate) fn source_url_from_path(&self, path: &Path) -> Result<String> {
+    pub(crate) fn source_url_from_path(&self, path: &Path) -> Result<Url> {
         let file_name = path
             .file_name()
             .context("Failed to get file name of path")?
@@ -162,7 +194,7 @@ impl CrateDetail {
             .source_info
             .get(file_name)
             .context("Failed to get url for path")?
-            .to_string())
+            .clone())
     }
 
     /// return bin crates metadata

@@ -351,19 +351,23 @@ fn git_compress(
             let file_name = repo_path
                 .file_name()
                 .context("Failed to get a file name / folder name")?;
-            if !dry_run {
-                println!(
-                    "{}",
-                    format!(
-                        "Compressing {} registry index",
-                        file_name
-                            .to_str()
-                            .context("Failed to get compress file name")?
-                    )
-                    .blue()
-                );
+            let mut git_folder = repo_path.clone();
+            git_folder.push(".git");
+            if git_folder.exists() {
+                if !dry_run {
+                    println!(
+                        "{}",
+                        format!(
+                            "Compressing {} registry index",
+                            file_name
+                                .to_str()
+                                .context("Failed to get compress file name")?
+                        )
+                        .blue()
+                    );
+                }
+                run_git_compress_commands(&repo_path, dry_run)?;
             }
-            run_git_compress_commands(&repo_path, dry_run)?;
         }
     }
     if do_checkout {
