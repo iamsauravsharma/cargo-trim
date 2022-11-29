@@ -33,20 +33,15 @@ impl<'a> RegistryDir<'a> {
         // read a index .cache dir folder for each registry by analyzing index folder
         if index_dir.exists() {
             for entry in fs::read_dir(index_dir).context("failed to read index directory")? {
-                let entry = entry?.path();
-                for folder in fs::read_dir(entry).context("failed to read registry directory")? {
-                    let folder = folder?.path();
-                    let folder_name = folder
-                        .file_name()
-                        .context("failed to get file name form registry sub directory")?;
-                    if folder_name == ".cache" {
-                        index_cache_dir.push(
-                            folder
-                                .to_str()
-                                .context("Unable to convert index cache folder to str")?
-                                .to_string(),
-                        );
-                    }
+                let mut entry = entry?.path();
+                entry.push(".cache");
+                if entry.exists() {
+                    index_cache_dir.push(
+                        entry
+                            .to_str()
+                            .context("Unable to convert index cache folder to str")?
+                            .to_string(),
+                    );
                 }
             }
         }
@@ -224,15 +219,14 @@ fn remove_index_cache(path: &Path, crate_metadata: &CrateMetaData, dry_run: bool
 
 /// check if any index cache folder is empty if it is it is removed out
 fn remove_empty_index_cache_dir(path: &Path, dry_run: bool) -> Result<()> {
+    for entry in fs::read_dir(path)? {
+        let path = entry?.path();
+        if path.is_dir() {
+            remove_empty_index_cache_dir(&path, dry_run)?;
+        }
+    }
     if fs::read_dir(path).map(|mut i| i.next().is_none())? {
         delete_folder(path, dry_run)?;
-    } else {
-        for entry in fs::read_dir(path)? {
-            let path = entry?.path();
-            if path.is_dir() {
-                remove_empty_index_cache_dir(&path, dry_run)?;
-            }
-        }
     }
     Ok(())
 }
