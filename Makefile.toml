@@ -61,5 +61,8 @@ args = [
     "@@split(TARGET_TRIPLE_FLAG, )",
 ]
 
-[tasks.ci]
-dependencies = ["clean", "fmt", "build", "clippy", "test"]
+[tasks.local]
+dependencies = ["fmt", "build", "clippy", "test"]
+
+[tasks.full]
+dependencies = ["clean", "local"]
