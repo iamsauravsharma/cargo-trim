@@ -159,8 +159,18 @@ enum Wipe {
     IndexCache,
     Src,
 }
+
 #[derive(Clone, ValueEnum, Debug)]
 enum GitCompress {
+    AggressiveCheckout,
+    AggressiveDb,
+    AggressiveIndex,
+    Checkout,
+    Db,
+    Index,
+}
+
+enum GitCompressAction {
     Index,
     Checkout,
     Db,
@@ -339,58 +349,75 @@ fn git_compress(
     db_dir: &Path,
     dry_run: bool,
 ) -> Result<()> {
-    let (do_index, do_checkout, do_db) = match value {
-        GitCompress::Index if index_dir.exists() => (true, false, false),
-        GitCompress::Checkout if checkout_dir.exists() => (false, true, false),
-        GitCompress::Db if db_dir.exists() => (false, false, true),
-        _ => (false, false, false),
+    let (git_compress_action, is_aggressive) = match value {
+        GitCompress::AggressiveIndex if index_dir.exists() => {
+            (Some(GitCompressAction::Index), true)
+        }
+        GitCompress::AggressiveCheckout if checkout_dir.exists() => {
+            (Some(GitCompressAction::Checkout), true)
+        }
+        GitCompress::AggressiveDb if db_dir.exists() => (Some(GitCompressAction::Db), true),
+        GitCompress::Index if index_dir.exists() => (Some(GitCompressAction::Index), false),
+        GitCompress::Checkout if checkout_dir.exists() => {
+            (Some(GitCompressAction::Checkout), false)
+        }
+        GitCompress::Db if db_dir.exists() => (Some(GitCompressAction::Db), false),
+        _ => (None, false),
     };
-    if do_index {
-        for entry in fs::read_dir(index_dir).context("failed to read registry index folder")? {
-            let repo_path = entry?.path();
-            let file_name = repo_path
-                .file_name()
-                .context("Failed to get a file name / folder name")?;
-            let mut git_folder = repo_path.clone();
-            git_folder.push(".git");
-            if git_folder.exists() {
-                if !dry_run {
-                    println!(
-                        "{}",
-                        format!(
-                            "Compressing {} registry index",
-                            file_name
-                                .to_str()
-                                .context("Failed to get compress file name")?
-                        )
-                        .blue()
-                    );
+    if let Some(git_compress) = git_compress_action {
+        match git_compress {
+            GitCompressAction::Index => {
+                for entry in
+                    fs::read_dir(index_dir).context("failed to read registry index folder")?
+                {
+                    let repo_path = entry?.path();
+                    let file_name = repo_path
+                        .file_name()
+                        .context("Failed to get a file name / folder name")?;
+                    let mut git_folder = repo_path.clone();
+                    git_folder.push(".git");
+                    if git_folder.exists() {
+                        if !dry_run {
+                            println!(
+                                "{}",
+                                format!(
+                                    "Compressing {} registry index",
+                                    file_name
+                                        .to_str()
+                                        .context("Failed to get compress file name")?
+                                )
+                                .blue()
+                            );
+                        }
+                        run_git_compress_commands(&repo_path, dry_run, is_aggressive)?;
+                    }
                 }
-                run_git_compress_commands(&repo_path, dry_run)?;
             }
-        }
-    }
-    if do_checkout {
-        for entry in fs::read_dir(checkout_dir).context("failed to read checkout directory")? {
-            let repo_path = entry?.path();
-            for rev in fs::read_dir(repo_path)
-                .context("failed to read checkout directory sub directory")?
-            {
-                let rev_path = rev?.path();
-                if !dry_run {
-                    println!("{}", "Compressing git checkout".blue());
+            GitCompressAction::Checkout => {
+                for entry in
+                    fs::read_dir(checkout_dir).context("failed to read checkout directory")?
+                {
+                    let repo_path = entry?.path();
+                    for rev in fs::read_dir(repo_path)
+                        .context("failed to read checkout directory sub directory")?
+                    {
+                        let rev_path = rev?.path();
+                        if !dry_run {
+                            println!("{}", "Compressing git checkout".blue());
+                        }
+                        run_git_compress_commands(&rev_path, dry_run, is_aggressive)?;
+                    }
                 }
-                run_git_compress_commands(&rev_path, dry_run)?;
             }
-        }
-    }
-    if do_db {
-        for entry in fs::read_dir(db_dir).context("failed to read db dir")? {
-            let repo_path = entry?.path();
-            if !dry_run {
-                println!("{}", "Compressing git db".blue());
+            GitCompressAction::Db => {
+                for entry in fs::read_dir(db_dir).context("failed to read db dir")? {
+                    let repo_path = entry?.path();
+                    if !dry_run {
+                        println!("{}", "Compressing git db".blue());
+                    }
+                    run_git_compress_commands(&repo_path, dry_run, is_aggressive)?;
+                }
             }
-            run_git_compress_commands(&repo_path, dry_run)?;
         }
     }
     println!("{}", "Git compress task completed".blue());
@@ -398,11 +425,11 @@ fn git_compress(
 }
 
 // run combination of commands which git compress a index of registry
-fn run_git_compress_commands(repo_path: &Path, dry_run: bool) -> Result<()> {
+fn run_git_compress_commands(repo_path: &Path, dry_run: bool, is_aggressive: bool) -> Result<()> {
     if dry_run {
         println!("{} git compressing {repo_path:?}", "Dry run:".yellow());
     } else {
-        let commands = [
+        let mut commands = vec![
             // Pack unpacked objects in a repository
             (vec!["repack", "-a", "-d"], "Repack unpacked objects"),
             // pack refs of branches/tags etc into one file know as pack-refs file for
@@ -425,6 +452,12 @@ fn run_git_compress_commands(repo_path: &Path, dry_run: bool) -> Result<()> {
                 "Prune older reflog",
             ),
         ];
+        if is_aggressive {
+            commands.push((
+                vec!["gc", "--prune=now", "--aggressive"],
+                "Prune aggressively",
+            ));
+        }
         let total_len = commands.len();
         for (pos, (args, message)) in commands.iter().enumerate() {
             let position = pos + 1;

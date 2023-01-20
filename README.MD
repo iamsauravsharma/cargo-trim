@@ -54,7 +54,7 @@ Options:
   -a, --all                    Clean up all registry & git crates
   -d, --directory <DIRECTORY>  Extra list of directory of Rust projects for current command [env: TRIM_DIRECTORY=]
   -n, --dry-run                Run command in dry run mode to see what would be done
-  -g, --gc <GIT_COMPRESS>      Git compress to reduce size of .cargo (git command required) [possible values: index, checkout, db]
+  -g, --gc <GIT_COMPRESS>      Git compress to reduce size of .cargo (git command required) [possible values: aggressive-checkout, aggressive-db, aggressive-index, checkout, db, index]
   -i, --ignore <IGNORE>        Extra list of ignore file name which should be ignored for current command [env: TRIM_IGNORE=]
   -l, --light                  Light cleanup without removing files required for future compilation without internet
       --no-scan-hidden-folder  Do not scan hidden folder for current command. Takes precedence over scan-hidden-folder [env: TRIM_NOT_SCAN_HIDDEN_FOLDER=]
@@ -68,8 +68,8 @@ Options:
   -t, --top <TOP>              Show certain number of top crates which have highest size
   -u, --update                 Generate and Update Cargo.lock file present inside config directory folder path
   -w, --wipe <WIPE>            Wipe folder [possible values: git, checkouts, db, registry, cache, index, index-cache, src]
-  -h, --help                   Print help information
-  -V, --version                Print version information
+  -h, --help                   Print help
+  -V, --version                Print version
 ```
 
 ### Configuration
