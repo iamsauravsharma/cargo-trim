@@ -2,28 +2,32 @@
 
 **Project status & info:**
 
-| License | Crates Version |
-| :-----: | :------------: |
+|                    License                     |              Crates Version               |
+| :--------------------------------------------: | :---------------------------------------: |
 | [![License: MIT][license_badge]][license_link] | [![Crate][cratesio_badge]][cratesio_link] |
 
-Binary application for cleaning __\$CARGO_HOME/registry__  & __\$CARGO_HOME/git__ folder support orphan and old crates cleaning
+Binary application for cleaning **\$CARGO_HOME/registry** & **\$CARGO_HOME/git** folder support orphan and old crates cleaning
 Default \$CARGO_HOME is set as \$HOME/.cargo
 
 ### Install
 
 For installation of cargo-trim:-
 You can install from crates.io registry
+
 ```
 cargo install cargo-trim
 ```
-__OR__
+
+**OR**
 
 For bleeding edge latest development version:
+
 ```
 cargo install --git https://github.com/iamsauravsharma/cargo-trim
 ```
 
 ### Setup
+
 Initially you need to set up cargo-trim for some commands such as orphan clean to work properly.
 To set up cargo-trim to properly work for all projects related to rust lang go to directory where all projects lies and run
 `cargo trim init`. You can even run this command multiple time to add multiple directory.
@@ -32,8 +36,10 @@ if there are any projects in the other directory then their dependencies will be
 other crates present inside added directory.
 
 ### Command output
+
 All cargo-trim can be run using `cargo trim <command>`
 `cargo trim --help` will produce out following output which list out all of available command for cargo-trim
+
 ```
 Binary application to cleanup $CARGO_HOME cache
 
@@ -73,6 +79,7 @@ Options:
 ```
 
 ### Configuration
+
 cargo-trim store its config file to config directory of OS and name config file as `cargo_trim_config.toml`.
 In file cargo-trim stores different information for scanning projects as well as listing crates.
 To list where cargo trim is storing config file you can use `cargo trim config --location`
@@ -81,41 +88,40 @@ same value without editing config file
 
 #### 1. directory
 
-__default: []__
+**default: []**
 
-__env: TRIM_DIRECTORY__
+**env: TRIM_DIRECTORY**
 
 List of directory to scan for a Rust projects
 
-#### 2. __ignore_file_name__
+#### 2. **ignore_file_name**
 
-__default: []__
+**default: []**
 
-__env: TRIM_IGNORE__
+**env: TRIM_IGNORE**
 
 File/Directory name which should be ignored while scanning through directories. This can be used to exclude some folder
 such as npm node_modules folder or python venv folder if the directory present in config contains such folder it will help
 to significantly increase performance.
 
-#### 3. __scan_hidden_folder__
+#### 3. **scan_hidden_folder**
 
-__default: false__
+**default: false**
 
-__env: TRIM_SCAN_HIDDEN_FOLDER__
+**env: TRIM_SCAN_HIDDEN_FOLDER**
 
 Whether to scan hidden folder(i.e. folder which start with dot notation) or not
 
-#### 4. __scan_target_folder__
+#### 4. **scan_target_folder**
 
-__default: false__
+**default: false**
 
-__env: TRIM_SCAN_TARGET_FOLDER__
+**env: TRIM_SCAN_TARGET_FOLDER**
 
 Whether to scan target folder. Currently, it searches for environment variable `CARGO_BUILD_TARGET_DIR` or `CARGO_TARGET_DIR`
 or set default value as target to determine a target folder name
 
 [license_badge]: https://img.shields.io/github/license/iamsauravsharma/cargo-trim.svg?style=for-the-badge
 [license_link]: LICENSE
-
 [cratesio_badge]: https://img.shields.io/crates/v/cargo-trim.svg?style=for-the-badge
 [cratesio_link]: https://crates.io/crates/cargo-trim

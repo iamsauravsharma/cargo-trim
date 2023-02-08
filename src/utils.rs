@@ -69,17 +69,16 @@ pub(crate) fn delete_index_cache(index_dir: &Path, dry_run: bool) -> Result<()> 
 ///  get size of directory
 pub(crate) fn get_size(path: &Path) -> Result<u64> {
     let mut total_size = 0;
-    if path.is_dir() {
-        for entry in fs::read_dir(path)? {
-            let entry_path = entry?.path();
-            if entry_path.is_dir() {
+    let metadata = path.metadata();
+    if let Ok(meta) = metadata {
+        if meta.is_dir() {
+            for entry in fs::read_dir(path)? {
+                let entry_path = entry?.path();
                 total_size += get_size(&entry_path)?;
-            } else {
-                total_size += entry_path.metadata()?.len();
             }
+        } else if meta.is_file() {
+            total_size += path.metadata()?.len();
         }
-    } else {
-        total_size += path.metadata()?.len();
     }
     Ok(total_size)
 }
