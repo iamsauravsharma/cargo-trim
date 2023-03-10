@@ -230,8 +230,7 @@ fn read_content(list: &[PathBuf]) -> Result<(Vec<CrateMetaData>, Vec<CrateMetaDa
                                 .context("Failed registry source url kind conversion")?;
                             // Support for crates.io sparse protocol and canonical protocol as same
                             // url
-                            if &url
-                                == &Url::from_str("https://github.com/rust-lang/crates.io-index")?
+                            if url == Url::from_str("https://github.com/rust-lang/crates.io-index")?
                             {
                                 present_crate_registry.push(CrateMetaData::new(
                                     name.to_string(),
