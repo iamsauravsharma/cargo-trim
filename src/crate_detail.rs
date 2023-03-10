@@ -123,10 +123,21 @@ impl CrateDetail {
                     .context("Failed to get file name of registry dir")?
                     .to_str()
                     .context("Failed to convert osstr to str")?;
+
+                // file for git based registry
                 let mut fetch_head_file = registry_dir.clone();
                 fetch_head_file.push(".git");
                 fetch_head_file.push("FETCH_HEAD");
-                // Check if fetch head file exists if it exists than index is registry based
+
+                // file for http based registry
+                let domain = registry_file_name
+                    .rsplitn(2, '-')
+                    .last()
+                    .context("Failed to get url for sparse registry")?;
+                let mut config_file = registry_dir.clone();
+                config_file.push("config.json");
+
+                // Check if fetch head file exists if it exists than index is old registry based
                 if fetch_head_file.exists() {
                     let content = fs::read_to_string(fetch_head_file)
                         .context("Failed to read FETCH_HEAD file")?;
@@ -138,14 +149,8 @@ impl CrateDetail {
                         registry_file_name.to_string(),
                         Url::from_str(url_path).context("Fail FETCH_HEAD url conversion")?,
                     );
-                // Else it is based on sparse registry
-                } else {
-                    let domain = registry_file_name
-                        .rsplitn(2, '-')
-                        .last()
-                        .context("Failed to get url for sparse registry")?;
-                    let mut config_file = registry_dir.clone();
-                    config_file.push("config.json");
+                // Else if config file exists is based on sparse registry
+                } else if config_file.exists() {
                     let content = fs::read_to_string(config_file)
                         .context("Failed to read config.json file")?;
                     let json: IndexConfig = serde_json::from_str(&content)?;

@@ -228,12 +228,27 @@ fn read_content(list: &[PathBuf]) -> Result<(Vec<CrateMetaData>, Vec<CrateMetaDa
                         if source.contains("registry+") {
                             let url = Url::from_str(&source.replace("registry+", ""))
                                 .context("Failed registry source url kind conversion")?;
+                            // Support for crates.io sparse protocol and canonical protocol as same
+                            // url
+                            if &url
+                                == &Url::from_str("https://github.com/rust-lang/crates.io-index")?
+                            {
+                                present_crate_registry.push(CrateMetaData::new(
+                                    name.to_string(),
+                                    Some(
+                                        Version::parse(version)
+                                            .context("failed Cargo.lock semver version parse")?,
+                                    ),
+                                    0,
+                                    Some(Url::from_str("https://index.crates.io")?),
+                                ));
+                            }
                             present_crate_registry.push(CrateMetaData::new(
                                 name.to_string(),
-                                Some(
-                                    Version::parse(version)
-                                        .context("failed Cargo.lock semver version parse")?,
-                                ),
+                                Some(Version::parse(version).context(
+                                    "failed Cargo.lock semver
+                            version parse",
+                                )?),
                                 0,
                                 Some(url),
                             ));
