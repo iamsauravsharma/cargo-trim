@@ -6,6 +6,7 @@ use anyhow::{Context, Result};
 use clap::{Parser, ValueEnum};
 use owo_colors::OwoColorize;
 
+use self::utils::{print_dash, query_full_width, query_print, show_top_number_crates};
 use crate::command::git::clean_git;
 use crate::command::registry::clean_registry;
 use crate::config_file::ConfigFile;
@@ -14,7 +15,7 @@ use crate::dir_path::DirPath;
 use crate::git_dir::GitDir;
 use crate::list_crate::CrateList;
 use crate::registry_dir::RegistryDir;
-use crate::utils::{convert_pretty, delete_folder, get_size, print_dash, query_print};
+use crate::utils::{convert_pretty, delete_folder, get_size};
 
 mod clear;
 mod config;
@@ -24,6 +25,7 @@ mod list;
 mod registry;
 mod set;
 mod unset;
+mod utils;
 
 #[derive(Debug, Parser)]
 enum SubCommand {
@@ -557,7 +559,7 @@ fn update_cargo_toml(cargo_toml_location: &[PathBuf], dry_run: bool) -> Result<(
 
 // show top n crates
 fn top_crates(crate_detail: &CrateDetail, number: usize) {
-    crate::utils::show_top_number_crates(crate_detail.bin(), "bin", number);
+    show_top_number_crates(crate_detail.bin(), "bin", number);
     registry::top_crates_registry(crate_detail, number);
     git::top_crates_git(crate_detail, number);
 }
@@ -575,7 +577,7 @@ fn query_size(dir_path: &DirPath, crate_list: &CrateList, crate_detail: &CrateDe
         ),
         &convert_pretty(bin_dir_size),
     );
-    print_dash(crate::utils::query_full_width());
+    print_dash(query_full_width());
     final_size += registry::query_size_registry(dir_path, crate_list, crate_detail);
     final_size += git::query_size_git(dir_path, crate_list, crate_detail);
     query_print("Total size", &convert_pretty(final_size));

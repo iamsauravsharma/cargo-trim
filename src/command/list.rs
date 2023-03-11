@@ -1,8 +1,8 @@
 use clap::Parser;
 use owo_colors::OwoColorize;
 
+use super::utils::crate_list_type;
 use crate::list_crate::CrateList;
-use crate::utils::crate_list_type;
 
 #[derive(Debug, Parser)]
 #[command(about = "List out crates", arg_required_else_help = true)]

@@ -63,13 +63,8 @@ impl Ord for CrateMetaData {
     fn cmp(&self, other: &Self) -> Ordering {
         match self.name.cmp(&other.name) {
             Ordering::Equal => {
-                match self.source.cmp(&other.source) {
-                    Ordering::Equal => {
-                        match self.version.cmp(&other.version) {
-                            Ordering::Equal => self.size.cmp(&other.size),
-                            ord => ord,
-                        }
-                    }
+                match self.version.cmp(&other.version) {
+                    Ordering::Equal => self.size.cmp(&other.size),
                     ord => ord,
                 }
             }

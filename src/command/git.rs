@@ -5,11 +5,13 @@ use anyhow::{Context, Result};
 use clap::Parser;
 use owo_colors::OwoColorize;
 
+use super::utils::{print_dash, show_top_number_crates};
+use super::{query_full_width, query_print};
 use crate::crate_detail::{CrateDetail, CrateMetaData};
 use crate::dir_path::DirPath;
 use crate::git_dir::GitDir;
 use crate::list_crate::CrateList;
-use crate::utils::{convert_pretty, get_size, print_dash, query_print, show_top_number_crates};
+use crate::utils::{convert_pretty, get_size};
 #[derive(Debug, Parser)]
 #[command(
     about = "Perform operation only to git related cache file",
@@ -249,7 +251,7 @@ pub(super) fn query_size_git(
         ),
         &convert_pretty(get_size(dir_path.db_dir()).unwrap_or(0_u64)),
     );
-    print_dash(crate::utils::query_full_width());
+    print_dash(query_full_width());
     git_dir_size
 }
 

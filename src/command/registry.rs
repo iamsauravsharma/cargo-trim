@@ -5,11 +5,12 @@ use anyhow::{Context, Result};
 use clap::Parser;
 use owo_colors::OwoColorize;
 
+use super::utils::{print_dash, query_full_width, query_print, show_top_number_crates};
 use crate::crate_detail::{CrateDetail, CrateMetaData};
 use crate::dir_path::DirPath;
 use crate::list_crate::CrateList;
 use crate::registry_dir::RegistryDir;
-use crate::utils::{convert_pretty, get_size, print_dash, query_print, show_top_number_crates};
+use crate::utils::{convert_pretty, get_size};
 
 #[derive(Debug, Parser)]
 #[command(
@@ -268,7 +269,7 @@ pub(super) fn query_size_registry(
         ),
         &convert_pretty(get_size(dir_path.src_dir()).unwrap_or(0_u64)),
     );
-    print_dash(crate::utils::query_full_width());
+    print_dash(query_full_width());
     registry_dir_size
 }
 
