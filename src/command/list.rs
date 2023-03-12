@@ -20,8 +20,6 @@ pub(crate) struct List {
     old_orphan: bool,
     #[arg(long = "orphan", short = 'x', help = "List out orphan crates")]
     orphan: bool,
-    #[arg(long = "used", short = 'u', help = "List out used crates")]
-    used: bool,
 }
 
 impl List {
@@ -37,9 +35,6 @@ impl List {
         }
         if self.orphan {
             list_orphan(crate_list, directory_is_empty);
-        }
-        if self.used {
-            list_used(crate_list, directory_is_empty);
         }
     }
 }
@@ -81,20 +76,6 @@ fn list_orphan(crate_list: &CrateList, directory_is_empty: bool) {
                             'cargo trim init' to initialize current directory as rust project \
                             directory or pass cargo trim set -d <directory> for setting rust \
                             project directory";
-        println!("{}", warning_text.yellow());
-    }
-}
-
-fn list_used(crate_list: &CrateList, directory_is_empty: bool) {
-    crate_list_type(crate_list.used_registry(), "REGISTRY USED CRATE");
-    crate_list_type(crate_list.used_git(), "GIT USED CRATE");
-    // print warning if directory config is empty
-    if directory_is_empty {
-        let warning_text = "WARNING: You have not initialized any directory as rust project \
-                            directory. This will list no crates as used crate. Run command 'cargo \
-                            trim init' to initialize current directory as rust project directory \
-                            or pass cargo trim set -d <directory> for setting rust project \
-                            directory";
         println!("{}", warning_text.yellow());
     }
 }

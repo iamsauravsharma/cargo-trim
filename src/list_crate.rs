@@ -73,8 +73,6 @@ pub(crate) struct CrateList {
     installed_crate_git: Vec<CrateMetaData>,
     old_crate_registry: Vec<CrateMetaData>,
     old_crate_git: Vec<CrateMetaData>,
-    used_crate_registry: Vec<CrateMetaData>,
-    used_crate_git: Vec<CrateMetaData>,
     orphan_crate_registry: Vec<CrateMetaData>,
     orphan_crate_git: Vec<CrateMetaData>,
     cargo_toml_location: CargoTomlLocation,
@@ -124,8 +122,6 @@ impl CrateList {
             installed_crate_git,
             old_crate_registry,
             old_crate_git,
-            used_crate_registry,
-            used_crate_git,
             orphan_crate_registry,
             orphan_crate_git,
             cargo_toml_location,
@@ -147,11 +143,6 @@ impl CrateList {
         &self.old_crate_registry
     }
 
-    /// provide list of used registry
-    pub(crate) fn used_registry(&self) -> &Vec<CrateMetaData> {
-        &self.used_crate_registry
-    }
-
     /// provide list o orphan registry
     pub(crate) fn orphan_registry(&self) -> &Vec<CrateMetaData> {
         &self.orphan_crate_registry
@@ -165,11 +156,6 @@ impl CrateList {
     /// provide list of old git
     pub(crate) fn old_git(&self) -> &Vec<CrateMetaData> {
         &self.old_crate_git
-    }
-
-    /// provide list of used git
-    pub(crate) fn used_git(&self) -> &Vec<CrateMetaData> {
-        &self.used_crate_git
     }
 
     /// provide list of orphan git
