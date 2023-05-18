@@ -375,7 +375,7 @@ fn git_compress(
                     let repo_path = entry?.path();
                     let file_name = repo_path
                         .file_name()
-                        .context("Failed to get a file name / folder name")?;
+                        .context("failed to get a file name / folder name")?;
                     let mut git_folder = repo_path.clone();
                     git_folder.push(".git");
                     if git_folder.exists() {
@@ -386,7 +386,7 @@ fn git_compress(
                                     "Compressing {} registry index",
                                     file_name
                                         .to_str()
-                                        .context("Failed to get compress file name")?
+                                        .context("failed to get compress file name")?
                                 )
                                 .blue()
                             );
@@ -472,7 +472,7 @@ fn run_git_compress_commands(repo_path: &Path, dry_run: bool, is_aggressive: boo
                 .args(args)
                 .current_dir(repo_path)
                 .output()
-                .context(format!("Failed to execute {position} command"))?;
+                .context(format!("failed to execute {position} command"))?;
             println!(
                 "{:70}.......Step {position}/{total_len}",
                 format!("  {symbol} {message}")
@@ -490,7 +490,7 @@ fn light_cleanup(checkout_dir: &Path, src_dir: &Path, index_dir: &Path, dry_run:
     // light cleanup git
     light_cleanup_success = git::light_cleanup_git(checkout_dir, dry_run) && light_cleanup_success;
     if !light_cleanup_success {
-        println!("Failed to delete some folder during light cleanup");
+        println!("failed to delete some folder during light cleanup");
     }
 }
 
@@ -508,7 +508,7 @@ fn wipe_directory(wipe: &Wipe, dir_path: &DirPath, dry_run: bool) {
     }
     .is_err();
     if has_failed {
-        println!("Failed to remove {wipe:?} directory");
+        println!("failed to remove {wipe:?} directory");
     } else {
         println!("{} {wipe:?} directory", "Removed".red());
     }
@@ -527,7 +527,7 @@ fn update_cargo_toml(cargo_toml_location: &[PathBuf], dry_run: bool) -> Result<(
                 .arg("generate-lockfile")
                 .current_dir(location)
                 .status()
-                .context("Failed to generate Cargo.lock")?;
+                .context("failed to generate Cargo.lock")?;
         }
         // helps so we may not need to generate lock file again for workspace project
         if cargo_lock.exists() {
@@ -541,7 +541,7 @@ fn update_cargo_toml(cargo_toml_location: &[PathBuf], dry_run: bool) -> Result<(
                     "Updating {}",
                     cargo_lock
                         .to_str()
-                        .context("Failed to convert Cargo.lock file path to str")?
+                        .context("failed to convert Cargo.lock file path to str")?
                         .blue()
                 );
                 println!("{message}");
@@ -549,7 +549,7 @@ fn update_cargo_toml(cargo_toml_location: &[PathBuf], dry_run: bool) -> Result<(
                     .arg("update")
                     .current_dir(location)
                     .status()
-                    .context("Failed to run cargo update command")?;
+                    .context("failed to run cargo update command")?;
             }
         }
     }

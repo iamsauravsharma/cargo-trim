@@ -115,9 +115,9 @@ impl CrateDetail {
                 let registry_dir = entry?.path();
                 let registry_file_name = registry_dir
                     .file_name()
-                    .context("Failed to get file name of registry dir")?
+                    .context("failed to get file name of registry dir")?
                     .to_str()
-                    .context("Failed to convert osstr to str")?;
+                    .context("failed to convert OSstr to str")?;
 
                 // file for git based registry
                 let mut fetch_head_file = registry_dir.clone();
@@ -128,31 +128,31 @@ impl CrateDetail {
                 let domain = registry_file_name
                     .rsplitn(2, '-')
                     .last()
-                    .context("Failed to get url for sparse registry")?;
+                    .context("failed to get url for sparse registry")?;
                 let mut config_file = registry_dir.clone();
                 config_file.push("config.json");
 
                 // Check if fetch head file exists if it exists than index is old registry based
                 if fetch_head_file.exists() {
                     let content = fs::read_to_string(fetch_head_file)
-                        .context("Failed to read FETCH_HEAD file")?;
+                        .context("failed to read FETCH_HEAD file")?;
                     let url_path = content
                         .split_whitespace()
                         .last()
-                        .context("Failed to get url part from content")?;
+                        .context("failed to get url part from content")?;
                     source_info.insert(
                         registry_file_name.to_string(),
-                        Url::from_str(url_path).context("Fail FETCH_HEAD url conversion")?,
+                        Url::from_str(url_path).context("fail FETCH_HEAD url conversion")?,
                     );
                 // Else if config file exists is based on sparse registry
                 } else if config_file.exists() {
                     let content = fs::read_to_string(config_file)
-                        .context("Failed to read config.json file")?;
+                        .context("failed to read config.json file")?;
                     let json: IndexConfig = serde_json::from_str(&content)?;
                     let scheme_url = json.api.unwrap_or(json.dl);
                     let scheme = scheme_url.scheme();
                     let url = Url::from_str(&format!("{scheme}://{domain}"))
-                        .context("Failed sparse registry index url")?;
+                        .context("failed sparse registry index url")?;
                     source_info.insert(registry_file_name.to_string(), url);
                 }
             }
@@ -162,20 +162,20 @@ impl CrateDetail {
                 let git_dir = entry?.path();
                 let git_file_name = git_dir
                     .file_name()
-                    .context("Failed to get file name of git dir")?
+                    .context("failed to get file name of git dir")?
                     .to_str()
-                    .context("Failed to convert osstr to str")?;
+                    .context("failed to convert osstr to str")?;
                 let mut fetch_head_file = git_dir.clone();
                 fetch_head_file.push("FETCH_HEAD");
                 let content = fs::read_to_string(fetch_head_file)
-                    .context("Failed to read FETCH_HEAD file")?;
+                    .context("failed to read FETCH_HEAD file")?;
                 let url_path = content
                     .split_whitespace()
                     .last()
-                    .context("Failed to get url part from content")?;
+                    .context("failed to get url part from content")?;
                 source_info.insert(
                     git_file_name.to_string(),
-                    Url::from_str(url_path).context("Failed to convert db dir FETCH_HEAD")?,
+                    Url::from_str(url_path).context("failed to convert db dir FETCH_HEAD")?,
                 );
             }
         }
@@ -189,13 +189,13 @@ impl CrateDetail {
     pub(crate) fn source_url_from_path(&self, path: &Path) -> Result<Url> {
         let file_name = path
             .file_name()
-            .context("Failed to get file name of path")?
+            .context("failed to get file name of path")?
             .to_str()
-            .context("Failed to convert osstr to str")?;
+            .context("failed to convert osstr to str")?;
         Ok(self
             .source_info
             .get(file_name)
-            .context("Failed to get url for path")?
+            .context("failed to get url for path")?
             .clone())
     }
 
@@ -298,7 +298,7 @@ impl CrateDetail {
                         .context("failed to get file name from main entry")?;
                     let crate_name = file_name
                         .to_str()
-                        .context("Failed to convert crate file name to str")?;
+                        .context("failed to convert crate file name to str")?;
                     let (name, version) = split_name_version(crate_name)?;
                     let crate_metadata = CrateMetaData {
                         name,
@@ -326,7 +326,7 @@ impl CrateDetail {
                     let crate_size = get_size(&entry).context("failed to get size")?;
                     let crate_name = file_name
                         .to_str()
-                        .context("Failed to convert crate file name to str")?;
+                        .context("failed to convert crate file name to str")?;
                     let (name, version) = split_name_version(crate_name)?;
                     let crate_metadata = CrateMetaData {
                         name,
@@ -373,10 +373,10 @@ impl CrateDetail {
                         .context("failed to get file name")?;
                     let git_sha = git_sha_file_name
                         .to_str()
-                        .context("Failed to convert git sha name to str")?;
+                        .context("failed to convert git sha name to str")?;
                     let file_name = file_path
                         .to_str()
-                        .context("Failed to convert file path file name to str")?;
+                        .context("failed to convert file path file name to str")?;
                     let full_name = format!("{file_name}-{git_sha}");
                     let crate_metadata = CrateMetaData {
                         name: full_name,
@@ -399,7 +399,7 @@ impl CrateDetail {
                 let file_name = entry.file_name().context("failed to get file name")?;
                 let file_name = file_name
                     .to_str()
-                    .context("Failed to convert db dir file name to str")?;
+                    .context("failed to convert db dir file name to str")?;
                 let full_name = format!("{file_name}-HEAD");
                 let crate_metadata = CrateMetaData {
                     name: full_name,

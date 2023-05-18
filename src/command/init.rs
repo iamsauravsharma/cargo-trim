@@ -18,7 +18,7 @@ impl Init {
     pub(super) fn run(&self, config_file: &mut ConfigFile) -> Result<()> {
         config_file.add_directory(
             std::env::current_dir()
-                .context("Current working directory is invalid")?
+                .context("current working directory is invalid")?
                 .to_str()
                 .context("failed to convert current directory to str")?,
             self.dry_run,

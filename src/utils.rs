@@ -22,7 +22,7 @@ pub(crate) fn split_name_version(full_name: &str) -> Result<(String, Version)> {
     let (clear_name_vec, version_vec) = version_split.split_at(version_start_position);
     let clear_name = clear_name_vec.join("-");
     let version = Version::from_str(version_vec.join("-").as_str())
-        .context("Failed to parse semver version from splitted parts")?;
+        .context("failed to parse semver version from splitted parts")?;
     Ok((clear_name, version))
 }
 
@@ -54,7 +54,7 @@ pub(crate) fn delete_index_cache(index_dir: &Path, dry_run: bool) -> Result<()> 
             let folder = folder?.path();
             let folder_name = folder
                 .file_name()
-                .context("Failed to obtain index .cache file name")?;
+                .context("failed to obtain index .cache file name")?;
             if folder_name == ".cache" {
                 delete_folder(&folder, dry_run)?;
             }

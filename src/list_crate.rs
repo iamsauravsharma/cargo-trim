@@ -205,7 +205,7 @@ fn read_content(list: &[PathBuf]) -> Result<(Vec<CrateMetaData>, Vec<CrateMetaDa
             let file_content = std::fs::read_to_string(lock_folder)
                 .context("failed to read cargo lock content to string")?;
             let cargo_lock_data: LockData =
-                toml::from_str(&file_content).context("Failed to convert to Toml format")?;
+                toml::from_str(&file_content).context("failed to convert to Toml format")?;
             if let Some(packages) = cargo_lock_data.package() {
                 for package in packages {
                     if let Some(source) = package.source() {
@@ -213,7 +213,7 @@ fn read_content(list: &[PathBuf]) -> Result<(Vec<CrateMetaData>, Vec<CrateMetaDa
                         let version = package.version();
                         if source.contains("registry+") {
                             let url = Url::from_str(&source.replace("registry+", ""))
-                                .context("Failed registry source url kind conversion")?;
+                                .context("failed registry source url kind conversion")?;
                             // Support for crates.io sparse protocol and canonical protocol as same
                             // url
                             if url == Url::from_str("https://github.com/rust-lang/crates.io-index")?
@@ -263,7 +263,7 @@ fn read_content(list: &[PathBuf]) -> Result<(Vec<CrateMetaData>, Vec<CrateMetaDa
                             let rev_short_form = &rev_sha_vec[1][..=6];
                             let full_name = format!("{name}-{rev_short_form}");
                             let url = Url::from_str(&url_with_kind.replace("git+", "")).context(
-                                "Failed git source url kind with query params conversion",
+                                "failed git source url kind with query params conversion",
                             )?;
                             present_crate_git.push(CrateMetaData::new(
                                 full_name,
@@ -274,7 +274,7 @@ fn read_content(list: &[PathBuf]) -> Result<(Vec<CrateMetaData>, Vec<CrateMetaDa
                         }
                         if source.contains("sparse+") {
                             let url = Url::from_str(&source.replace("sparse+", ""))
-                                .context("Failed sparse source url kind conversion")?;
+                                .context("failed sparse source url kind conversion")?;
                             present_crate_registry.push(CrateMetaData::new(
                                 name.to_string(),
                                 Some(
@@ -327,7 +327,7 @@ fn list_old_crates(
                 .file_name()
                 .context("failed to get sold crate db dir file name")?
                 .to_str()
-                .context("Failed to convert db dir entry file name to str")?;
+                .context("failed to convert db dir entry file name to str")?;
             let rev_value = latest_rev_value(&entry)?;
             let full_name = format!("{file_name}-{rev_value}");
             full_name_list.push(full_name);
@@ -416,7 +416,7 @@ fn latest_rev_value(path: &Path) -> Result<String> {
     let mut fetch_head_file = PathBuf::new();
     fetch_head_file.push(path);
     fetch_head_file.push("FETCH_HEAD");
-    let content = fs::read_to_string(fetch_head_file).context("Failed to read FETCH_HEAD file")?;
+    let content = fs::read_to_string(fetch_head_file).context("failed to read FETCH_HEAD file")?;
     // read first 7 value which is same as hash for git based checkout folder
     Ok(content[..7].to_string())
 }

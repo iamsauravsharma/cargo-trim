@@ -18,8 +18,8 @@ impl<'a> GitDir<'a> {
     pub(crate) fn new(checkout_dir: &'a Path, db_dir: &'a Path) -> Result<Self> {
         let checkout_dir = checkout_dir
             .to_str()
-            .context("Failed checkout dir path conversion")?;
-        let db_dir = db_dir.to_str().context("Failed db dir path conversion")?;
+            .context("failed checkout dir path conversion")?;
+        let db_dir = db_dir.to_str().context("failed db dir path conversion")?;
         Ok(Self {
             checkout_dir,
             db_dir,
@@ -62,7 +62,7 @@ impl<'a> GitDir<'a> {
             println!("{} {:?}", "Removed".red(), crate_metadata.name(),);
             true
         } else {
-            println!(r#"Failed to remove {:?}"#, crate_metadata.name(),);
+            println!(r#"failed to remove {:?}"#, crate_metadata.name(),);
             false
         }
     }
@@ -114,9 +114,9 @@ fn remove_crate(
                         let path = rev?.path();
                         let file_name = path
                             .file_name()
-                            .context("Failed to get file name to check rev sha")?
+                            .context("failed to get file name to check rev sha")?
                             .to_str()
-                            .context("Failed rev sha file name to str conversion")?;
+                            .context("failed rev sha file name to str conversion")?;
                         if file_name == rev_sha {
                             delete_folder(&path, dry_run)?;
                         }

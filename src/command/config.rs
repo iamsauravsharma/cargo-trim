@@ -49,7 +49,7 @@ impl Config {
         }
         if self.print {
             let content = toml::to_string_pretty(config_file)
-                .context("Failed to convert struct to pretty toml")?;
+                .context("failed to convert struct to pretty toml")?;
             println!("{content}");
         }
         Ok(())

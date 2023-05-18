@@ -39,7 +39,7 @@ impl<'a> RegistryDir<'a> {
                     index_cache_dir.push(
                         entry
                             .to_str()
-                            .context("Unable to convert index cache folder to str")?
+                            .context("unable to convert index cache folder to str")?
                             .to_string(),
                     );
                 }
@@ -88,7 +88,7 @@ impl<'a> RegistryDir<'a> {
         for index_cache_dir in &index_cache {
             let index = Path::new(&index_cache_dir);
             let source = crate_detail
-                .source_url_from_path(index.parent().context("Failed to get index parent")?)?;
+                .source_url_from_path(index.parent().context("failed to get index parent")?)?;
             if &Some(source) == crate_metadata.source() {
                 let same_name_list = self.installed_crate.iter().filter(|&x| {
                     x.name() == crate_metadata.name() && x.source() == crate_metadata.source()
@@ -110,7 +110,7 @@ impl<'a> RegistryDir<'a> {
                 crate_metadata
                     .version()
                     .clone()
-                    .context("Failed to convert crate version")?,
+                    .context("failed to convert crate version")?,
             );
             Ok(true)
         } else if is_success {
@@ -121,17 +121,17 @@ impl<'a> RegistryDir<'a> {
                 crate_metadata
                     .version()
                     .clone()
-                    .context("Failed to convert crate version")?,
+                    .context("failed to convert crate version")?,
             );
             Ok(true)
         } else {
             println!(
-                r#"Failed to remove "{}-{}""#,
+                r#"failed to remove "{}-{}""#,
                 crate_metadata.name(),
                 crate_metadata
                     .version()
                     .clone()
-                    .context("Failed to convert crate version")?,
+                    .context("failed to convert crate version")?,
             );
             Ok(false)
         }
@@ -174,10 +174,10 @@ fn remove_crate(
                     let crate_version = crate_metadata
                         .version()
                         .clone()
-                        .context("Failed to get crate version")?;
+                        .context("failed to get crate version")?;
                     if path
                         .to_str()
-                        .context("Failed to get crate name path to str")?
+                        .context("failed to get crate name path to str")?
                         .contains(&format!("{crate_name}-{crate_version}"))
                     {
                         delete_folder(&path, dry_run)?;

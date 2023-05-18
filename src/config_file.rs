@@ -205,9 +205,9 @@ impl ConfigFile {
     fn need_to_be_ignored(&self, path: &Path) -> Result<bool> {
         let file_name = path
             .file_name()
-            .context("Failed to get need to be ignored path file name")?
+            .context("failed to get need to be ignored path file name")?
             .to_str()
-            .context("Failed to convert folder name Osstr to str")?;
+            .context("failed to convert folder name Osstr to str")?;
         if self.ignore_file_name().contains(&file_name.to_owned()) {
             return Ok(true);
         }
@@ -224,9 +224,9 @@ impl ConfigFile {
     fn save(&self) -> Result<()> {
         let mut buffer = String::new();
         let serialized =
-            toml::to_string_pretty(&self).context("Config cannot to converted to pretty toml")?;
+            toml::to_string_pretty(&self).context("config cannot to converted to pretty toml")?;
         buffer.push_str(&serialized);
-        fs::write(&self.location, buffer).context("Failed to write a value to config file")?;
+        fs::write(&self.location, buffer).context("failed to write a value to config file")?;
         Ok(())
     }
 }
