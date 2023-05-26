@@ -169,7 +169,7 @@ impl CrateList {
     }
 
     /// list crates which is both old and orphan
-    pub(crate) fn list_old_orphan_registry(&self) -> Vec<CrateMetaData> {
+    pub(crate) fn old_orphan_registry(&self) -> Vec<CrateMetaData> {
         let mut old_orphan_registry = Vec::new();
         let orphan_list = self.orphan_registry();
         for crates in self.old_registry() {
@@ -181,7 +181,7 @@ impl CrateList {
     }
 
     /// list out git crates which is both old and orphan
-    pub(crate) fn list_old_orphan_git(&self) -> Vec<CrateMetaData> {
+    pub(crate) fn old_orphan_git(&self) -> Vec<CrateMetaData> {
         let mut old_orphan_git = Vec::new();
         let orphan_list = self.orphan_git();
         for crates in self.old_git() {

@@ -647,13 +647,13 @@ fn old_orphan_clean(
     }
     let (registry_sized_cleaned, total_registry_crate_removed) = clean_registry(
         registry_crates_location,
-        &crate_list.list_old_orphan_registry(),
+        &crate_list.old_orphan_registry(),
         crate_detail,
         dry_run,
     )?;
     let (git_sized_cleaned, total_git_crate_removed) = clean_git(
         git_crates_location,
-        &crate_list.list_old_orphan_git(),
+        &crate_list.old_orphan_git(),
         crate_detail,
         dry_run,
     );

@@ -135,7 +135,7 @@ impl Git {
             }
             let (sized_cleaned, total_crate_removed) = clean_git(
                 git_crates_location,
-                &crate_list.list_old_orphan_git(),
+                &crate_list.old_orphan_git(),
                 crate_detail,
                 dry_run,
             );

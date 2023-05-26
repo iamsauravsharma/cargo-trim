@@ -63,7 +63,7 @@ pub(crate) fn delete_index_cache(index_dir: &Path, dry_run: bool) -> Result<()> 
     Ok(())
 }
 
-///  get size of directory
+///  get size of path
 pub(crate) fn get_size(path: &Path) -> Result<u64> {
     let mut total_size = 0;
     let metadata = path.metadata();

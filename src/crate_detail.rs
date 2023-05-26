@@ -133,6 +133,7 @@ impl CrateDetail {
                 config_file.push("config.json");
 
                 // Check if fetch head file exists if it exists than index is old registry based
+                // index instead of new sparse based
                 if fetch_head_file.exists() {
                     let content = fs::read_to_string(fetch_head_file)
                         .context("failed to read FETCH_HEAD file")?;
@@ -144,11 +145,13 @@ impl CrateDetail {
                         registry_file_name.to_string(),
                         Url::from_str(url_path).context("fail FETCH_HEAD url conversion")?,
                     );
-                // Else if config file exists is based on sparse registry
+                // Else if config file exists it is based on sparse registry
                 } else if config_file.exists() {
                     let content = fs::read_to_string(config_file)
                         .context("failed to read config.json file")?;
                     let json: IndexConfig = serde_json::from_str(&content)?;
+                    // First use api url if api url exists else use dl url for determining scheme
+                    // since file name have no information about scheme
                     let scheme_url = json.api.unwrap_or(json.dl);
                     let scheme = scheme_url.scheme();
                     let url = Url::from_str(&format!("{scheme}://{domain}"))

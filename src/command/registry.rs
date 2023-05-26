@@ -133,7 +133,7 @@ impl Registry {
             }
             let (sized_cleaned, total_crate_removed) = clean_registry(
                 registry_crates_location,
-                &crate_list.list_old_orphan_registry(),
+                &crate_list.old_orphan_registry(),
                 crate_detail,
                 dry_run,
             )?;

@@ -40,6 +40,7 @@ impl List {
 }
 
 fn list_all(crate_list: &CrateList) {
+    crate_list_type(crate_list.installed_bin(), "INSTALLED BIN");
     crate_list_type(crate_list.installed_registry(), "REGISTRY INSTALLED CRATE");
     crate_list_type(crate_list.installed_git(), "GIT INSTALLED CRATE");
 }
@@ -51,10 +52,10 @@ fn list_old(crate_list: &CrateList) {
 
 fn list_old_orphan(crate_list: &CrateList, directory_is_empty: bool) {
     crate_list_type(
-        &crate_list.list_old_orphan_registry(),
+        &crate_list.old_orphan_registry(),
         "REGISTRY OLD+ORPHAN CRATE",
     );
-    crate_list_type(&crate_list.list_old_orphan_git(), "GIT OLD+ORPHAN CRATE");
+    crate_list_type(&crate_list.old_orphan_git(), "GIT OLD+ORPHAN CRATE");
     // print waning if no directory present in config file
     if directory_is_empty {
         let warning_text = "WARNING: You have not initialized any directory as rust project \
