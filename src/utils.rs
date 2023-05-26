@@ -95,13 +95,16 @@ pub(crate) fn get_inode_handled_size(path: &Path, inodes: &mut Vec<u64>) -> Resu
         } else if meta.is_file() {
             let metadata = path.metadata()?;
             let file_size = metadata.len();
-            if cfg!(unix) {
+            #[cfg(unix)]
+            {
                 let file_inode = metadata.ino();
                 if !inodes.contains(&file_inode) {
                     total_size += file_size;
                     inodes.push(file_inode);
                 }
-            } else {
+            }
+            #[cfg(not(unix))]
+            {
                 total_size += file_size;
             }
         }
