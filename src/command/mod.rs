@@ -15,7 +15,7 @@ use crate::dir_path::DirPath;
 use crate::git_dir::GitDir;
 use crate::list_crate::CrateList;
 use crate::registry_dir::RegistryDir;
-use crate::utils::{convert_pretty, delete_folder, get_size};
+use crate::utils::{convert_pretty, delete_folder, get_inode_handled_size};
 
 mod clear;
 mod config;
@@ -568,7 +568,7 @@ fn top_crates(crate_detail: &CrateDetail, number: usize) {
 // information
 fn query_size(dir_path: &DirPath, crate_list: &CrateList, crate_detail: &CrateDetail) {
     let mut final_size = 0_u64;
-    let bin_dir_size = get_size(dir_path.bin_dir()).unwrap_or(0_u64);
+    let bin_dir_size = get_inode_handled_size(dir_path.bin_dir(), &mut vec![]).unwrap_or(0_u64);
     final_size += bin_dir_size;
     query_print(
         &format!(

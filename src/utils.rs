@@ -1,4 +1,6 @@
 use std::fs;
+#[cfg(unix)]
+use std::os::unix::fs::MetadataExt;
 use std::path::Path;
 use std::str::FromStr;
 
@@ -75,6 +77,33 @@ pub(crate) fn get_size(path: &Path) -> Result<u64> {
             }
         } else if meta.is_file() {
             total_size += path.metadata()?.len();
+        }
+    }
+    Ok(total_size)
+}
+
+///  get accurate bin size
+pub(crate) fn get_inode_handled_size(path: &Path, inodes: &mut Vec<u64>) -> Result<u64> {
+    let mut total_size = 0;
+    let metadata = path.metadata();
+    if let Ok(meta) = metadata {
+        if meta.is_dir() {
+            for entry in fs::read_dir(path)? {
+                let entry_path = entry?.path();
+                total_size += get_inode_handled_size(&entry_path, inodes)?;
+            }
+        } else if meta.is_file() {
+            let metadata = path.metadata()?;
+            let file_size = metadata.len();
+            if cfg!(unix) {
+                let file_inode = metadata.ino();
+                if !inodes.contains(&file_inode) {
+                    total_size += file_size;
+                    inodes.push(file_inode);
+                }
+            } else {
+                total_size += file_size;
+            }
         }
     }
     Ok(total_size)
