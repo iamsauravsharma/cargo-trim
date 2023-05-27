@@ -6,10 +6,17 @@ use crate::crate_detail::CrateMetaData;
 use crate::utils::convert_pretty;
 
 /// show title
-pub(super) fn show_title(title: &str, first_width: usize, second_width: usize, dash_len: usize) {
+pub(super) fn show_title(
+    title: &str,
+    first_width: usize,
+    second_width: usize,
+    third_width: usize,
+    dash_len: usize,
+) {
     print_dash(dash_len);
     println!(
-        "|{:^first_width$}|{:^second_width$}|",
+        "|{:^first_width$}|{:^second_width$}|{:^third_width$}|",
+        "LOCATION",
         title.bold(),
         "SIZE".bold(),
     );
@@ -22,18 +29,21 @@ pub(super) fn show_total_count(
     size: u64,
     first_width: usize,
     second_width: usize,
+    third_width: usize,
     dash_len: usize,
 ) {
     if data.is_empty() {
         println!(
-            "|{:^first_width$}|{:^second_width$}|",
+            "|{:^first_width$}|{:^second_width$}|{:^third_width$}|",
+            "----",
             "NONE".red(),
             convert_pretty(0).red(),
         );
     }
     print_dash(dash_len);
     println!(
-        "|{:^first_width$}|{:^second_width$}|",
+        "|{:^first_width$}|{:^second_width$}|{:^third_width$}|",
+        "----",
         format!("Total no of crates:- {}", data.len()).blue(),
         convert_pretty(size).blue(),
     );
@@ -49,6 +59,7 @@ pub(super) fn print_dash(len: usize) {
 pub(super) fn show_top_number_crates(
     crates: &HashSet<CrateMetaData>,
     crate_type: &str,
+    first_width: usize,
     number: usize,
 ) {
     // sort crates by size
@@ -60,15 +71,34 @@ pub(super) fn show_top_number_crates(
     for &crate_metadata in crates.iter().take(top_number) {
         listed_crates.push(crate_metadata.clone());
     }
-    crate_list_type(&listed_crates[..top_number], &title);
+    let top_number_crates = &listed_crates[..top_number];
+    let second_width = std::cmp::max(
+        top_number_crates
+            .iter()
+            .map(|cm| {
+                if let Some(version) = cm.version() {
+                    cm.name().len() + version.to_string().len() + 1
+                } else {
+                    cm.name().len()
+                }
+            })
+            .max()
+            .unwrap_or(30),
+        30,
+    ) + 2;
+    crate_list_type(top_number_crates, first_width, second_width, &title);
 }
 
 // list certain crate type to terminal
-pub(super) fn crate_list_type(crate_metadata_list: &[CrateMetaData], title: &str) {
-    let first_width = 44;
-    let second_width = 16;
-    let dash_len = first_width + second_width + 3;
-    show_title(title, first_width, second_width, dash_len);
+pub(super) fn crate_list_type(
+    crate_metadata_list: &[CrateMetaData],
+    first_width: usize,
+    second_width: usize,
+    title: &str,
+) {
+    let third_width = 12;
+    let dash_len = first_width + second_width + third_width + 4;
+    show_title(title, first_width, second_width, third_width, dash_len);
 
     let mut total_size = 0;
     for crate_metadata in crate_metadata_list {
@@ -76,13 +106,21 @@ pub(super) fn crate_list_type(crate_metadata_list: &[CrateMetaData], title: &str
         total_size += size;
         if let Some(version) = crate_metadata.version() {
             println!(
-                "|{:^first_width$}|{:^second_width$}|",
+                "|{:^first_width$}|{:^second_width$}|{:^third_width$}|",
+                crate_metadata
+                    .source()
+                    .as_ref()
+                    .map_or("N/A".to_string(), ToString::to_string),
                 format!("{}-{version}", crate_metadata.name()),
                 convert_pretty(size)
             );
         } else {
             println!(
-                "|{:^first_width$}|{:^second_width$}|",
+                "|{:^first_width$}|{:^second_width$}|{:^third_width$}|",
+                crate_metadata
+                    .source()
+                    .as_ref()
+                    .map_or("N/A".to_string(), ToString::to_string),
                 format!("{}", crate_metadata.name()),
                 convert_pretty(size)
             );
@@ -93,6 +131,7 @@ pub(super) fn crate_list_type(crate_metadata_list: &[CrateMetaData], title: &str
         total_size,
         first_width,
         second_width,
+        third_width,
         dash_len,
     );
 }

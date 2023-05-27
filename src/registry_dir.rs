@@ -103,9 +103,14 @@ impl<'a> RegistryDir<'a> {
         }
         if dry_run {
             println!(
-                r#"{} {} "{}-{}""#,
+                "{} {} {} {}-{}",
                 "Dry run:".yellow(),
                 "Removed".red(),
+                crate_metadata
+                    .source()
+                    .as_ref()
+                    .map(ToString::to_string)
+                    .unwrap_or_default(),
                 crate_metadata.name(),
                 crate_metadata
                     .version()
@@ -115,8 +120,13 @@ impl<'a> RegistryDir<'a> {
             Ok(true)
         } else if is_success {
             println!(
-                r#"{} "{}-{}""#,
+                "{} {} {}-{}",
                 "Removed".red(),
+                crate_metadata
+                    .source()
+                    .as_ref()
+                    .map(ToString::to_string)
+                    .unwrap_or_default(),
                 crate_metadata.name(),
                 crate_metadata
                     .version()
@@ -126,8 +136,13 @@ impl<'a> RegistryDir<'a> {
             Ok(true)
         } else {
             println!(
-                r#"failed to remove "{}-{}""#,
+                "Failed to remove {} {}-{}",
                 crate_metadata.name(),
+                crate_metadata
+                    .source()
+                    .as_ref()
+                    .map(ToString::to_string)
+                    .unwrap_or_default(),
                 crate_metadata
                     .version()
                     .clone()
@@ -141,12 +156,12 @@ impl<'a> RegistryDir<'a> {
     pub(crate) fn remove_crate_list(
         &mut self,
         crate_detail: &CrateDetail,
-        list: &[CrateMetaData],
+        crate_metadata_list: &[CrateMetaData],
         dry_run: bool,
     ) -> Result<(u64, usize)> {
         let mut size_cleaned = 0;
         let mut crate_removed = 0;
-        for crate_metadata in list {
+        for crate_metadata in crate_metadata_list {
             if self.remove_crate(crate_detail, crate_metadata, dry_run)? {
                 size_cleaned += crate_metadata.size();
                 crate_removed += 1;

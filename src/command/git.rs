@@ -85,7 +85,16 @@ impl Git {
         }
 
         if let Some(number) = self.top {
-            top_crates_git(crate_detail, number);
+            let max_width = std::cmp::max(
+                crate_detail
+                    .source_urls()
+                    .iter()
+                    .map(|su| su.to_string().len())
+                    .max()
+                    .unwrap_or(9),
+                9,
+            ) + 2;
+            top_crates_git(crate_detail, max_width, number);
         }
 
         if self.query {
@@ -219,9 +228,19 @@ pub(super) fn light_cleanup_git(checkout_dir: &Path, dry_run: bool) -> bool {
 }
 
 // Show top git crates
-pub(super) fn top_crates_git(crate_detail: &CrateDetail, number: usize) {
-    show_top_number_crates(crate_detail.git_crates_archive(), "git_archive", number);
-    show_top_number_crates(crate_detail.git_crates_source(), "git_source", number);
+pub(super) fn top_crates_git(crate_detail: &CrateDetail, first_width: usize, number: usize) {
+    show_top_number_crates(
+        crate_detail.git_crates_archive(),
+        "git_archive",
+        first_width,
+        number,
+    );
+    show_top_number_crates(
+        crate_detail.git_crates_source(),
+        "git_source",
+        first_width,
+        number,
+    );
 }
 
 pub(super) fn query_size_git(

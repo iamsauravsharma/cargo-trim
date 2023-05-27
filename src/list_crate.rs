@@ -29,7 +29,7 @@ impl CargoTomlLocation {
         self.path.append(&mut lock_location.path);
     }
 
-    pub(crate) fn location_path(&self) -> &Vec<PathBuf> {
+    pub(crate) fn paths(&self) -> &Vec<PathBuf> {
         &self.path
     }
 }
@@ -106,7 +106,7 @@ impl CrateList {
 
         // list all used crates in rust program
         let (cargo_toml_location, used_crate_registry, used_crate_git) =
-            list_used_crates(config_file)?;
+            list_used_crates(config_file, crate_detail)?;
 
         // list orphan crates. If crate is not used then it is orphan
         let (orphan_crate_registry, orphan_crate_git) = list_orphan_crates(
@@ -195,11 +195,14 @@ impl CrateList {
 
 /// Read out content of cargo.lock file to list out crates present so can be
 /// used for orphan clean
-fn read_content(list: &[PathBuf]) -> Result<(Vec<CrateMetaData>, Vec<CrateMetaData>)> {
+fn read_content(
+    toml_file_parent_paths: &[PathBuf],
+    crate_detail: &CrateDetail,
+) -> Result<(Vec<CrateMetaData>, Vec<CrateMetaData>)> {
     let mut present_crate_registry = Vec::new();
     let mut present_crate_git = Vec::new();
-    for lock in list.iter() {
-        let mut lock_folder = lock.clone();
+    for toml_file_parent_path in toml_file_parent_paths.iter() {
+        let mut lock_folder = toml_file_parent_path.clone();
         lock_folder.push("Cargo.lock");
         if lock_folder.exists() {
             let file_content = std::fs::read_to_string(lock_folder)
@@ -212,21 +215,15 @@ fn read_content(list: &[PathBuf]) -> Result<(Vec<CrateMetaData>, Vec<CrateMetaDa
                         let name = package.name();
                         let version = package.version();
                         if source.contains("registry+") {
-                            let url = Url::from_str(&source.replace("registry+", ""))
+                            let mut url = Url::from_str(&source.replace("registry+", ""))
                                 .context("failed registry source url kind conversion")?;
-                            // Support for crates.io sparse protocol and canonical protocol as same
-                            // url
+                            // Only add sparse registry if sparse registry is present in place of
+                            // git based registry
+                            let index_crates_url = Url::from_str("https://index.crates.io")?;
                             if url == Url::from_str("https://github.com/rust-lang/crates.io-index")?
+                                && crate_detail.source_urls().contains(&&index_crates_url)
                             {
-                                present_crate_registry.push(CrateMetaData::new(
-                                    name.to_string(),
-                                    Some(
-                                        Version::parse(version)
-                                            .context("failed Cargo.lock semver version parse")?,
-                                    ),
-                                    0,
-                                    Some(Url::from_str("https://index.crates.io")?),
-                                ));
+                                url = index_crates_url;
                             }
                             present_crate_registry.push(CrateMetaData::new(
                                 name.to_string(),
@@ -348,6 +345,7 @@ fn list_old_crates(
 /// list used crates
 fn list_used_crates(
     config_file: &ConfigFile,
+    crate_detail: &CrateDetail,
 ) -> Result<(CargoTomlLocation, Vec<CrateMetaData>, Vec<CrateMetaData>)> {
     let mut used_crate_registry = Vec::new();
     let mut used_crate_git = Vec::new();
@@ -356,7 +354,8 @@ fn list_used_crates(
     // read a Cargo.lock file and determine out a used registry and git crate
     for path in &config_directory {
         let list_cargo_toml = config_file.list_cargo_toml(Path::new(path))?;
-        let (mut registry_crate, mut git_crate) = read_content(list_cargo_toml.location_path())?;
+        let (mut registry_crate, mut git_crate) =
+            read_content(list_cargo_toml.paths(), crate_detail)?;
         cargo_toml_location.append(list_cargo_toml);
         used_crate_registry.append(&mut registry_crate);
         used_crate_git.append(&mut git_crate);

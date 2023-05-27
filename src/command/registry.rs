@@ -84,7 +84,16 @@ impl Registry {
             }
         }
         if let Some(number) = self.top {
-            top_crates_registry(crate_detail, number);
+            let max_width = std::cmp::max(
+                crate_detail
+                    .source_urls()
+                    .iter()
+                    .map(|su| su.to_string().len())
+                    .max()
+                    .unwrap_or(9),
+                9,
+            ) + 2;
+            top_crates_registry(crate_detail, max_width, number);
         }
         if self.query {
             let final_size = query_size_registry(dir_path, crate_list, crate_detail);
@@ -224,15 +233,17 @@ pub(super) fn light_cleanup_registry(src_dir: &Path, index_dir: &Path, dry_run: 
 }
 
 // Show top registry crates
-pub(super) fn top_crates_registry(crate_detail: &CrateDetail, number: usize) {
+pub(super) fn top_crates_registry(crate_detail: &CrateDetail, first_width: usize, number: usize) {
     show_top_number_crates(
         crate_detail.registry_crates_archive(),
         "registry_archive",
+        first_width,
         number,
     );
     show_top_number_crates(
         crate_detail.registry_crates_source(),
         "registry_source",
+        first_width,
         number,
     );
 }

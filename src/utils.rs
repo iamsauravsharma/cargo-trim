@@ -33,13 +33,23 @@ pub(crate) fn delete_folder(path: &Path, dry_run: bool) -> Result<()> {
     if path.exists() {
         if path.is_file() {
             if dry_run {
-                println!("{} {} {path:?}", "Dry run:".yellow(), "Removed".red());
+                println!(
+                    "{} {} {}",
+                    "Dry run:".yellow(),
+                    "Removed".red(),
+                    path.to_str().unwrap_or_default()
+                );
             } else {
                 fs::remove_file(path)?;
             }
         } else if path.is_dir() {
             if dry_run {
-                println!("{} {} {path:?}", "Dry run:".yellow(), "Removed".red());
+                println!(
+                    "{} {} {}",
+                    "Dry run:".yellow(),
+                    "Removed".red(),
+                    path.to_str().unwrap_or_default()
+                );
             } else {
                 fs::remove_dir_all(path)?;
             }

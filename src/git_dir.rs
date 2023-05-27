@@ -52,17 +52,39 @@ impl<'a> GitDir<'a> {
         };
         if dry_run {
             println!(
-                "{} {} {:?}",
+                "{} {} {} {}",
                 "Dry run:".yellow(),
                 "Removed".red(),
+                crate_metadata
+                    .source()
+                    .as_ref()
+                    .map(ToString::to_string)
+                    .unwrap_or_default(),
                 crate_metadata.name(),
             );
             true
         } else if is_success {
-            println!("{} {:?}", "Removed".red(), crate_metadata.name(),);
+            println!(
+                "{} {} {}",
+                "Removed".red(),
+                crate_metadata
+                    .source()
+                    .as_ref()
+                    .map(ToString::to_string)
+                    .unwrap_or_default(),
+                crate_metadata.name()
+            );
             true
         } else {
-            println!(r#"failed to remove {:?}"#, crate_metadata.name(),);
+            println!(
+                r#"failed to remove {} {}"#,
+                crate_metadata
+                    .source()
+                    .as_ref()
+                    .map(ToString::to_string)
+                    .unwrap_or_default(),
+                crate_metadata.name(),
+            );
             false
         }
     }
