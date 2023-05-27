@@ -58,6 +58,7 @@ Commands:
 
 Options:
   -a, --all                    Clean up all registry & git crates
+      --clear-empty-index      Clear all empty index directory
   -d, --directory <DIRECTORY>  Extra list of directory of Rust projects for current command [env: TRIM_DIRECTORY=]
   -n, --dry-run                Run command in dry run mode to see what would be done
   -g, --gc <GIT_COMPRESS>      Git compress to reduce size of .cargo (git command required) [possible values: aggressive-checkout, aggressive-db, aggressive-index, checkout, db, index]
@@ -66,7 +67,7 @@ Options:
       --no-scan-hidden-folder  Do not scan hidden folder for current command. Takes precedence over scan-hidden-folder [env: TRIM_NOT_SCAN_HIDDEN_FOLDER=]
       --no-scan-target-folder  Do not scan target folder for current command. Takes precedence over scan-target-folder [env: TRIM_NOT_SCAN_TARGET_FOLDER=]
   -o, --old                    Clean old cache crates
-  -z, --old-orphan             Clean crates which is both old and orphan
+  -z, --old-orphan             Clean crates which are both old and orphan
   -x, --orphan                 Clean orphan cache crates i.e all crates which are not present in lock file generated till now
   -q, --query                  Return size of different .cargo/cache folders
       --scan-hidden-folder     Scan hidden folder for current command [env: TRIM_SCAN_HIDDEN_FOLDER=]

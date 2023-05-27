@@ -77,7 +77,7 @@ impl<'a> GitDir<'a> {
             true
         } else {
             println!(
-                r#"failed to remove {} {}"#,
+                r#"Failed to remove {} {}"#,
                 crate_metadata
                     .source()
                     .as_ref()

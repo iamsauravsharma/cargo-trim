@@ -51,6 +51,8 @@ enum SubCommand {
 pub(crate) struct Command {
     #[arg(long = "all", short = 'a', help = "Clean up all registry & git crates")]
     all: bool,
+    #[arg(long = "clear-empty-index", help = "Clear all empty index directory")]
+    clear_empty_index: bool,
     #[arg(
         long = "directory",
         short = 'd',
@@ -104,7 +106,7 @@ pub(crate) struct Command {
     #[arg(
         long = "old-orphan",
         short = 'z',
-        help = "Clean crates which is both old and orphan"
+        help = "Clean crates which are both old and orphan"
     )]
     old_orphan: bool,
     #[arg(
@@ -229,6 +231,7 @@ impl Command {
                 )?;
             }
         }
+
         if self.light_cleanup {
             light_cleanup(
                 dir_path.checkout_dir(),
@@ -237,6 +240,17 @@ impl Command {
                 dry_run,
             );
         }
+
+        if self.clear_empty_index {
+            clear_empty_index(
+                dir_path.src_dir(),
+                dir_path.cache_dir(),
+                dir_path.index_dir(),
+                &mut crate_detail,
+                dry_run,
+            );
+        }
+
         if let Some(wipes) = &self.wipe {
             for wipe in wipes {
                 wipe_directory(wipe, &dir_path, dry_run);
@@ -350,6 +364,51 @@ impl Command {
 
         Ok(())
     }
+}
+
+// Clear all unused index
+fn clear_empty_index(
+    src_dir: &Path,
+    cache_dir: &Path,
+    index_dir: &Path,
+    crate_detail: &mut CrateDetail,
+    dry_run: bool,
+) {
+    let mut to_remove_indexes = vec![];
+    for url in crate_detail.source_urls() {
+        if !crate_detail
+            .registry_crates_source()
+            .iter()
+            .any(|metadata| {
+                if let Some(source) = metadata.source().as_ref() {
+                    if source == url {
+                        return true;
+                    }
+                }
+                false
+            })
+        {
+            let file_name = crate_detail.file_name_from_url(url);
+            if let Some(name) = file_name {
+                to_remove_indexes.push(name);
+            }
+        };
+    }
+    let mut is_success = true;
+    for index in to_remove_indexes {
+        is_success = crate::utils::delete_folder(src_dir.join(&index).as_path(), dry_run).is_ok()
+            && is_success;
+        is_success = crate::utils::delete_folder(cache_dir.join(&index).as_path(), dry_run).is_ok()
+            && is_success;
+        is_success = crate::utils::delete_folder(index_dir.join(&index).as_path(), dry_run).is_ok()
+            && is_success;
+    }
+    if is_success {
+        println!("{}", "Cleaned empty index".blue());
+    } else {
+        println!("Failed to remove unused index");
+    }
+    if is_success {}
 }
 
 // Git compress git files according to provided value if option
@@ -517,7 +576,7 @@ fn wipe_directory(wipe: &Wipe, dir_path: &DirPath, dry_run: bool) {
     }
     .is_err();
     if has_failed {
-        println!("failed to remove {wipe:?} directory");
+        println!("Failed to remove {wipe:?} directory");
     } else {
         println!("{} {wipe:?} directory", "Removed".red());
     }

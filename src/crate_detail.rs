@@ -202,6 +202,17 @@ impl CrateDetail {
             .clone())
     }
 
+    /// Get path from url
+    pub(crate) fn file_name_from_url(&self, url: &Url) -> Option<String> {
+        self.source_info.iter().find_map(|(key, val)| {
+            if val == url {
+                Some(key.to_string())
+            } else {
+                None
+            }
+        })
+    }
+
     /// Get source urls
     pub(crate) fn source_urls(&self) -> Vec<&Url> {
         self.source_info.values().collect()
