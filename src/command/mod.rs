@@ -248,7 +248,7 @@ impl Command {
         }
 
         if self.update {
-            let cargo_toml_location = crate_list.cargo_toml_location().location_path();
+            let cargo_toml_location = &crate_list.cargo_toml_location().paths();
             update_cargo_toml(cargo_toml_location, dry_run)?;
         }
 
@@ -314,7 +314,16 @@ impl Command {
                 SubCommand::Clear(clear) => clear.run(&mut config_file)?,
                 SubCommand::Config(config) => config.run(&config_file, dir_path.config_file())?,
                 SubCommand::List(list) => {
-                    list.run(&crate_list, config_file.directory().is_empty());
+                    let max_width = std::cmp::max(
+                        crate_detail
+                            .source_urls()
+                            .iter()
+                            .map(|su| su.to_string().len())
+                            .max()
+                            .unwrap_or(9),
+                        9,
+                    ) + 2;
+                    list.run(&crate_list, max_width, config_file.directory().is_empty());
                 }
                 SubCommand::Set(set) => set.run(&mut config_file)?,
                 SubCommand::Unset(unset) => unset.run(&mut config_file)?,
@@ -559,9 +568,18 @@ fn update_cargo_toml(cargo_toml_location: &[PathBuf], dry_run: bool) -> Result<(
 
 // show top n crates
 fn top_crates(crate_detail: &CrateDetail, number: usize) {
-    show_top_number_crates(crate_detail.bin(), "bin", number);
-    registry::top_crates_registry(crate_detail, number);
-    git::top_crates_git(crate_detail, number);
+    let max_width = std::cmp::max(
+        crate_detail
+            .source_urls()
+            .iter()
+            .map(|su| su.to_string().len())
+            .max()
+            .unwrap_or(9),
+        9,
+    ) + 2;
+    show_top_number_crates(crate_detail.bin(), "bin", max_width, number);
+    registry::top_crates_registry(crate_detail, max_width, number);
+    git::top_crates_git(crate_detail, max_width, number);
 }
 
 // query size of directory of cargo home folder provide some valuable size

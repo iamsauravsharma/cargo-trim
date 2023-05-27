@@ -202,6 +202,11 @@ impl CrateDetail {
             .clone())
     }
 
+    /// Get source urls
+    pub(crate) fn source_urls(&self) -> Vec<&Url> {
+        self.source_info.values().collect()
+    }
+
     /// return bin crates metadata
     pub(crate) fn bin(&self) -> &HashSet<CrateMetaData> {
         &self.bin
