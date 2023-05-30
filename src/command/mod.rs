@@ -587,41 +587,31 @@ fn wipe_directory(wipe: &Wipe, dir_path: &DirPath, dry_run: bool) {
 // Update cargo lock
 fn update_cargo_toml(cargo_toml_location: &[PathBuf], dry_run: bool) -> Result<()> {
     for location in cargo_toml_location {
-        let mut cargo_lock = location.clone();
-        cargo_lock.push("Cargo.lock");
-        // at first try generating lock file
-        if !cargo_lock.exists() {
-            std::process::Command::new("cargo")
-                .arg("generate-lockfile")
+        if dry_run {
+            println!(
+                "{} Updating lockfile at path {location:?}",
+                "Dry run:".yellow(),
+            );
+        } else {
+            println!(
+                "Updating project at {}",
+                location
+                    .to_str()
+                    .context("failed to convert Cargo.lock file path to str")?
+                    .blue()
+            );
+            if !std::process::Command::new("cargo")
+                .arg("update")
                 .current_dir(location)
                 .status()
-                .context("failed to generate Cargo.lock")?;
-        }
-        // helps so we may not need to generate lock file again for workspace project
-        if cargo_lock.exists() {
-            if dry_run {
-                println!(
-                    "{} Updating lockfile at path {location:?}",
-                    "Dry run:".yellow(),
-                );
-            } else {
-                let message = format!(
-                    "Updating {}",
-                    cargo_lock
-                        .to_str()
-                        .context("failed to convert Cargo.lock file path to str")?
-                        .blue()
-                );
-                println!("{message}");
-                std::process::Command::new("cargo")
-                    .arg("update")
-                    .current_dir(location)
-                    .status()
-                    .context("failed to run cargo update command")?;
-            }
+                .context("failed to run cargo update command")?
+                .success()
+            {
+                return Err(anyhow::anyhow!("Failed to update {location:?}"));
+            };
         }
     }
-    println!("{}", "Successfully updated all Cargo.lock".blue());
+    println!("{}", "Successfully updated all dependencies".blue());
     Ok(())
 }
 
