@@ -589,7 +589,7 @@ fn update_cargo_toml(cargo_toml_location: &[PathBuf], dry_run: bool) -> Result<(
     for location in cargo_toml_location {
         if dry_run {
             println!(
-                "{} Updating lockfile at path {location:?}",
+                "{} Updating project at path {location:?}",
                 "Dry run:".yellow(),
             );
         } else {
@@ -597,7 +597,7 @@ fn update_cargo_toml(cargo_toml_location: &[PathBuf], dry_run: bool) -> Result<(
                 "Updating project at {}",
                 location
                     .to_str()
-                    .context("failed to convert Cargo.lock file path to str")?
+                    .context("failed to convert location file path to str")?
                     .blue()
             );
             if !std::process::Command::new("cargo")
