@@ -181,21 +181,22 @@ fn remove_crate(
     if path.exists() {
         for entry in fs::read_dir(path)? {
             let path = entry?.path();
-            let source = crate_detail.source_url_from_path(&path)?;
-            if &Some(source) == crate_metadata.source() {
-                for entry in fs::read_dir(path)? {
-                    let path = entry?.path();
-                    let crate_name = crate_metadata.name();
-                    let crate_version = crate_metadata
-                        .version()
-                        .clone()
-                        .context("failed to get crate version")?;
-                    if path
-                        .to_str()
-                        .context("failed to get crate name path to str")?
-                        .contains(&format!("{crate_name}-{crate_version}"))
-                    {
-                        delete_folder(&path, dry_run)?;
+            if let Ok(source_url) = crate_detail.source_url_from_path(&path) {
+                if &Some(source_url) == crate_metadata.source() {
+                    for entry in fs::read_dir(path)? {
+                        let path = entry?.path();
+                        let crate_name = crate_metadata.name();
+                        let crate_version = crate_metadata
+                            .version()
+                            .clone()
+                            .context("failed to get crate version")?;
+                        if path
+                            .to_str()
+                            .context("failed to get crate name path to str")?
+                            .contains(&format!("{crate_name}-{crate_version}"))
+                        {
+                            delete_folder(&path, dry_run)?;
+                        }
                     }
                 }
             }

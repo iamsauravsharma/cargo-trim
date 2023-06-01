@@ -307,26 +307,27 @@ impl CrateDetail {
         if src_dir.exists() {
             for entry in fs::read_dir(src_dir).context("failed to read src directory")? {
                 let registry = entry?.path();
-                let source = self.source_url_from_path(&registry)?;
-                for entry in fs::read_dir(registry).context("failed to read registry folder")? {
-                    let entry = entry?.path();
-                    let crate_size =
-                        get_size(&entry).context("failed to get registry crate size")?;
-                    let file_name = entry
-                        .file_name()
-                        .context("failed to get file name from main entry")?;
-                    let crate_name = file_name
-                        .to_str()
-                        .context("failed to convert crate file name to str")?;
-                    let (name, version) = split_name_version(crate_name)?;
-                    let crate_metadata = CrateMetaData {
-                        name,
-                        version: Some(version),
-                        size: crate_size,
-                        source: Some(source.clone()),
-                    };
-                    self.add_registry_crate_source(&crate_metadata);
-                    update_crate_list(&mut installed_crate_registry, &crate_metadata)?;
+                if let Ok(source) = self.source_url_from_path(&registry) {
+                    for entry in fs::read_dir(registry).context("failed to read registry folder")? {
+                        let entry = entry?.path();
+                        let crate_size =
+                            get_size(&entry).context("failed to get registry crate size")?;
+                        let file_name = entry
+                            .file_name()
+                            .context("failed to get file name from main entry")?;
+                        let crate_name = file_name
+                            .to_str()
+                            .context("failed to convert crate file name to str")?;
+                        let (name, version) = split_name_version(crate_name)?;
+                        let crate_metadata = CrateMetaData {
+                            name,
+                            version: Some(version),
+                            size: crate_size,
+                            source: Some(source.clone()),
+                        };
+                        self.add_registry_crate_source(&crate_metadata);
+                        update_crate_list(&mut installed_crate_registry, &crate_metadata)?;
+                    }
                 }
             }
         }
@@ -334,27 +335,28 @@ impl CrateDetail {
         if cache_dir.exists() {
             for entry in fs::read_dir(cache_dir).context("failed to read cache dir")? {
                 let registry = entry?.path();
-                let source = self.source_url_from_path(&registry)?;
-                for entry in
-                    fs::read_dir(registry).context("failed to read cache dir registry folder")?
-                {
-                    let entry = entry?.path();
-                    let file_name = entry
-                        .file_name()
-                        .context("failed to get file name from cache dir")?;
-                    let crate_size = get_size(&entry).context("failed to get size")?;
-                    let crate_name = file_name
-                        .to_str()
-                        .context("failed to convert crate file name to str")?;
-                    let (name, version) = split_name_version(crate_name)?;
-                    let crate_metadata = CrateMetaData {
-                        name,
-                        version: Some(version),
-                        size: crate_size,
-                        source: Some(source.clone()),
-                    };
-                    self.add_registry_crate_archive(&crate_metadata);
-                    update_crate_list(&mut installed_crate_registry, &crate_metadata)?;
+                if let Ok(source) = self.source_url_from_path(&registry) {
+                    for entry in fs::read_dir(registry)
+                        .context("failed to read cache dir registry folder")?
+                    {
+                        let entry = entry?.path();
+                        let file_name = entry
+                            .file_name()
+                            .context("failed to get file name from cache dir")?;
+                        let crate_size = get_size(&entry).context("failed to get size")?;
+                        let crate_name = file_name
+                            .to_str()
+                            .context("failed to convert crate file name to str")?;
+                        let (name, version) = split_name_version(crate_name)?;
+                        let crate_metadata = CrateMetaData {
+                            name,
+                            version: Some(version),
+                            size: crate_size,
+                            source: Some(source.clone()),
+                        };
+                        self.add_registry_crate_archive(&crate_metadata);
+                        update_crate_list(&mut installed_crate_registry, &crate_metadata)?;
+                    }
                 }
             }
         }
@@ -377,34 +379,35 @@ impl CrateDetail {
             // read checkout dir to list crate name in form of crate_name-rev_sha
             for entry in fs::read_dir(checkout_dir).context("failed to read checkout directory")? {
                 let entry = entry?.path();
-                let source = self.source_url_from_path(&entry)?;
-                let file_path = entry
-                    .file_name()
-                    .context("failed to obtain checkout directory sub folder file name")?;
-                for git_sha_entry in
-                    fs::read_dir(&entry).context("failed to read checkout dir sub folder")?
-                {
-                    let git_sha_entry = git_sha_entry?.path();
-                    let crate_size =
-                        get_size(&git_sha_entry).context("failed to get folder size")?;
-                    let git_sha_file_name = git_sha_entry
+                if let Ok(source) = self.source_url_from_path(&entry) {
+                    let file_path = entry
                         .file_name()
-                        .context("failed to get file name")?;
-                    let git_sha = git_sha_file_name
-                        .to_str()
-                        .context("failed to convert git sha name to str")?;
-                    let file_name = file_path
-                        .to_str()
-                        .context("failed to convert file path file name to str")?;
-                    let full_name = format!("{file_name}-{git_sha}");
-                    let crate_metadata = CrateMetaData {
-                        name: full_name,
-                        version: None,
-                        size: crate_size,
-                        source: Some(source.clone()),
-                    };
-                    self.add_git_crate_archive(&crate_metadata);
-                    update_crate_list(&mut installed_crate_git, &crate_metadata)?;
+                        .context("failed to obtain checkout directory sub folder file name")?;
+                    for git_sha_entry in
+                        fs::read_dir(&entry).context("failed to read checkout dir sub folder")?
+                    {
+                        let git_sha_entry = git_sha_entry?.path();
+                        let crate_size =
+                            get_size(&git_sha_entry).context("failed to get folder size")?;
+                        let git_sha_file_name = git_sha_entry
+                            .file_name()
+                            .context("failed to get file name")?;
+                        let git_sha = git_sha_file_name
+                            .to_str()
+                            .context("failed to convert git sha name to str")?;
+                        let file_name = file_path
+                            .to_str()
+                            .context("failed to convert file path file name to str")?;
+                        let full_name = format!("{file_name}-{git_sha}");
+                        let crate_metadata = CrateMetaData {
+                            name: full_name,
+                            version: None,
+                            size: crate_size,
+                            source: Some(source.clone()),
+                        };
+                        self.add_git_crate_archive(&crate_metadata);
+                        update_crate_list(&mut installed_crate_git, &crate_metadata)?;
+                    }
                 }
             }
         }
@@ -412,22 +415,23 @@ impl CrateDetail {
         if db_dir.exists() {
             for entry in fs::read_dir(db_dir).context("failed to read db dir")? {
                 let entry = entry?.path();
-                let source = self.source_url_from_path(&entry)?;
-                let crate_size =
-                    get_size(&entry).context("failed to get size of db dir folders")?;
-                let file_name = entry.file_name().context("failed to get file name")?;
-                let file_name = file_name
-                    .to_str()
-                    .context("failed to convert db dir file name to str")?;
-                let full_name = format!("{file_name}-HEAD");
-                let crate_metadata = CrateMetaData {
-                    name: full_name,
-                    version: None,
-                    size: crate_size,
-                    source: Some(source),
-                };
-                self.add_git_crate_source(&crate_metadata);
-                update_crate_list(&mut installed_crate_git, &crate_metadata)?;
+                if let Ok(source) = self.source_url_from_path(&entry) {
+                    let crate_size =
+                        get_size(&entry).context("failed to get size of db dir folders")?;
+                    let file_name = entry.file_name().context("failed to get file name")?;
+                    let file_name = file_name
+                        .to_str()
+                        .context("failed to convert db dir file name to str")?;
+                    let full_name = format!("{file_name}-HEAD");
+                    let crate_metadata = CrateMetaData {
+                        name: full_name,
+                        version: None,
+                        size: crate_size,
+                        source: Some(source),
+                    };
+                    self.add_git_crate_source(&crate_metadata);
+                    update_crate_list(&mut installed_crate_git, &crate_metadata)?;
+                }
             }
         }
         let mut installed_crates = Vec::new();

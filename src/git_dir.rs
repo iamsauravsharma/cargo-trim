@@ -117,34 +117,35 @@ fn remove_crate(
 ) -> Result<()> {
     for entry in fs::read_dir(location)? {
         let path = entry?.path();
-        let source = crate_detail.source_url_from_path(&path)?;
-        if &Some(source) == crate_metadata.source() {
-            // split name to split crate and rev sha
-            let name = crate_metadata.name();
-            let name = name.rsplitn(2, '-').collect::<Vec<&str>>();
-            let crate_name = name[1];
-            let rev_sha = name[0];
-            if path
-                .to_str()
-                .context("failed git directory crate path to str")?
-                .contains(crate_name)
-            {
-                if rev_sha.contains("HEAD") {
-                    delete_folder(&path, dry_run)?;
-                } else {
-                    for rev in fs::read_dir(&path)? {
-                        let path = rev?.path();
-                        let file_name = path
-                            .file_name()
-                            .context("failed to get file name to check rev sha")?
-                            .to_str()
-                            .context("failed rev sha file name to str conversion")?;
-                        if file_name == rev_sha {
+        if let Ok(source_url) = crate_detail.source_url_from_path(&path) {
+            if &Some(source_url) == crate_metadata.source() {
+                // split name to split crate and rev sha
+                let name = crate_metadata.name();
+                let name = name.rsplitn(2, '-').collect::<Vec<&str>>();
+                let crate_name = name[1];
+                let rev_sha = name[0];
+                if path
+                    .to_str()
+                    .context("failed git directory crate path to str")?
+                    .contains(crate_name)
+                {
+                    if rev_sha.contains("HEAD") {
+                        delete_folder(&path, dry_run)?;
+                    } else {
+                        for rev in fs::read_dir(&path)? {
+                            let path = rev?.path();
+                            let file_name = path
+                                .file_name()
+                                .context("failed to get file name to check rev sha")?
+                                .to_str()
+                                .context("failed rev sha file name to str conversion")?;
+                            if file_name == rev_sha {
+                                delete_folder(&path, dry_run)?;
+                            }
+                        }
+                        if fs::read_dir(&path)?.next().is_none() {
                             delete_folder(&path, dry_run)?;
                         }
-                    }
-                    if fs::read_dir(&path)?.next().is_none() {
-                        delete_folder(&path, dry_run)?;
                     }
                 }
             }
