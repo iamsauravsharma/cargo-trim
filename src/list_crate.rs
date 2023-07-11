@@ -201,7 +201,7 @@ fn read_content(
 ) -> Result<(Vec<CrateMetaData>, Vec<CrateMetaData>)> {
     let mut present_crate_registry = Vec::new();
     let mut present_crate_git = Vec::new();
-    for toml_file_parent_path in toml_file_parent_paths.iter() {
+    for toml_file_parent_path in toml_file_parent_paths {
         let mut lock_folder = toml_file_parent_path.clone();
         lock_folder.push("Cargo.lock");
         if lock_folder.exists() {
