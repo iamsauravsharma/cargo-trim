@@ -246,7 +246,7 @@ impl Command {
                 dir_path.src_dir(),
                 dir_path.cache_dir(),
                 dir_path.index_dir(),
-                &mut crate_detail,
+                &crate_detail,
                 dry_run,
             );
         }
@@ -263,7 +263,7 @@ impl Command {
 
         if self.update {
             let cargo_toml_location = &crate_list.cargo_toml_location().paths();
-            update_cargo_toml(cargo_toml_location, dry_run)?;
+            run_cargo_update_command(cargo_toml_location, dry_run)?;
         }
 
         if self.query {
@@ -371,7 +371,7 @@ fn clear_empty_index(
     src_dir: &Path,
     cache_dir: &Path,
     index_dir: &Path,
-    crate_detail: &mut CrateDetail,
+    crate_detail: &CrateDetail,
     dry_run: bool,
 ) {
     let mut to_remove_indexes = vec![];
@@ -582,10 +582,7 @@ fn wipe_directory(wipe: &Wipe, dir_path: &DirPath, dry_run: bool) {
     }
 }
 
-// Update cargo toml
-
-// Update cargo lock
-fn update_cargo_toml(cargo_toml_location: &[PathBuf], dry_run: bool) -> Result<()> {
+fn run_cargo_update_command(cargo_toml_location: &[PathBuf], dry_run: bool) -> Result<()> {
     for location in cargo_toml_location {
         if dry_run {
             println!(
