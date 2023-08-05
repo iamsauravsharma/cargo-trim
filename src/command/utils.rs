@@ -55,7 +55,7 @@ pub(super) fn print_dash(len: usize) {
     println!("{}", "-".repeat(len));
 }
 
-/// top crates help to list out top n crates
+/// top crates help to List top n crates
 pub(super) fn show_top_number_crates(
     crates: &HashSet<CrateMetaData>,
     crate_type: &str,

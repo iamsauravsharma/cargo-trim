@@ -143,7 +143,7 @@ pub(crate) struct Command {
     #[arg(
         long = "update",
         short = 'u',
-        help = "Generate and Update Cargo.lock file present inside config directory folder path"
+        help = "Update Cargo.lock file present inside config directory folder path"
     )]
     update: bool,
     #[arg(long = "wipe", short = 'w', help = "Wipe folder", value_enum)]
@@ -185,7 +185,7 @@ impl Command {
     pub(crate) fn run(&self) -> Result<()> {
         let dry_run = self.dry_run;
 
-        // List out all required path
+        // List all required path
         let dir_path = DirPath::new()?;
 
         // Read config file data
@@ -194,7 +194,7 @@ impl Command {
         // create new CrateDetail struct
         let mut crate_detail = CrateDetail::new(dir_path.index_dir(), dir_path.db_dir())?;
 
-        // List out crates
+        // List crates
         let crate_list =
             crate::list_crate::CrateList::create_list(&dir_path, &config_file, &mut crate_detail)?;
 
@@ -262,8 +262,8 @@ impl Command {
         }
 
         if self.update {
-            let cargo_toml_location = &crate_list.cargo_toml_location().paths();
-            run_cargo_update_command(cargo_toml_location, dry_run)?;
+            let cargo_lock_files = &crate_list.cargo_lock_files().paths();
+            run_cargo_update_command(cargo_lock_files, dry_run)?;
         }
 
         if self.query {
@@ -582,8 +582,11 @@ fn wipe_directory(wipe: &Wipe, dir_path: &DirPath, dry_run: bool) {
     }
 }
 
-fn run_cargo_update_command(cargo_toml_location: &[PathBuf], dry_run: bool) -> Result<()> {
-    for location in cargo_toml_location {
+fn run_cargo_update_command(cargo_lock_files: &[PathBuf], dry_run: bool) -> Result<()> {
+    for lock_file in cargo_lock_files {
+        let Some(location) = lock_file.parent() else {
+            return Err(anyhow::anyhow!("cannot get parent for parent"));
+        };
         if dry_run {
             println!(
                 "{} Updating project at path {location:?}",

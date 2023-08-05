@@ -7,7 +7,7 @@ use anyhow::{Context, Result};
 use owo_colors::OwoColorize;
 use serde::{Deserialize, Serialize};
 
-use crate::list_crate::CargoTomlLocation;
+use crate::list_crate::CargoLockFiles;
 
 /// Stores config file information
 #[derive(Serialize, Deserialize, Default)]
@@ -173,32 +173,22 @@ impl ConfigFile {
         Ok(())
     }
 
-    /// List out cargo.toml file present directories by recursively analyze all
+    /// List Cargo.lock file present directories by recursively analyze all
     /// folder present in directory
-    pub(crate) fn list_cargo_toml(&self, path: &Path) -> Result<CargoTomlLocation> {
-        let mut cargo_trim_list = CargoTomlLocation::new();
-        if path.exists() {
+    pub(crate) fn list_cargo_locks(&self, path: &Path) -> Result<CargoLockFiles> {
+        let mut cargo_lock_files = CargoLockFiles::new();
+        if path.exists() && !self.need_to_be_ignored(path)? {
             if path.is_dir() {
                 for entry in std::fs::read_dir(path)
                     .context("failed to read directory while trying to find cargo.toml")?
                 {
-                    let sub = entry?.path();
-                    if sub.is_dir() {
-                        if self.need_to_be_ignored(path)? {
-                            continue;
-                        }
-                        let kids_list = self.list_cargo_toml(&sub)?;
-                        cargo_trim_list.append(kids_list);
-                    }
-                    if sub.is_file() && sub.file_name() == Some(OsStr::new("Cargo.toml")) {
-                        cargo_trim_list.add_path(path.to_path_buf());
-                    }
+                    cargo_lock_files.append(self.list_cargo_locks(&entry?.path())?);
                 }
-            } else if path.is_file() && path.file_name() == Some(OsStr::new("Cargo.toml")) {
-                cargo_trim_list.add_path(path.to_path_buf());
+            } else if path.is_file() && path.file_name() == Some(OsStr::new("Cargo.lock")) {
+                cargo_lock_files.add_path(path.to_path_buf());
             }
         }
-        Ok(cargo_trim_list)
+        Ok(cargo_lock_files)
     }
 
     /// check if directory should be scanned for listing crates or not

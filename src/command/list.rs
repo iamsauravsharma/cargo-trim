@@ -5,20 +5,20 @@ use super::utils::crate_list_type;
 use crate::list_crate::CrateList;
 
 #[derive(Debug, Parser)]
-#[command(about = "List out crates", arg_required_else_help = true)]
+#[command(about = "List crates", arg_required_else_help = true)]
 #[allow(clippy::struct_excessive_bools)]
 pub(crate) struct List {
-    #[arg(long = "all", short = 'a', help = "List out all installed crate")]
+    #[arg(long = "all", short = 'a', help = "List all installed crate")]
     all: bool,
-    #[arg(long = "old", short = 'o', help = "List out old crates")]
+    #[arg(long = "old", short = 'o', help = "List old crates")]
     old: bool,
     #[arg(
         long = "old-orphan",
         short = 'z',
-        help = "List out crates which are both old and orphan"
+        help = "List crates which are both old and orphan"
     )]
     old_orphan: bool,
-    #[arg(long = "orphan", short = 'x', help = "List out orphan crates")]
+    #[arg(long = "orphan", short = 'x', help = "List orphan crates")]
     orphan: bool,
 }
 

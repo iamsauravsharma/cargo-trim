@@ -21,7 +21,7 @@ pub(crate) struct Set {
         long = "ignore",
         short = 'i',
         help = "Add file name/directory name to ignore list in configuration file which are \
-                ignored while scanning Cargo.toml file",
+                ignored while scanning Cargo.lock file",
         value_name = "file"
     )]
     ignore: Option<Vec<String>>,

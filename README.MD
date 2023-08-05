@@ -38,7 +38,7 @@ other crates present inside added directory.
 ### Command output
 
 All cargo-trim can be run using `cargo trim <command>`
-`cargo trim --help` will produce out following output which list out all of available command for cargo-trim
+`cargo trim --help` will produce following output which list all of available command for cargo-trim
 
 ```
 Binary application to cleanup $CARGO_HOME cache
@@ -51,7 +51,7 @@ Commands:
   config    Query about config file data used by CLI
   set       Set config file values
   unset     Unset values from config file
-  list      List out crates
+  list      List crates
   git       Perform operation only to git related cache file
   registry  Perform operation only to registry related cache file
   help      Print this message or the help of the given subcommand(s)
@@ -73,7 +73,7 @@ Options:
       --scan-hidden-folder     Scan hidden folder for current command [env: TRIM_SCAN_HIDDEN_FOLDER=]
       --scan-target-folder     Scan target folder for current command [env: TRIM_SCAN_TARGET_FOLDER=]
   -t, --top <TOP>              Show certain number of top crates which have highest size
-  -u, --update                 Generate and Update Cargo.lock file present inside config directory folder path
+  -u, --update                 Update Cargo.lock file present inside config directory folder path
   -w, --wipe <WIPE>            Wipe folder [possible values: git, checkouts, db, registry, cache, index, index-cache, src]
   -h, --help                   Print help
   -V, --version                Print version
