@@ -23,8 +23,6 @@ jobs:
            - os: "ubuntu-latest"
              rust-version: "nightly"
     runs-on: ${{ matrix.os }}
-    env:
-      MAKE_FEATURES_FLAG: "--all-features"
     defaults:
       run:
         shell: bash
@@ -38,10 +36,6 @@ jobs:
          components: rustfmt, clippy
      - name: Install cargo make
        uses: davidB/rust-cargo-make@v1
-     - name: Create .env file
-       uses: iamsauravsharma/create-dotenv@v1.2.2
-       with:
-          env-prefix: 'MAKE_'
      - name: Run tests
        run: |
-        cargo make full --env-file=.env
+        cargo make full

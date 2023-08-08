@@ -1,10 +1,6 @@
 [env]
 RUST_BACKTRACE = "full"
 
-[env.FEATURES_FLAG]
-value = ""
-condition = { env_not_set = ["FEATURES_FLAG"] }
-
 [tasks.clean]
 description = "Clean target directory"
 command = "cargo"
@@ -13,11 +9,7 @@ args = ["clean"]
 [tasks.build]
 description = "Run cargo build"
 command = "cargo"
-args = [
-    "build",
-    "--workspace",
-    "@@split(FEATURES_FLAG, )"
-]
+args = ["build", "--workspace"]
 
 [tasks.fmt]
 condition = { channels = ["nightly"] }
@@ -29,23 +21,12 @@ args = ["fmt", "--", "--check"]
 condition = { channels = ["nightly"] }
 description = "Check if clippy return any warnings or error"
 command = "cargo"
-args = [
-    "clippy",
-    "--workspace",
-    "@@split(FEATURES_FLAG, )",
-    "--",
-    "-D",
-    "warnings",
-]
+args = ["clippy", "--workspace", "--", "-D", "warnings"]
 
 [tasks.test]
 description = "Run test"
 command = "cargo"
-args = [
-    "test",
-    "--workspace",
-    "@@split(FEATURES_FLAG, )",
-]
+args = ["test", "--workspace"]
 
 [tasks.local]
 dependencies = ["fmt", "build", "clippy", "test"]
