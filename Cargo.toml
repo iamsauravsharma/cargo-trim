@@ -1,6 +1,6 @@
 [package]
 name = "cargo-trim"
-version = "0.11.1"
+version = "0.12.0"
 authors = ["Saurav Sharma <appdroiddeveloper@gmail.com>"]
 homepage = "https://github.com/iamsauravsharma/cargo-trim"
 repository = "https://github.com/iamsauravsharma/cargo-trim"
@@ -12,12 +12,12 @@ keywords = ["cargo", "cache", "remove", "manage", "clean"]
 categories = ["command-line-utilities"]
 
 [dependencies]
-anyhow = "1.0.71"
-clap = { version = "4.3.0", features = ["derive", "cargo", "env"] }
+anyhow = "1.0.72"
+clap = { version = "4.3.21", features = ["derive", "cargo", "env"] }
 dirs-next = "2.0.0"
 owo-colors = "3.5.0"
-semver = "1.0.17"
-serde = { version = "1.0.163", features = ["derive"] }
-serde_json = "1.0.96"
-toml = "0.7.4"
-url = { version = "2.3.1", features = ["serde"] }
+semver = "1.0.18"
+serde = { version = "1.0.183", features = ["derive"] }
+serde_json = "1.0.104"
+toml = "0.7.6"
+url = { version = "2.4.0", features = ["serde"] }
