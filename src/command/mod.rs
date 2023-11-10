@@ -149,7 +149,7 @@ pub(crate) struct Command {
     #[arg(long = "wipe", short = 'w', help = "Wipe folder", value_enum)]
     wipe: Option<Vec<Wipe>>,
     #[command(subcommand)]
-    sub_command: Option<SubCommand>,
+    sub: Option<SubCommand>,
 }
 
 #[derive(Clone, ValueEnum, Debug)]
@@ -322,7 +322,7 @@ impl Command {
             )?;
         }
 
-        if let Some(sub_command) = &self.sub_command {
+        if let Some(sub_command) = &self.sub {
             match &sub_command {
                 SubCommand::Init(init) => init.run(&mut config_file)?,
                 SubCommand::Clear(clear) => clear.run(&mut config_file)?,
