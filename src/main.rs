@@ -1,8 +1,3 @@
-#![warn(unreachable_pub, anonymous_parameters)]
-#![deny(unsafe_code)]
-#![deny(clippy::all)]
-#![warn(clippy::pedantic)]
-
 mod command;
 mod config_file;
 mod crate_detail;
