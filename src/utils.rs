@@ -146,13 +146,13 @@ pub(crate) fn convert_pretty(num: u64) -> String {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use semver::Version;
 
     use super::{convert_pretty, split_name_version};
 
     #[test]
-    fn test_split_name_version() {
+    fn split_name_version_test() {
         assert_eq!(
             split_name_version("sample_crate-0.12.0").unwrap(),
             (
@@ -198,7 +198,7 @@ mod test {
     }
 
     #[test]
-    fn test_convert_pretty() {
+    fn convert_pretty_test() {
         assert_eq!(convert_pretty(0), "  0.000 B".to_string());
         assert_eq!(convert_pretty(12), " 12.000 B".to_string());
         assert_eq!(convert_pretty(1234), "  1.234 kB".to_string());

@@ -1,20 +1,18 @@
 use std::process::{Command, Stdio};
 
 fn run_cargo_trim(args: &[&str]) {
-    let status = Command::new("cargo")
+    let binary_program = env!("CARGO_BIN_EXE_cargo-trim");
+    let status = Command::new(binary_program)
         .stdout(Stdio::null())
-        .arg("run")
-        .arg("--")
-        .arg("trim")
         .args(args)
         .status()
         .unwrap();
     assert!(status.success());
 }
 
-// test check trim subcommand help
+// test check trim subcommand is run currently and exit with status success
 #[test]
-fn test_help() {
+fn command_line_success_test() {
     run_cargo_trim(&["help"]);
     run_cargo_trim(&["help", "list"]);
     run_cargo_trim(&["help", "config"]);
