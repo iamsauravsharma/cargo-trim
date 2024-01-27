@@ -31,7 +31,7 @@ impl<'a> RegistryDir<'a> {
             .context("failed to convert src dir to str")?;
         let mut index_cache_dir = Vec::new();
         // read a index .cache dir folder for each registry by analyzing index folder
-        if index_dir.exists() {
+        if index_dir.exists() && index_dir.is_dir() {
             for entry in fs::read_dir(index_dir).context("failed to read index directory")? {
                 let mut entry = entry?.path();
                 entry.push(".cache");
@@ -178,7 +178,7 @@ fn remove_crate(
     crate_metadata: &CrateMetaData,
     dry_run: bool,
 ) -> Result<()> {
-    if path.exists() {
+    if path.exists() && path.is_dir() {
         for entry in fs::read_dir(path)? {
             let path = entry?.path();
             if let Ok(source_url) = crate_detail.source_url_from_path(&path) {
@@ -236,14 +236,16 @@ fn remove_index_cache(path: &Path, crate_metadata: &CrateMetaData, dry_run: bool
 /// check if any index cache folder is empty if it is removed directory. First
 /// remove all dir entry than only remove main file if it is empty
 fn remove_empty_index_cache_dir(path: &Path, dry_run: bool) -> Result<()> {
-    for entry in fs::read_dir(path)? {
-        let path = entry?.path();
-        if path.is_dir() {
-            remove_empty_index_cache_dir(&path, dry_run)?;
+    if path.exists() && path.is_dir() {
+        for entry in fs::read_dir(path)? {
+            let path = entry?.path();
+            if path.is_dir() {
+                remove_empty_index_cache_dir(&path, dry_run)?;
+            }
         }
-    }
-    if fs::read_dir(path).map(|mut i| i.next().is_none())? {
-        delete_folder(path, dry_run)?;
+        if fs::read_dir(path).map(|mut i| i.next().is_none())? {
+            delete_folder(path, dry_run)?;
+        }
     }
     Ok(())
 }

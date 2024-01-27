@@ -314,7 +314,7 @@ fn list_old_crates(
     // list old git crate
     let mut old_crate_git = Vec::new();
     // analyze each crates of db dir and create list of head rev value
-    if db_dir.exists() {
+    if db_dir.exists() && db_dir.is_dir() {
         let mut full_name_list = Vec::new();
         for crates in fs::read_dir(db_dir).context("failed to read db dir")? {
             let entry = crates?.path();

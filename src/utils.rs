@@ -60,15 +60,24 @@ pub(crate) fn delete_folder(path: &Path, dry_run: bool) -> Result<()> {
 
 /// delete index .cache file
 pub(crate) fn delete_index_cache(index_dir: &Path, dry_run: bool) -> Result<()> {
-    for entry in fs::read_dir(index_dir)? {
-        let registry_dir = entry?.path();
-        for folder in fs::read_dir(registry_dir)? {
-            let folder = folder?.path();
-            let folder_name = folder
-                .file_name()
-                .context("failed to obtain index .cache file name")?;
-            if folder_name == ".cache" {
-                delete_folder(&folder, dry_run)?;
+    if index_dir.exists() && index_dir.is_dir() {
+        for entry in fs::read_dir(index_dir)? {
+            let registry_dir = entry?.path();
+            if registry_dir.is_dir() {
+                let mut config_file = registry_dir.clone();
+                config_file.push("config.json");
+                if config_file.exists() {
+                    continue;
+                }
+                for folder in fs::read_dir(registry_dir)? {
+                    let folder = folder?.path();
+                    let folder_name = folder
+                        .file_name()
+                        .context("failed to obtain index .cache file name")?;
+                    if folder_name == ".cache" {
+                        delete_folder(&folder, dry_run)?;
+                    }
+                }
             }
         }
     }

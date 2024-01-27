@@ -437,55 +437,63 @@ fn git_compress(
     if let Some(git_compress) = git_compress_action {
         match git_compress {
             GitCompressAction::Index => {
-                for entry in
-                    fs::read_dir(index_dir).context("failed to read registry index folder")?
-                {
-                    let repo_path = entry?.path();
-                    let file_name = repo_path
-                        .file_name()
-                        .context("failed to get a file name / folder name")?;
-                    let mut git_folder = repo_path.clone();
-                    git_folder.push(".git");
-                    if git_folder.exists() {
-                        if !dry_run {
-                            println!(
-                                "{}",
-                                format!(
-                                    "Compressing {} registry index",
-                                    file_name
-                                        .to_str()
-                                        .context("failed to get compress file name")?
-                                )
-                                .blue()
-                            );
+                if index_dir.exists() && index_dir.is_dir() {
+                    for entry in
+                        fs::read_dir(index_dir).context("failed to read registry index folder")?
+                    {
+                        let repo_path = entry?.path();
+                        let file_name = repo_path
+                            .file_name()
+                            .context("failed to get a file name / folder name")?;
+                        let mut git_folder = repo_path.clone();
+                        git_folder.push(".git");
+                        if git_folder.exists() {
+                            if !dry_run {
+                                println!(
+                                    "{}",
+                                    format!(
+                                        "Compressing {} registry index",
+                                        file_name
+                                            .to_str()
+                                            .context("failed to get compress file name")?
+                                    )
+                                    .blue()
+                                );
+                            }
+                            run_git_compress_commands(&repo_path, dry_run, is_aggressive)?;
                         }
-                        run_git_compress_commands(&repo_path, dry_run, is_aggressive)?;
                     }
                 }
             }
             GitCompressAction::Checkout => {
-                for entry in
-                    fs::read_dir(checkout_dir).context("failed to read checkout directory")?
-                {
-                    let repo_path = entry?.path();
-                    for rev in fs::read_dir(repo_path)
-                        .context("failed to read checkout directory sub directory")?
+                if checkout_dir.is_dir() && checkout_dir.exists() {
+                    for entry in
+                        fs::read_dir(checkout_dir).context("failed to read checkout directory")?
                     {
-                        let rev_path = rev?.path();
-                        if !dry_run {
-                            println!("{}", "Compressing git checkout".blue());
+                        let repo_path = entry?.path();
+                        if repo_path.exists() && repo_path.is_dir() {
+                            for rev in fs::read_dir(repo_path)
+                                .context("failed to read checkout directory sub directory")?
+                            {
+                                let rev_path = rev?.path();
+                                if !dry_run {
+                                    println!("{}", "Compressing git checkout".blue());
+                                }
+                                run_git_compress_commands(&rev_path, dry_run, is_aggressive)?;
+                            }
                         }
-                        run_git_compress_commands(&rev_path, dry_run, is_aggressive)?;
                     }
                 }
             }
             GitCompressAction::Db => {
-                for entry in fs::read_dir(db_dir).context("failed to read db dir")? {
-                    let repo_path = entry?.path();
-                    if !dry_run {
-                        println!("{}", "Compressing git db".blue());
+                if db_dir.exists() && db_dir.is_dir() {
+                    for entry in fs::read_dir(db_dir).context("failed to read db dir")? {
+                        let repo_path = entry?.path();
+                        if !dry_run {
+                            println!("{}", "Compressing git db".blue());
+                        }
+                        run_git_compress_commands(&repo_path, dry_run, is_aggressive)?;
                     }
-                    run_git_compress_commands(&repo_path, dry_run, is_aggressive)?;
                 }
             }
         }
