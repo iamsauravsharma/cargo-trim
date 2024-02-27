@@ -16,13 +16,13 @@ pub(crate) struct GitDir<'a> {
 impl<'a> GitDir<'a> {
     /// create new git dir
     pub(crate) fn new(checkout_dir: &'a Path, db_dir: &'a Path) -> Result<Self> {
-        let checkout_dir = checkout_dir
+        let checkout_dir_str = checkout_dir
             .to_str()
             .context("failed checkout dir path conversion")?;
-        let db_dir = db_dir.to_str().context("failed db dir path conversion")?;
+        let db_dir_str = db_dir.to_str().context("failed db dir path conversion")?;
         Ok(Self {
-            checkout_dir,
-            db_dir,
+            checkout_dir: checkout_dir_str,
+            db_dir: db_dir_str,
         })
     }
 
@@ -122,9 +122,9 @@ fn remove_crate(
                 if &Some(source_url) == crate_metadata.source() {
                     // split name to split crate and rev sha
                     let name = crate_metadata.name();
-                    let name = name.rsplitn(2, '-').collect::<Vec<&str>>();
-                    let crate_name = name[1];
-                    let rev_sha = name[0];
+                    let splitted_name = name.rsplitn(2, '-').collect::<Vec<&str>>();
+                    let crate_name = splitted_name[1];
+                    let rev_sha = splitted_name[0];
                     if path
                         .to_str()
                         .context("failed git directory crate path to str")?
@@ -134,8 +134,8 @@ fn remove_crate(
                             delete_folder(&path, dry_run)?;
                         } else if path.is_dir() {
                             for rev in fs::read_dir(&path)? {
-                                let path = rev?.path();
-                                let file_name = path
+                                let rev_path = rev?.path();
+                                let file_name = rev_path
                                     .file_name()
                                     .context("failed to get file name to check rev sha")?
                                     .to_str()

@@ -136,9 +136,9 @@ impl Git {
                 std::io::stdin()
                     .read_line(&mut input)
                     .context("error: unable to read user input")?;
-                let input = input.trim().to_ascii_lowercase();
+                let trimmed_input = input.trim().to_ascii_lowercase();
                 // if answer is any instead of yes and y return
-                if !["y", "yes"].contains(&input.as_str()) {
+                if !["y", "yes"].contains(&trimmed_input.as_str()) {
                     return Ok(());
                 }
             }
@@ -177,9 +177,9 @@ impl Git {
                 std::io::stdin()
                     .read_line(&mut input)
                     .context("error: unable to read user input")?;
-                let input = input.trim().to_ascii_lowercase();
+                let trimmed_input = input.trim().to_ascii_lowercase();
                 // If answer is not y or yes then return
-                if !["y", "yes"].contains(&input.as_str()) {
+                if !["y", "yes"].contains(&trimmed_input.as_str()) {
                     return Ok(());
                 }
             }

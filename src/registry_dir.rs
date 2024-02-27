@@ -23,21 +23,21 @@ impl<'a> RegistryDir<'a> {
         index_dir: &Path,
         installed_crate: &[CrateMetaData],
     ) -> Result<Self> {
-        let cache_dir = cache_dir
+        let cache_dir_str = cache_dir
             .to_str()
             .context("failed to convert cache dir to str")?;
-        let src_dir = src_dir
+        let src_dir_str = src_dir
             .to_str()
             .context("failed to convert src dir to str")?;
         let mut index_cache_dir = Vec::new();
         // read a index .cache dir folder for each registry by analyzing index folder
         if index_dir.exists() && index_dir.is_dir() {
             for entry in fs::read_dir(index_dir).context("failed to read index directory")? {
-                let mut entry = entry?.path();
-                entry.push(".cache");
-                if entry.exists() {
+                let mut entry_path = entry?.path();
+                entry_path.push(".cache");
+                if entry_path.exists() {
                     index_cache_dir.push(
-                        entry
+                        entry_path
                             .to_str()
                             .context("unable to convert index cache folder to str")?
                             .to_string(),
@@ -47,8 +47,8 @@ impl<'a> RegistryDir<'a> {
         }
 
         Ok(Self {
-            cache_dir,
-            src_dir,
+            cache_dir: cache_dir_str,
+            src_dir: src_dir_str,
             index_cache_dir,
             installed_crate: installed_crate.to_owned(),
         })
@@ -180,22 +180,22 @@ fn remove_crate(
 ) -> Result<()> {
     if path.exists() && path.is_dir() {
         for entry in fs::read_dir(path)? {
-            let path = entry?.path();
-            if let Ok(source_url) = crate_detail.source_url_from_path(&path) {
+            let entry_path = entry?.path();
+            if let Ok(source_url) = crate_detail.source_url_from_path(&entry_path) {
                 if &Some(source_url) == crate_metadata.source() {
-                    for entry in fs::read_dir(path)? {
-                        let path = entry?.path();
+                    for dir_entry in fs::read_dir(path)? {
+                        let dir_entry_path = dir_entry?.path();
                         let crate_name = crate_metadata.name();
                         let crate_version = crate_metadata
                             .version()
                             .clone()
                             .context("failed to get crate version")?;
-                        if path
+                        if dir_entry_path
                             .to_str()
                             .context("failed to get crate name path to str")?
                             .contains(&format!("{crate_name}-{crate_version}"))
                         {
-                            delete_folder(&path, dry_run)?;
+                            delete_folder(&dir_entry_path, dry_run)?;
                         }
                     }
                 }
@@ -238,9 +238,9 @@ fn remove_index_cache(path: &Path, crate_metadata: &CrateMetaData, dry_run: bool
 fn remove_empty_index_cache_dir(path: &Path, dry_run: bool) -> Result<()> {
     if path.exists() && path.is_dir() {
         for entry in fs::read_dir(path)? {
-            let path = entry?.path();
-            if path.is_dir() {
-                remove_empty_index_cache_dir(&path, dry_run)?;
+            let entry_path = entry?.path();
+            if entry_path.is_dir() {
+                remove_empty_index_cache_dir(&entry_path, dry_run)?;
             }
         }
         if fs::read_dir(path).map(|mut i| i.next().is_none())? {

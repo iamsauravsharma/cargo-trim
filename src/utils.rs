@@ -70,12 +70,12 @@ pub(crate) fn delete_index_cache(index_dir: &Path, dry_run: bool) -> Result<()> 
                     continue;
                 }
                 for folder in fs::read_dir(registry_dir)? {
-                    let folder = folder?.path();
-                    let folder_name = folder
+                    let folder_path = folder?.path();
+                    let folder_name = folder_path
                         .file_name()
                         .context("failed to obtain index .cache file name")?;
                     if folder_name == ".cache" {
-                        delete_folder(&folder, dry_run)?;
+                        delete_folder(&folder_path, dry_run)?;
                     }
                 }
             }
@@ -112,11 +112,11 @@ pub(crate) fn get_inode_handled_size(path: &Path, inodes: &mut Vec<u64>) -> Resu
                 total_size += get_inode_handled_size(&entry_path, inodes)?;
             }
         } else if meta.is_file() {
-            let metadata = path.metadata()?;
-            let file_size = metadata.len();
+            let path_metadata = path.metadata()?;
+            let file_size = path_metadata.len();
             #[cfg(unix)]
             {
-                let file_inode = metadata.ino();
+                let file_inode = path_metadata.ino();
                 if !inodes.contains(&file_inode) {
                     total_size += file_size;
                     inodes.push(file_inode);
@@ -141,15 +141,15 @@ pub(crate) fn convert_pretty(num: u64) -> String {
     if num == 0 {
         return "  0.000 B".to_string();
     }
-    let num = num as f64;
+    let num_f64 = num as f64;
     let units = ["B", "kB", "MB", "GB", "TB"];
-    let factor = (num.log10() / 3_f64).floor();
+    let factor = (num_f64.log10() / 3_f64).floor();
     let power_factor = if factor >= units.len() as f64 {
         (units.len() - 1) as f64
     } else {
         factor
     };
-    let pretty_bytes = format!("{:7.3}", num / 1000_f64.powf(power_factor));
+    let pretty_bytes = format!("{:7.3}", num_f64 / 1000_f64.powf(power_factor));
     let unit = units[power_factor as usize];
     format!("{pretty_bytes} {unit}")
 }
