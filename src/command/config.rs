@@ -32,13 +32,13 @@ impl Config {
         if self.directory {
             let read_directory = config_file.directory();
             for name in read_directory {
-                println!("{name}");
+                println!("{}: {name}", "Directory".blue());
             }
         }
         if self.ignore {
             let read_ignore_file_name = config_file.ignore_file_name();
             for name in read_ignore_file_name {
-                println!("{name}");
+                println!("{}: {name}", "Ignored name".blue());
             }
         }
         if self.location {

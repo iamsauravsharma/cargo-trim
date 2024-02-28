@@ -194,7 +194,7 @@ impl CrateDetail {
             .file_name()
             .context("failed to get file name of path")?
             .to_str()
-            .context("failed to convert osstr to str")?;
+            .context("failed to convert os str to str")?;
         Ok(self
             .source_info
             .get(file_name)

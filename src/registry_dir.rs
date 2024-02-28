@@ -55,14 +55,14 @@ impl<'a> RegistryDir<'a> {
     }
 
     /// Remove crate from src & cache directory
-    pub(crate) fn remove_crate(
+    fn remove_crate(
         &mut self,
         crate_detail: &CrateDetail,
         crate_metadata: &CrateMetaData,
         dry_run: bool,
     ) -> Result<bool> {
         // remove crate from cache dir
-        let mut is_success = remove_crate(
+        let mut is_success = remove_crate_from_location(
             Path::new(&self.cache_dir),
             crate_detail,
             crate_metadata,
@@ -71,7 +71,7 @@ impl<'a> RegistryDir<'a> {
         .is_ok();
 
         // remove crate from index dir
-        is_success = remove_crate(
+        is_success = remove_crate_from_location(
             Path::new(&self.src_dir),
             crate_detail,
             crate_metadata,
@@ -171,15 +171,15 @@ impl<'a> RegistryDir<'a> {
     }
 }
 
-/// Remove crates which name is provided to delete
-fn remove_crate(
-    path: &Path,
+/// Remove crates which name is provided to delete from provided path
+fn remove_crate_from_location(
+    location: &Path,
     crate_detail: &CrateDetail,
     crate_metadata: &CrateMetaData,
     dry_run: bool,
 ) -> Result<()> {
-    if path.exists() && path.is_dir() {
-        for entry in fs::read_dir(path)? {
+    if location.exists() && location.is_dir() {
+        for entry in fs::read_dir(location)? {
             let entry_path = entry?.path();
             if let Ok(source_url) = crate_detail.source_url_from_path(&entry_path) {
                 if &Some(source_url) == crate_metadata.source() {

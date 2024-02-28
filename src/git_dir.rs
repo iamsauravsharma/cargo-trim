@@ -27,14 +27,14 @@ impl<'a> GitDir<'a> {
     }
 
     /// remove crates
-    pub(crate) fn remove_crate(
+    fn remove_crate(
         &self,
         crate_detail: &CrateDetail,
         crate_metadata: &CrateMetaData,
         dry_run: bool,
     ) -> bool {
         let is_success = if crate_metadata.name().contains("-HEAD") {
-            remove_crate(
+            remove_crate_from_location(
                 Path::new(&self.db_dir),
                 crate_detail,
                 crate_metadata,
@@ -42,7 +42,7 @@ impl<'a> GitDir<'a> {
             )
             .is_ok()
         } else {
-            remove_crate(
+            remove_crate_from_location(
                 Path::new(&self.checkout_dir),
                 crate_detail,
                 crate_metadata,
@@ -109,7 +109,7 @@ impl<'a> GitDir<'a> {
 }
 
 /// preform remove operation
-fn remove_crate(
+fn remove_crate_from_location(
     location: &Path,
     crate_detail: &CrateDetail,
     crate_metadata: &CrateMetaData,

@@ -18,9 +18,9 @@ impl Clear {
     pub(super) fn run(&self, config_file: &mut ConfigFile) -> Result<()> {
         config_file.remove_directory(
             std::env::current_dir()
-                .context("current working directory is invalid")?
+                .context("cannot access current working directory")?
                 .to_str()
-                .context("cannot convert current directory to str")?,
+                .context("current working dir is not valid str")?,
             self.dry_run,
             true,
         )?;

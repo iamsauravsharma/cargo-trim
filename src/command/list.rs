@@ -142,7 +142,7 @@ fn list_old_orphan(crate_list: &CrateList, first_width: usize, directory_is_empt
         second_width,
         "GIT OLD+ORPHAN CRATE",
     );
-    // print waning if no directory present in config file
+    // print warning if no directory present in config file
     if directory_is_empty {
         let warning_text = "WARNING: You have not initialized any directory as rust project \
                             directory. This will list all old crates as old orphan crates even if \
