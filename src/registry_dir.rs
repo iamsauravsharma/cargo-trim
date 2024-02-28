@@ -183,7 +183,7 @@ fn remove_crate(
             let entry_path = entry?.path();
             if let Ok(source_url) = crate_detail.source_url_from_path(&entry_path) {
                 if &Some(source_url) == crate_metadata.source() {
-                    for dir_entry in fs::read_dir(path)? {
+                    for dir_entry in fs::read_dir(entry_path)? {
                         let dir_entry_path = dir_entry?.path();
                         let crate_name = crate_metadata.name();
                         let crate_version = crate_metadata
