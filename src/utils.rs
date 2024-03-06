@@ -132,24 +132,14 @@ pub(crate) fn get_inode_handled_size(path: &Path, inodes: &mut Vec<u64>) -> Resu
 }
 
 /// Convert size to pretty number
-#[allow(
-    clippy::cast_precision_loss,
-    clippy::cast_possible_truncation,
-    clippy::cast_sign_loss
-)]
+#[allow(clippy::cast_precision_loss)]
 pub(crate) fn convert_pretty(num: u64) -> String {
-    if num == 0 {
-        return "  0.000 B".to_string();
-    }
-    let num_f64 = num as f64;
-    let units = ["B", "kB", "MB", "GB", "TB"];
-    let factor = (num_f64.log10() / 3_f64).floor();
-    let power_factor = if factor >= units.len() as f64 {
-        (units.len() - 1) as f64
-    } else {
-        factor
-    };
-    let pretty_bytes = format!("{:7.3}", num_f64 / 1000_f64.powf(power_factor));
+    let units = ["B", "kB", "MB", "GB", "TB", "PB", "EB"];
+    let power_factor = if num == 0 { 0 } else { num.ilog10() / 3 };
+    let pretty_bytes = format!(
+        "{:7.3}",
+        num as f64 / 1000_f64.powf(f64::from(power_factor))
+    );
     let unit = units[power_factor as usize];
     format!("{pretty_bytes} {unit}")
 }
