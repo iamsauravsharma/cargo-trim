@@ -407,7 +407,9 @@ impl CrateDetail {
                             let file_name = file_path
                                 .to_str()
                                 .context("failed to convert file path file name to str")?;
-                            let full_name = format!("{file_name}-{git_sha}");
+                            let splitted_file_name = file_name.rsplitn(2, '-').collect::<Vec<_>>();
+                            let crate_name_initial = splitted_file_name[1];
+                            let full_name = format!("{crate_name_initial}-{git_sha}");
                             let crate_metadata = CrateMetaData {
                                 name: full_name,
                                 version: None,
@@ -432,7 +434,9 @@ impl CrateDetail {
                     let file_name_str = file_name
                         .to_str()
                         .context("failed to convert db dir file name to str")?;
-                    let full_name = format!("{file_name_str}-HEAD");
+                    let splitted_file_name = file_name_str.rsplitn(2, '-').collect::<Vec<_>>();
+                    let crate_name_initial = splitted_file_name[1];
+                    let full_name = format!("{crate_name_initial}-HEAD");
                     let crate_metadata = CrateMetaData {
                         name: full_name,
                         version: None,

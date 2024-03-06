@@ -256,10 +256,15 @@ fn read_content(
                                 url_with_kind = rev_sha_vec[0];
                             }
                             let rev_short_form = &rev_sha_vec[1][..=6];
-                            let full_name = format!("{name}-{rev_short_form}");
                             let url = Url::from_str(&url_with_kind.replace("git+", "")).context(
                                 "failed git source url kind with query params conversion",
                             )?;
+                            let last_path_segment = url
+                                .path_segments()
+                                .context("url doesn't have segment")?
+                                .last()
+                                .context("cannot get last segments of path")?;
+                            let full_name = format!("{last_path_segment}-{rev_short_form}");
                             present_crate_git.push(CrateMetaData::new(
                                 full_name,
                                 None,
@@ -379,26 +384,25 @@ fn list_orphan_crates(
             orphan_crate_registry.push(crates.clone());
         }
     }
-    for crates in installed_crate_git {
-        let crate_name = crates.name();
+    for installed_crate_metadata in installed_crate_git {
+        let crate_name = installed_crate_metadata.name();
         if crate_name.contains("-HEAD") {
-            let split_installed = crate_name.rsplitn(2, '-').collect::<Vec<&str>>();
             if used_crate_git.is_empty() {
-                orphan_crate_git.push(crates.clone());
+                orphan_crate_git.push(installed_crate_metadata.clone());
             }
             let mut used_in_project = false;
             for used in used_crate_git {
-                if used.name().contains(split_installed[1]) {
+                if used.source() == installed_crate_metadata.source() {
                     used_in_project = true;
-                    // Break if found to be used one time no need to check for other
+                    // break if found to be used one time no need to check for other usage
                     break;
                 }
             }
             if !used_in_project {
-                orphan_crate_git.push(crates.clone());
+                orphan_crate_git.push(installed_crate_metadata.clone());
             }
-        } else if !used_crate_git.contains(crates) {
-            orphan_crate_git.push(crates.clone());
+        } else if !used_crate_git.contains(installed_crate_metadata) {
+            orphan_crate_git.push(installed_crate_metadata.clone());
         }
     }
     orphan_crate_registry.sort();

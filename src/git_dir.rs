@@ -118,8 +118,8 @@ fn remove_crate_from_location(
     if location.exists() && location.is_dir() {
         for entry in fs::read_dir(location)? {
             let path = entry?.path();
-            if let Ok(source_url) = crate_detail.source_url_from_path(&path) {
-                if &Some(source_url) == crate_metadata.source() {
+            if let Ok(url_from_path) = crate_detail.source_url_from_path(&path) {
+                if &Some(url_from_path) == crate_metadata.source() {
                     // split name to split crate and rev sha
                     let name = crate_metadata.name();
                     let splitted_name = name.rsplitn(2, '-').collect::<Vec<&str>>();
@@ -141,7 +141,7 @@ fn remove_crate_from_location(
                                     .to_str()
                                     .context("failed rev sha file name to str conversion")?;
                                 if file_name == rev_sha {
-                                    delete_folder(&path, dry_run)?;
+                                    delete_folder(&rev_path, dry_run)?;
                                 }
                             }
                             if fs::read_dir(&path)?.next().is_none() {
