@@ -198,7 +198,7 @@ mod tests {
 
     #[test]
     fn convert_pretty_test() {
-        assert_eq!(convert_pretty(0), "  0.000 B".to_string());
+        assert_eq!(convert_pretty(u64::MIN), "  0.000 B".to_string());
         assert_eq!(convert_pretty(12), " 12.000 B".to_string());
         assert_eq!(convert_pretty(1234), "  1.234 kB".to_string());
         assert_eq!(convert_pretty(23908), " 23.908 kB".to_string());
@@ -207,7 +207,8 @@ mod tests {
         assert_eq!(convert_pretty(3_417_849_409_404), "  3.418 TB".to_string());
         assert_eq!(
             convert_pretty(93_453_982_182_159_417),
-            "93453.982 TB".to_string()
+            " 93.454 PB".to_string()
         );
+        assert_eq!(convert_pretty(u64::MAX), " 18.447 EB".to_string());
     }
 }
