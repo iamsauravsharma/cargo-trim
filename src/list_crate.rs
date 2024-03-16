@@ -229,9 +229,7 @@ fn read_content(
                                     "failed Cargo.lock semver
                             version parse",
                                 )?),
-                                0,
                                 Some(url),
-                                None,
                             ));
                         }
                         if source.contains("git+") {
@@ -266,13 +264,7 @@ fn read_content(
                                 .last()
                                 .context("cannot get last segments of path")?;
                             let full_name = format!("{last_path_segment}-{rev_short_form}");
-                            present_crate_git.push(CrateMetaData::new(
-                                full_name,
-                                None,
-                                0,
-                                Some(url),
-                                None,
-                            ));
+                            present_crate_git.push(CrateMetaData::new(full_name, None, Some(url)));
                         }
                         if source.contains("sparse+") {
                             let url = Url::from_str(&source.replace("sparse+", ""))
@@ -283,9 +275,7 @@ fn read_content(
                                     Version::parse(version)
                                         .context("failed Cargo.lock semver version parse")?,
                                 ),
-                                0,
                                 Some(url),
-                                None,
                             ));
                         }
                     }
@@ -393,15 +383,10 @@ fn list_orphan_crates(
             if used_crate_git.is_empty() {
                 orphan_crate_git.push(installed_crate_metadata.clone());
             }
-            let mut used_in_project = false;
-            for used in used_crate_git {
-                if used.source() == installed_crate_metadata.source() {
-                    used_in_project = true;
-                    // break if found to be used one time no need to check for other usage
-                    break;
-                }
-            }
-            if !used_in_project {
+            if !used_crate_git
+                .iter()
+                .any(|used| used.source() == installed_crate_metadata.source())
+            {
                 orphan_crate_git.push(installed_crate_metadata.clone());
             }
         } else if !used_crate_git.contains(installed_crate_metadata) {

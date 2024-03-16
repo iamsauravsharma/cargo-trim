@@ -23,19 +23,13 @@ pub(crate) struct CrateMetaData {
 }
 
 impl CrateMetaData {
-    pub(crate) fn new(
-        name: String,
-        version: Option<Version>,
-        size: u64,
-        source: Option<Url>,
-        path: Option<PathBuf>,
-    ) -> Self {
+    pub(crate) fn new(name: String, version: Option<Version>, source: Option<Url>) -> Self {
         Self {
             name,
             version,
-            size,
+            size: 0,
             source,
-            path,
+            path: None,
         }
     }
 
