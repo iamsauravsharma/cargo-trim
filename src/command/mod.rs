@@ -12,7 +12,6 @@ use crate::command::registry::clean_registry;
 use crate::config_file::ConfigFile;
 use crate::crate_detail::CrateDetail;
 use crate::dir_path::DirPath;
-use crate::git_dir::GitDir;
 use crate::list_crate::CrateList;
 use crate::registry_dir::RegistryDir;
 use crate::utils::{convert_pretty, delete_folder, get_inode_handled_size};
@@ -271,20 +270,14 @@ impl Command {
         }
 
         let mut registry_crates_location = crate::registry_dir::RegistryDir::new(
-            dir_path.cache_dir(),
-            dir_path.src_dir(),
             dir_path.index_dir(),
             crate_list.installed_registry(),
         )?;
-
-        let git_crates_location =
-            crate::git_dir::GitDir::new(dir_path.checkout_dir(), dir_path.db_dir())?;
 
         if self.old {
             old_clean(
                 &crate_list,
                 &mut registry_crates_location,
-                &git_crates_location,
                 &crate_detail,
                 dry_run,
             )?;
@@ -294,7 +287,6 @@ impl Command {
             old_orphan_clean(
                 &crate_list,
                 &mut registry_crates_location,
-                &git_crates_location,
                 &crate_detail,
                 config_file.directory().is_empty(),
                 dry_run,
@@ -305,7 +297,6 @@ impl Command {
             orphan_clean(
                 &crate_list,
                 &mut registry_crates_location,
-                &git_crates_location,
                 &crate_detail,
                 config_file.directory().is_empty(),
                 dry_run,
@@ -316,7 +307,6 @@ impl Command {
             remove_all(
                 &crate_list,
                 &mut registry_crates_location,
-                &git_crates_location,
                 &crate_detail,
                 dry_run,
             )?;
@@ -346,7 +336,6 @@ impl Command {
                         &dir_path,
                         &crate_list,
                         &crate_detail,
-                        &git_crates_location,
                         config_file.directory().is_empty(),
                     )?;
                 }
@@ -662,7 +651,6 @@ fn query_size(dir_path: &DirPath, crate_list: &CrateList, crate_detail: &CrateDe
 fn old_clean(
     crate_list: &CrateList,
     registry_crates_location: &mut RegistryDir,
-    git_crates_location: &GitDir,
     crate_detail: &CrateDetail,
     dry_run: bool,
 ) -> Result<()> {
@@ -672,12 +660,8 @@ fn old_clean(
         crate_detail,
         dry_run,
     )?;
-    let (git_sized_cleaned, total_git_crate_removed) = clean_git(
-        git_crates_location,
-        crate_list.old_git(),
-        crate_detail,
-        dry_run,
-    );
+    let (git_sized_cleaned, total_git_crate_removed) =
+        clean_git(crate_list.old_git(), crate_detail, dry_run)?;
     println!(
         "{}",
         format!(
@@ -694,7 +678,6 @@ fn old_clean(
 fn old_orphan_clean(
     crate_list: &CrateList,
     registry_crates_location: &mut RegistryDir,
-    git_crates_location: &GitDir,
     crate_detail: &CrateDetail,
     directory_is_empty: bool,
     dry_run: bool,
@@ -726,12 +709,8 @@ fn old_orphan_clean(
         crate_detail,
         dry_run,
     )?;
-    let (git_sized_cleaned, total_git_crate_removed) = clean_git(
-        git_crates_location,
-        &crate_list.old_orphan_git(),
-        crate_detail,
-        dry_run,
-    );
+    let (git_sized_cleaned, total_git_crate_removed) =
+        clean_git(&crate_list.old_orphan_git(), crate_detail, dry_run)?;
 
     println!(
         "{}",
@@ -749,7 +728,6 @@ fn old_orphan_clean(
 fn orphan_clean(
     crate_list: &CrateList,
     registry_crates_location: &mut RegistryDir,
-    git_crates_location: &GitDir,
     crate_detail: &CrateDetail,
     directory_is_empty: bool,
     dry_run: bool,
@@ -781,12 +759,8 @@ fn orphan_clean(
         crate_detail,
         dry_run,
     )?;
-    let (git_sized_cleaned, total_git_crate_removed) = clean_git(
-        git_crates_location,
-        crate_list.orphan_git(),
-        crate_detail,
-        dry_run,
-    );
+    let (git_sized_cleaned, total_git_crate_removed) =
+        clean_git(crate_list.orphan_git(), crate_detail, dry_run)?;
 
     println!(
         "{}",
@@ -804,7 +778,6 @@ fn orphan_clean(
 fn remove_all(
     crate_list: &CrateList,
     registry_crates_location: &mut RegistryDir,
-    git_crates_location: &GitDir,
     crate_detail: &CrateDetail,
     dry_run: bool,
 ) -> Result<()> {
@@ -814,12 +787,8 @@ fn remove_all(
         crate_detail,
         dry_run,
     )?;
-    let (git_sized_cleaned, total_git_crate_removed) = clean_git(
-        git_crates_location,
-        crate_list.installed_git(),
-        crate_detail,
-        dry_run,
-    );
+    let (git_sized_cleaned, total_git_crate_removed) =
+        clean_git(crate_list.installed_git(), crate_detail, dry_run)?;
 
     println!(
         "{}",

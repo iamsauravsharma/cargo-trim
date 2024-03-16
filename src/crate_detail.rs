@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use std::default::Default;
 use std::fs;
 use std::hash::Hash;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use anyhow::{Context, Result};
@@ -19,6 +19,7 @@ pub(crate) struct CrateMetaData {
     version: Option<Version>,
     size: u64,
     source: Option<Url>,
+    path: Option<PathBuf>,
 }
 
 impl CrateMetaData {
@@ -27,12 +28,14 @@ impl CrateMetaData {
         version: Option<Version>,
         size: u64,
         source: Option<Url>,
+        path: Option<PathBuf>,
     ) -> Self {
         Self {
             name,
             version,
             size,
             source,
+            path,
         }
     }
 
@@ -50,6 +53,10 @@ impl CrateMetaData {
 
     pub(crate) fn source(&self) -> &Option<Url> {
         &self.source
+    }
+
+    pub(crate) fn path(&self) -> &Option<PathBuf> {
+        &self.path
     }
 }
 
@@ -288,6 +295,7 @@ impl CrateDetail {
                     version: None,
                     size: bin_size,
                     source: None,
+                    path: None,
                 };
                 self.add_bin(&bin_metadata);
                 installed_bin.push(bin_metadata);
@@ -328,6 +336,7 @@ impl CrateDetail {
                                 version: Some(version),
                                 size: crate_size,
                                 source: Some(source.clone()),
+                                path: Some(dir_entry_path),
                             };
                             self.add_registry_crate_source(&crate_metadata);
                             update_crate_list(&mut installed_crate_registry, &crate_metadata)?;
@@ -360,6 +369,7 @@ impl CrateDetail {
                                 version: Some(version),
                                 size: crate_size,
                                 source: Some(source.clone()),
+                                path: Some(dir_entry_path),
                             };
                             self.add_registry_crate_archive(&crate_metadata);
                             update_crate_list(&mut installed_crate_registry, &crate_metadata)?;
@@ -415,6 +425,7 @@ impl CrateDetail {
                                 version: None,
                                 size: crate_size,
                                 source: Some(source.clone()),
+                                path: Some(git_sha_entry_path),
                             };
                             self.add_git_crate_archive(&crate_metadata);
                             update_crate_list(&mut installed_crate_git, &crate_metadata)?;
@@ -442,6 +453,7 @@ impl CrateDetail {
                         version: None,
                         size: crate_size,
                         source: Some(source),
+                        path: Some(entry_path),
                     };
                     self.add_git_crate_source(&crate_metadata);
                     update_crate_list(&mut installed_crate_git, &crate_metadata)?;

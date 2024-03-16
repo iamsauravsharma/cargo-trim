@@ -8,27 +8,14 @@ use crate::crate_detail::{CrateDetail, CrateMetaData};
 use crate::utils::delete_folder;
 
 /// Stores .cargo/registry cache & src information
-pub(crate) struct RegistryDir<'a> {
-    cache_dir: &'a str,
-    src_dir: &'a str,
+pub(crate) struct RegistryDir {
     index_cache_dir: Vec<String>,
     installed_crate: Vec<CrateMetaData>,
 }
 
-impl<'a> RegistryDir<'a> {
+impl RegistryDir {
     /// Create new registry dir
-    pub(crate) fn new(
-        cache_dir: &'a Path,
-        src_dir: &'a Path,
-        index_dir: &Path,
-        installed_crate: &[CrateMetaData],
-    ) -> Result<Self> {
-        let cache_dir_str = cache_dir
-            .to_str()
-            .context("failed to convert cache dir to str")?;
-        let src_dir_str = src_dir
-            .to_str()
-            .context("failed to convert src dir to str")?;
+    pub(crate) fn new(index_dir: &Path, installed_crate: &[CrateMetaData]) -> Result<Self> {
         let mut index_cache_dir = Vec::new();
         // read a index .cache dir folder for each registry by analyzing index folder
         if index_dir.exists() && index_dir.is_dir() {
@@ -47,8 +34,6 @@ impl<'a> RegistryDir<'a> {
         }
 
         Ok(Self {
-            cache_dir: cache_dir_str,
-            src_dir: src_dir_str,
             index_cache_dir,
             installed_crate: installed_crate.to_owned(),
         })
@@ -62,30 +47,34 @@ impl<'a> RegistryDir<'a> {
         dry_run: bool,
     ) -> Result<bool> {
         // remove crate from cache dir
-        let mut is_success = remove_crate_from_location(
-            Path::new(&self.cache_dir),
-            crate_detail,
-            crate_metadata,
-            dry_run,
-        )
-        .is_ok();
-
-        // remove crate from index dir
-        is_success = remove_crate_from_location(
-            Path::new(&self.src_dir),
-            crate_detail,
-            crate_metadata,
-            dry_run,
-        )
-        .is_ok()
-            && is_success;
-
-        let index_cache = self.index_cache_dir.clone();
+        let mut is_success = true;
+        if let Some(found_crate_metadata) = crate_detail
+            .registry_crates_archive()
+            .iter()
+            .find(|&source_metadata| source_metadata == crate_metadata)
+        {
+            let path = found_crate_metadata
+                .path()
+                .clone()
+                .context("expected path from crate detail metadata")?;
+            is_success = is_success && delete_folder(&path, dry_run).is_ok();
+        }
+        if let Some(found_crate_metadata) = crate_detail
+            .registry_crates_source()
+            .iter()
+            .find(|&source_metadata| source_metadata == crate_metadata)
+        {
+            let path = found_crate_metadata
+                .path()
+                .clone()
+                .context("expected path from crate detail metadata")?;
+            is_success = is_success && delete_folder(&path, dry_run).is_ok();
+        }
 
         // remove index cache dir if their is only one crate. It will also clean crate
         // name from installed crate name owned locally by it so when two version of
         // same crate is deleted it properly remove index cache
-        for index_cache_dir in &index_cache {
+        for index_cache_dir in &self.index_cache_dir {
             let index = Path::new(&index_cache_dir);
             let source = crate_detail
                 .source_url_from_path(index.parent().context("failed to get index parent")?)?;
@@ -97,10 +86,10 @@ impl<'a> RegistryDir<'a> {
                     is_success =
                         remove_index_cache(index, crate_metadata, dry_run).is_ok() && is_success;
                 }
-                is_success = remove_empty_index_cache_dir(index, dry_run).is_ok() && is_success;
                 self.installed_crate.retain(|x| x != crate_metadata);
             }
         }
+
         if dry_run {
             println!(
                 "{} {} {} {}-{}",
@@ -167,42 +156,12 @@ impl<'a> RegistryDir<'a> {
                 crate_removed += 1;
             }
         }
+        for index_cache_dir in &self.index_cache_dir {
+            let index = Path::new(&index_cache_dir);
+            remove_empty_index_cache_dir(index, dry_run)?;
+        }
         Ok((size_cleaned, crate_removed))
     }
-}
-
-/// Remove crates which name is provided to delete from provided path
-fn remove_crate_from_location(
-    location: &Path,
-    crate_detail: &CrateDetail,
-    crate_metadata: &CrateMetaData,
-    dry_run: bool,
-) -> Result<()> {
-    if location.exists() && location.is_dir() {
-        for entry in fs::read_dir(location)? {
-            let entry_path = entry?.path();
-            if let Ok(source_url) = crate_detail.source_url_from_path(&entry_path) {
-                if &Some(source_url) == crate_metadata.source() {
-                    for dir_entry in fs::read_dir(entry_path)? {
-                        let dir_entry_path = dir_entry?.path();
-                        let crate_name = crate_metadata.name();
-                        let crate_version = crate_metadata
-                            .version()
-                            .clone()
-                            .context("failed to get crate version")?;
-                        if dir_entry_path
-                            .to_str()
-                            .context("failed to get crate name path to str")?
-                            .contains(&format!("{crate_name}-{crate_version}"))
-                        {
-                            delete_folder(&dir_entry_path, dry_run)?;
-                        }
-                    }
-                }
-            }
-        }
-    }
-    Ok(())
 }
 
 /// determine crate index cache location and remove crate index cache
