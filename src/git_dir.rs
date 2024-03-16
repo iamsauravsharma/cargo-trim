@@ -1,6 +1,3 @@
-use std::fs;
-use std::path::Path;
-
 use anyhow::{Context, Result};
 use owo_colors::OwoColorize;
 
@@ -8,47 +5,41 @@ use crate::crate_detail::{CrateDetail, CrateMetaData};
 use crate::utils::delete_folder;
 
 /// Store git dir folder information
-pub(crate) struct GitDir<'a> {
-    checkout_dir: &'a str,
-    db_dir: &'a str,
-}
+pub(crate) struct GitDir;
 
-impl<'a> GitDir<'a> {
-    /// create new git dir
-    pub(crate) fn new(checkout_dir: &'a Path, db_dir: &'a Path) -> Result<Self> {
-        let checkout_dir_str = checkout_dir
-            .to_str()
-            .context("failed checkout dir path conversion")?;
-        let db_dir_str = db_dir.to_str().context("failed db dir path conversion")?;
-        Ok(Self {
-            checkout_dir: checkout_dir_str,
-            db_dir: db_dir_str,
-        })
-    }
-
+impl GitDir {
     /// remove crates
     fn remove_crate(
-        &self,
         crate_detail: &CrateDetail,
         crate_metadata: &CrateMetaData,
         dry_run: bool,
-    ) -> bool {
+    ) -> Result<bool> {
         let is_success = if crate_metadata.name().contains("-HEAD") {
-            remove_crate_from_location(
-                Path::new(&self.db_dir),
-                crate_detail,
-                crate_metadata,
-                dry_run,
-            )
-            .is_ok()
+            if let Some(found_crate_metadata) = crate_detail
+                .git_crates_archive()
+                .iter()
+                .find(|&source_metadata| source_metadata == crate_metadata)
+            {
+                let path = found_crate_metadata
+                    .path()
+                    .clone()
+                    .context("expected path from crate detail metadata")?;
+                delete_folder(&path, dry_run).is_ok()
+            } else {
+                true
+            }
+        } else if let Some(found_crate_metadata) = crate_detail
+            .git_crates_source()
+            .iter()
+            .find(|&source_metadata| source_metadata == crate_metadata)
+        {
+            let path = found_crate_metadata
+                .path()
+                .clone()
+                .context("expected path from crate detail metadata")?;
+            delete_folder(&path, dry_run).is_ok()
         } else {
-            remove_crate_from_location(
-                Path::new(&self.checkout_dir),
-                crate_detail,
-                crate_metadata,
-                dry_run,
-            )
-            .is_ok()
+            true
         };
         if dry_run {
             println!(
@@ -62,7 +53,7 @@ impl<'a> GitDir<'a> {
                     .unwrap_or_default(),
                 crate_metadata.name(),
             );
-            true
+            Ok(true)
         } else if is_success {
             println!(
                 "{} {} {}",
@@ -74,7 +65,7 @@ impl<'a> GitDir<'a> {
                     .unwrap_or_default(),
                 crate_metadata.name()
             );
-            true
+            Ok(true)
         } else {
             println!(
                 r#"Failed to remove {} {}"#,
@@ -85,73 +76,24 @@ impl<'a> GitDir<'a> {
                     .unwrap_or_default(),
                 crate_metadata.name(),
             );
-            false
+            Ok(false)
         }
     }
 
     /// Remove list of crates
     pub(crate) fn remove_crate_list(
-        &self,
         crate_detail: &CrateDetail,
         list: &[CrateMetaData],
         dry_run: bool,
-    ) -> (u64, usize) {
+    ) -> Result<(u64, usize)> {
         let mut size_cleaned = 0;
         let mut crate_removed = 0;
         for crate_metadata in list {
-            if self.remove_crate(crate_detail, crate_metadata, dry_run) {
+            if Self::remove_crate(crate_detail, crate_metadata, dry_run)? {
                 size_cleaned += crate_metadata.size();
                 crate_removed += 1;
             }
         }
-        (size_cleaned, crate_removed)
+        Ok((size_cleaned, crate_removed))
     }
-}
-
-/// preform remove operation
-fn remove_crate_from_location(
-    location: &Path,
-    crate_detail: &CrateDetail,
-    crate_metadata: &CrateMetaData,
-    dry_run: bool,
-) -> Result<()> {
-    if location.exists() && location.is_dir() {
-        for entry in fs::read_dir(location)? {
-            let path = entry?.path();
-            if let Ok(url_from_path) = crate_detail.source_url_from_path(&path) {
-                if &Some(url_from_path) == crate_metadata.source() {
-                    // split name to split crate and rev sha
-                    let name = crate_metadata.name();
-                    let splitted_name = name.rsplitn(2, '-').collect::<Vec<&str>>();
-                    let crate_name = splitted_name[1];
-                    let rev_sha = splitted_name[0];
-                    if path
-                        .to_str()
-                        .context("failed git directory crate path to str")?
-                        .contains(crate_name)
-                    {
-                        if rev_sha.contains("HEAD") {
-                            delete_folder(&path, dry_run)?;
-                        } else if path.is_dir() {
-                            for rev in fs::read_dir(&path)? {
-                                let rev_path = rev?.path();
-                                let file_name = rev_path
-                                    .file_name()
-                                    .context("failed to get file name to check rev sha")?
-                                    .to_str()
-                                    .context("failed rev sha file name to str conversion")?;
-                                if file_name == rev_sha {
-                                    delete_folder(&rev_path, dry_run)?;
-                                }
-                            }
-                            if fs::read_dir(&path)?.next().is_none() {
-                                delete_folder(&path, dry_run)?;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    Ok(())
 }

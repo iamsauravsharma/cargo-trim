@@ -231,6 +231,7 @@ fn read_content(
                                 )?),
                                 0,
                                 Some(url),
+                                None,
                             ));
                         }
                         if source.contains("git+") {
@@ -270,6 +271,7 @@ fn read_content(
                                 None,
                                 0,
                                 Some(url),
+                                None,
                             ));
                         }
                         if source.contains("sparse+") {
@@ -283,6 +285,7 @@ fn read_content(
                                 ),
                                 0,
                                 Some(url),
+                                None,
                             ));
                         }
                     }

@@ -72,7 +72,6 @@ impl Git {
         dir_path: &DirPath,
         crate_list: &CrateList,
         crate_detail: &CrateDetail,
-        git_crates_location: &GitDir,
         directory_is_empty: bool,
     ) -> Result<()> {
         let dry_run = self.dry_run;
@@ -103,12 +102,8 @@ impl Git {
         }
 
         if self.old {
-            let (sized_cleaned, total_crate_removed) = clean_git(
-                git_crates_location,
-                crate_list.old_git(),
-                crate_detail,
-                dry_run,
-            );
+            let (sized_cleaned, total_crate_removed) =
+                clean_git(crate_list.old_git(), crate_detail, dry_run)?;
             println!(
                 "{}",
                 format!(
@@ -142,12 +137,8 @@ impl Git {
                     return Ok(());
                 }
             }
-            let (sized_cleaned, total_crate_removed) = clean_git(
-                git_crates_location,
-                &crate_list.old_orphan_git(),
-                crate_detail,
-                dry_run,
-            );
+            let (sized_cleaned, total_crate_removed) =
+                clean_git(&crate_list.old_orphan_git(), crate_detail, dry_run)?;
 
             println!(
                 "{}",
@@ -183,12 +174,8 @@ impl Git {
                     return Ok(());
                 }
             }
-            let (sized_cleaned, total_crate_removed) = clean_git(
-                git_crates_location,
-                crate_list.orphan_git(),
-                crate_detail,
-                dry_run,
-            );
+            let (sized_cleaned, total_crate_removed) =
+                clean_git(crate_list.orphan_git(), crate_detail, dry_run)?;
 
             println!(
                 "{}",
@@ -201,12 +188,8 @@ impl Git {
         }
 
         if self.all {
-            let (sized_cleaned, total_crate_removed) = clean_git(
-                git_crates_location,
-                crate_list.installed_git(),
-                crate_detail,
-                dry_run,
-            );
+            let (sized_cleaned, total_crate_removed) =
+                clean_git(crate_list.installed_git(), crate_detail, dry_run)?;
             println!(
                 "{}",
                 format!(
@@ -276,10 +259,9 @@ pub(super) fn query_size_git(
 
 // perform clean on git crates
 pub(super) fn clean_git(
-    git_crates_location: &GitDir,
     crate_metadata_list: &[CrateMetaData],
     crate_detail: &CrateDetail,
     dry_run: bool,
-) -> (u64, usize) {
-    git_crates_location.remove_crate_list(crate_detail, crate_metadata_list, dry_run)
+) -> Result<(u64, usize)> {
+    GitDir::remove_crate_list(crate_detail, crate_metadata_list, dry_run)
 }
