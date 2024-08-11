@@ -6,13 +6,13 @@
 | :--------------------------------------------: | :---------------------------------------: |
 | [![License: MIT][license_badge]][license_link] | [![Crate][cratesio_badge]][cratesio_link] |
 
-Binary application for cleaning **\$CARGO_HOME/registry** & **\$CARGO_HOME/git** folder support orphan and old crates cleaning
-Default \$CARGO_HOME is set as \$HOME/.cargo
+`cargo-trim` is a binary application designed to clean up the **\$CARGO_HOME/registry** & **\$CARGO_HOME/git** folders,
+supporting orphaned and outdated crate removal.
+The default value for $CARGO_HOME is $HOME/.cargo.
 
 ### Install
 
-For installation of cargo-trim:-
-You can install from crates.io registry
+You can install `cargo-trim` directly from the crates.io registry:
 
 ```
 cargo install cargo-trim
@@ -28,18 +28,34 @@ cargo install --git https://github.com/iamsauravsharma/cargo-trim
 
 ### Setup
 
-Initially you need to set up cargo-trim for some commands such as orphan clean to work properly.
-To set up cargo-trim to properly work for all projects related to rust lang go to directory where all projects lies and run
-`cargo trim init`. You can even run this command multiple time to add multiple directory.
-Or run command `cargo trim set -d <directory-path>`. All projects inside the directory will be used for listing orphan crates. So
-if there are any projects in the other directory then their dependencies will be classified as orphan crates if not used by any
-other crates present inside added directory.
+To set up cargo-trim, initialize it in the directory where your Rust projects reside using:
 
-### Command output
+```bash
+cargo trim init
+```
 
-All cargo-trim can be run using `cargo trim <command>`
-`cargo trim --help` will produce following output which list all of available command for cargo-trim
+This command can be run multiple times to add multiple directories.
 
+Alternatively, you can specify a directory manually with:
+
+```bash
+cargo trim set -d <directory-path>
+```
+
+This setup is crucial for enabling commands like orphan cleaning, as it allows `cargo-trim` to track and manage crates across your projects.
+
+### Commands
+You can run `cargo-trim` commands using:
+```bash
+cargo trim <command>
+```
+For a full list of available commands, use:
+
+```bash
+cargo trim --help
+```
+
+This will display the following output:
 ```
 Binary application to cleanup $CARGO_HOME cache
 
@@ -81,11 +97,14 @@ Options:
 
 ### Configuration
 
-cargo-trim store its config file to config directory of OS and name config file as `cargo_trim_config.toml`.
-In file cargo-trim stores different information for scanning projects as well as listing crates.
-To list where cargo trim is storing config file you can use `cargo trim config --location`
-Below are a list of configuration and their default value a well as corresponding env variable that can be used for setting
-same value without editing config file
+`cargo-trim` stores its configuration in a cargo_trim_config.toml file, located in the OS's default config directory.
+The file contains various settings for scanning projects and managing crates.
+
+To find the configuration file's location, use:
+```
+cargo trim config --location
+```
+Here are some configuration options and their default values:
 
 #### 1. directory
 
@@ -101,9 +120,8 @@ List of directory to scan for a Rust projects
 
 **env: TRIM_IGNORE**
 
-File/Directory name which should be ignored while scanning through directories. This can be used to exclude some folder
-such as npm node_modules folder or python venv folder if the directory present in config contains such folder it will help
-to significantly increase performance.
+List of file or directory names to ignore during scanning.
+This is useful for excluding folders like `node_modules` or `venv` to enhance performance.
 
 #### 3. **scan_hidden_folder**
 
@@ -111,7 +129,7 @@ to significantly increase performance.
 
 **env: TRIM_SCAN_HIDDEN_FOLDER**
 
-Whether to scan hidden folder(i.e. folder which start with dot notation) or not
+Indicates whether hidden folders (those starting with a dot) should be scanned.
 
 #### 4. **scan_target_folder**
 
@@ -119,8 +137,7 @@ Whether to scan hidden folder(i.e. folder which start with dot notation) or not
 
 **env: TRIM_SCAN_TARGET_FOLDER**
 
-Whether to scan target folder. Currently, it searches for environment variable `CARGO_BUILD_TARGET_DIR` or `CARGO_TARGET_DIR`
-or set default value as target to determine a target folder name
+Indicates whether the target folder should be scanned. The target folder name is determined by the `CARGO_BUILD_TARGET_DIR`, `CARGO_TARGET_DIR` environment variables, or defaults to `target`.
 
 [license_badge]: https://img.shields.io/github/license/iamsauravsharma/cargo-trim.svg?style=for-the-badge
 [license_link]: LICENSE
