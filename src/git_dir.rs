@@ -22,9 +22,8 @@ impl GitDir {
             {
                 let path = found_crate_metadata
                     .path()
-                    .clone()
                     .context("expected path from crate detail metadata")?;
-                delete_folder(&path, dry_run).is_ok()
+                delete_folder(path, dry_run).is_ok()
             } else {
                 true
             }
@@ -35,9 +34,8 @@ impl GitDir {
         {
             let path = found_crate_metadata
                 .path()
-                .clone()
                 .context("expected path from crate detail metadata")?;
-            delete_folder(&path, dry_run).is_ok()
+            delete_folder(path, dry_run).is_ok()
         } else {
             true
         };
@@ -68,7 +66,7 @@ impl GitDir {
             Ok(true)
         } else {
             println!(
-                r#"Failed to remove {} {}"#,
+                "Failed to remove {} {}",
                 crate_metadata
                     .source()
                     .as_ref()

@@ -40,8 +40,8 @@ struct LockData {
 }
 
 impl LockData {
-    fn package(&self) -> &Option<Vec<Package>> {
-        &self.package
+    fn package(&self) -> Option<&Vec<Package>> {
+        self.package.as_ref()
     }
 }
 
@@ -61,8 +61,8 @@ impl Package {
         &self.version
     }
 
-    fn source(&self) -> &Option<String> {
-        &self.source
+    fn source(&self) -> Option<&String> {
+        self.source.as_ref()
     }
 }
 

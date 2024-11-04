@@ -369,7 +369,7 @@ fn clear_empty_index(
             .registry_crates_source()
             .iter()
             .any(|metadata| {
-                if let Some(source) = metadata.source().as_ref() {
+                if let Some(source) = metadata.source() {
                     if source == url {
                         return true;
                     }

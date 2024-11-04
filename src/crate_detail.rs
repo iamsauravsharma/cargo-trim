@@ -37,20 +37,20 @@ impl CrateMetaData {
         &self.name
     }
 
-    pub(crate) fn version(&self) -> &Option<Version> {
-        &self.version
+    pub(crate) fn version(&self) -> Option<&Version> {
+        self.version.as_ref()
     }
 
     pub(crate) fn size(&self) -> u64 {
         self.size
     }
 
-    pub(crate) fn source(&self) -> &Option<Url> {
-        &self.source
+    pub(crate) fn source(&self) -> Option<&Url> {
+        self.source.as_ref()
     }
 
-    pub(crate) fn path(&self) -> &Option<PathBuf> {
-        &self.path
+    pub(crate) fn path(&self) -> Option<&PathBuf> {
+        self.path.as_ref()
     }
 }
 

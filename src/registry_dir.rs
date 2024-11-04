@@ -55,9 +55,8 @@ impl RegistryDir {
         {
             let path = found_crate_metadata
                 .path()
-                .clone()
                 .context("expected path from crate detail metadata")?;
-            is_success = is_success && delete_folder(&path, dry_run).is_ok();
+            is_success = is_success && delete_folder(path, dry_run).is_ok();
         }
         if let Some(found_crate_metadata) = crate_detail
             .registry_crates_source()
@@ -66,9 +65,8 @@ impl RegistryDir {
         {
             let path = found_crate_metadata
                 .path()
-                .clone()
                 .context("expected path from crate detail metadata")?;
-            is_success = is_success && delete_folder(&path, dry_run).is_ok();
+            is_success = is_success && delete_folder(path, dry_run).is_ok();
         }
 
         // remove index cache dir if their is only one crate. It will also clean crate
@@ -78,7 +76,7 @@ impl RegistryDir {
             let index = Path::new(&index_cache_dir);
             let source = crate_detail
                 .source_url_from_path(index.parent().context("failed to get index parent")?)?;
-            if &Some(source) == crate_metadata.source() {
+            if Some(&source) == crate_metadata.source() {
                 let same_name_list = self.installed_crate.iter().filter(|&x| {
                     x.name() == crate_metadata.name() && x.source() == crate_metadata.source()
                 });
@@ -103,7 +101,6 @@ impl RegistryDir {
                 crate_metadata.name(),
                 crate_metadata
                     .version()
-                    .clone()
                     .context("failed to convert crate version")?,
             );
             Ok(true)
@@ -119,7 +116,6 @@ impl RegistryDir {
                 crate_metadata.name(),
                 crate_metadata
                     .version()
-                    .clone()
                     .context("failed to convert crate version")?,
             );
             Ok(true)
@@ -134,7 +130,6 @@ impl RegistryDir {
                     .unwrap_or_default(),
                 crate_metadata
                     .version()
-                    .clone()
                     .context("failed to convert crate version")?,
             );
             Ok(false)
