@@ -16,7 +16,7 @@ impl GitDir {
     ) -> Result<bool> {
         let is_success = if crate_metadata.name().contains("-HEAD") {
             if let Some(found_crate_metadata) = crate_detail
-                .git_crates_archive()
+                .git_crates_source()
                 .iter()
                 .find(|&source_metadata| source_metadata == crate_metadata)
             {
@@ -28,7 +28,7 @@ impl GitDir {
                 true
             }
         } else if let Some(found_crate_metadata) = crate_detail
-            .git_crates_source()
+            .git_crates_archive()
             .iter()
             .find(|&source_metadata| source_metadata == crate_metadata)
         {
