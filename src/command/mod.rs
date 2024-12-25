@@ -320,9 +320,9 @@ impl Command {
                 SubCommand::List(list) => {
                     let max_width = std::cmp::max(
                         crate_detail
-                            .source_urls()
-                            .iter()
-                            .map(|su| su.to_string().len())
+                            .source_infos()
+                            .keys()
+                            .map(String::len)
                             .max()
                             .unwrap_or(9),
                         9,
@@ -364,32 +364,29 @@ fn clear_empty_index(
     dry_run: bool,
 ) {
     let mut to_remove_indexes = vec![];
-    for url in crate_detail.source_urls() {
+    for index_name in crate_detail.source_infos().keys() {
         if !crate_detail
             .registry_crates_source()
             .iter()
             .any(|metadata| {
                 if let Some(source) = metadata.source() {
-                    if source == url {
+                    if source == index_name {
                         return true;
                     }
                 }
                 false
             })
         {
-            let file_name = crate_detail.file_name_from_url(url);
-            if let Some(name) = file_name {
-                to_remove_indexes.push(name);
-            }
+            to_remove_indexes.push(index_name);
         };
     }
     let mut is_success = true;
     for index in to_remove_indexes {
-        is_success = crate::utils::delete_folder(src_dir.join(&index).as_path(), dry_run).is_ok()
+        is_success = crate::utils::delete_folder(src_dir.join(index).as_path(), dry_run).is_ok()
             && is_success;
-        is_success = crate::utils::delete_folder(cache_dir.join(&index).as_path(), dry_run).is_ok()
+        is_success = crate::utils::delete_folder(cache_dir.join(index).as_path(), dry_run).is_ok()
             && is_success;
-        is_success = crate::utils::delete_folder(index_dir.join(&index).as_path(), dry_run).is_ok()
+        is_success = crate::utils::delete_folder(index_dir.join(index).as_path(), dry_run).is_ok()
             && is_success;
     }
     if is_success {
@@ -616,9 +613,9 @@ fn run_cargo_update_command(cargo_lock_files: &[PathBuf], dry_run: bool) -> Resu
 fn top_crates(crate_detail: &CrateDetail, number: usize) {
     let max_width = std::cmp::max(
         crate_detail
-            .source_urls()
-            .iter()
-            .map(|su| su.to_string().len())
+            .source_infos()
+            .keys()
+            .map(String::len)
             .max()
             .unwrap_or(9),
         9,
