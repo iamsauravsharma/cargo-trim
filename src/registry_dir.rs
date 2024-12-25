@@ -74,9 +74,13 @@ impl RegistryDir {
         // same crate is deleted it properly remove index cache
         for index_cache_dir in &self.index_cache_dir {
             let index = Path::new(&index_cache_dir);
-            let source = crate_detail
-                .source_url_from_path(index.parent().context("failed to get index parent")?)?;
-            if Some(&source) == crate_metadata.source() {
+            let index_parent = index
+                .parent()
+                .and_then(|p| p.file_name())
+                .and_then(|f| f.to_str())
+                .map(ToString::to_string)
+                .context("failed to get index parent")?;
+            if Some(&index_parent) == crate_metadata.source() {
                 let same_name_list = self.installed_crate.iter().filter(|&x| {
                     x.name() == crate_metadata.name() && x.source() == crate_metadata.source()
                 });

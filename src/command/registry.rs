@@ -86,9 +86,9 @@ impl Registry {
         if let Some(number) = self.top {
             let max_width = std::cmp::max(
                 crate_detail
-                    .source_urls()
-                    .iter()
-                    .map(|su| su.to_string().len())
+                    .source_infos()
+                    .keys()
+                    .map(String::len)
                     .max()
                     .unwrap_or(9),
                 9,

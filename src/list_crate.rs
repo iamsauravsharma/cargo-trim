@@ -216,21 +216,27 @@ fn read_content(
                             let mut url = Url::from_str(&source.replace("registry+", ""))
                                 .context("failed registry source url kind conversion")?;
                             // Only add sparse registry if sparse registry is present in place of
-                            // git based registry
+                            // git based registry for crates.io
                             let index_crates_url = Url::from_str("https://index.crates.io")?;
                             if url == Url::from_str("https://github.com/rust-lang/crates.io-index")?
-                                && crate_detail.source_urls().contains(&&index_crates_url)
+                                && crate_detail
+                                    .source_infos()
+                                    .values()
+                                    .collect::<Vec<_>>()
+                                    .contains(&&index_crates_url)
                             {
                                 url = index_crates_url;
                             }
-                            present_crate_registry.push(CrateMetaData::new(
-                                name.to_string(),
-                                Some(Version::parse(version).context(
-                                    "failed Cargo.lock semver
+                            for index_name in crate_detail.index_names_from_url(&url) {
+                                present_crate_registry.push(CrateMetaData::new(
+                                    name.to_string(),
+                                    Some(Version::parse(version).context(
+                                        "failed Cargo.lock semver
                             version parse",
-                                )?),
-                                Some(url),
-                            ));
+                                    )?),
+                                    Some(index_name),
+                                ));
+                            }
                         }
                         if source.contains("git+") {
                             let url_with_kind;
@@ -264,19 +270,27 @@ fn read_content(
                                 .last()
                                 .context("cannot get last segments of path")?;
                             let full_name = format!("{last_path_segment}-{rev_short_form}");
-                            present_crate_git.push(CrateMetaData::new(full_name, None, Some(url)));
+                            for index_name in crate_detail.index_names_from_url(&url) {
+                                present_crate_git.push(CrateMetaData::new(
+                                    full_name.clone(),
+                                    None,
+                                    Some(index_name),
+                                ));
+                            }
                         }
                         if source.contains("sparse+") {
                             let url = Url::from_str(&source.replace("sparse+", ""))
                                 .context("failed sparse source url kind conversion")?;
-                            present_crate_registry.push(CrateMetaData::new(
-                                name.to_string(),
-                                Some(
-                                    Version::parse(version)
-                                        .context("failed Cargo.lock semver version parse")?,
-                                ),
-                                Some(url),
-                            ));
+                            for index_name in crate_detail.index_names_from_url(&url) {
+                                present_crate_registry.push(CrateMetaData::new(
+                                    name.to_string(),
+                                    Some(
+                                        Version::parse(version)
+                                            .context("failed Cargo.lock semver version parse")?,
+                                    ),
+                                    Some(index_name),
+                                ));
+                            }
                         }
                     }
                 }
