@@ -65,7 +65,7 @@ checksum = "1be3f42a67d6d345ecd59f675f3f012d6974981560836e938c22b424b85ce1be"
 
 [[package]]
 name = "cargo-trim"
-version = "0.12.4"
+version = "0.13.0"
 dependencies = [
  "anyhow",
  "clap",
