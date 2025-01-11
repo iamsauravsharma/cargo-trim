@@ -267,7 +267,7 @@ fn read_content(
                             let last_path_segment = url
                                 .path_segments()
                                 .context("url doesn't have segment")?
-                                .last()
+                                .next_back()
                                 .context("cannot get last segments of path")?;
                             let full_name = format!("{last_path_segment}-{rev_short_form}");
                             for index_name in crate_detail.index_names_from_url(&url) {
