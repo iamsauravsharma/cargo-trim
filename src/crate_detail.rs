@@ -66,12 +66,7 @@ impl Ord for CrateMetaData {
         match self.name.cmp(&other.name) {
             Ordering::Equal => {
                 match self.version.cmp(&other.version) {
-                    Ordering::Equal => {
-                        match self.size.cmp(&other.size) {
-                            Ordering::Less => self.source.cmp(&other.source),
-                            ord => ord,
-                        }
-                    }
+                    Ordering::Equal => self.source.cmp(&other.source),
                     ord => ord,
                 }
             }
@@ -105,7 +100,7 @@ struct IndexConfig {
 /// stores different crate size and name information
 #[derive(Default)]
 pub(crate) struct CrateDetail {
-    source_info: HashMap<String, Url>,
+    source_infos: HashMap<String, Url>,
     bin: HashSet<CrateMetaData>,
     git_crates_source: HashSet<CrateMetaData>,
     registry_crates_source: HashSet<CrateMetaData>,
@@ -116,7 +111,7 @@ pub(crate) struct CrateDetail {
 impl CrateDetail {
     /// Crate new index info
     pub(crate) fn new(index_dir: &Path, db_dir: &Path) -> Result<Self> {
-        let mut source_info = HashMap::new();
+        let mut source_infos = HashMap::new();
         if index_dir.exists() && index_dir.is_dir() {
             for entry in fs::read_dir(index_dir)? {
                 let registry_dir = entry?.path();
@@ -144,7 +139,7 @@ impl CrateDetail {
                         .split_whitespace()
                         .last()
                         .context("failed to get url part from content")?;
-                    source_info.insert(
+                    source_infos.insert(
                         registry_file_name.to_string(),
                         Url::from_str(url_path).context("fail FETCH_HEAD url conversion")?,
                     );
@@ -164,7 +159,7 @@ impl CrateDetail {
                     let scheme = scheme_url.scheme();
                     let url = Url::from_str(&format!("{scheme}://{domain}"))
                         .context("failed sparse registry index url")?;
-                    source_info.insert(registry_file_name.to_string(), url);
+                    source_infos.insert(registry_file_name.to_string(), url);
                 }
             }
         }
@@ -184,21 +179,21 @@ impl CrateDetail {
                     .split_whitespace()
                     .last()
                     .context("failed to get url part from content")?;
-                source_info.insert(
+                source_infos.insert(
                     git_file_name.to_string(),
                     Url::from_str(url_path).context("failed to convert db dir FETCH_HEAD")?,
                 );
             }
         }
         Ok(Self {
-            source_info,
+            source_infos,
             ..Default::default()
         })
     }
 
     /// Get index name from url
     pub(crate) fn index_names_from_url(&self, url: &Url) -> Vec<String> {
-        self.source_info
+        self.source_infos
             .iter()
             .filter_map(|(key, val)| {
                 if val == url {
@@ -212,7 +207,7 @@ impl CrateDetail {
 
     /// Get source infos
     pub(crate) fn source_infos(&self) -> &HashMap<String, Url> {
-        &self.source_info
+        &self.source_infos
     }
 
     /// return bin crates metadata
