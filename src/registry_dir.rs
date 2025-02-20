@@ -186,7 +186,7 @@ fn remove_index_cache(path: &Path, crate_metadata: &CrateMetaData, dry_run: bool
             crate_index_cache_location.push(&name[2..4]);
             crate_index_cache_location.push(name);
         }
-    };
+    }
     delete_folder(&crate_index_cache_location, dry_run)?;
     Ok(())
 }

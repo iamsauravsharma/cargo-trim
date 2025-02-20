@@ -378,7 +378,7 @@ fn clear_empty_index(
             })
         {
             to_remove_indexes.push(index_name);
-        };
+        }
     }
     let mut is_success = true;
     for index in to_remove_indexes {
@@ -602,7 +602,7 @@ fn run_cargo_update_command(cargo_lock_files: &[PathBuf], dry_run: bool) -> Resu
                 .success()
             {
                 return Err(anyhow::anyhow!("Failed to update {location:?}"));
-            };
+            }
         }
     }
     println!("{}", "Successfully updated all dependencies".blue());
