@@ -3,6 +3,15 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 
+fn get_cargo_home() -> Result<String> {
+    if let Ok(cargo_home) = std::env::var("CARGO_HOME") {
+        return Ok(cargo_home);
+    }
+
+    option_env!("CARGO_HOME")
+        .map(String::from)
+        .context("Failed to get CARGO_HOME directory")
+}
 /// Struct for storing Directory path
 pub(crate) struct DirPath {
     bin_dir: PathBuf,
@@ -32,7 +41,7 @@ impl DirPath {
             fs::File::create(&config_file).context("failed to create config file")?;
         }
 
-        let home_dir = Path::new(env!("CARGO_HOME")).to_path_buf();
+        let home_dir = Path::new(&get_cargo_home()?).to_path_buf();
 
         // set bin directory path
         let bin_dir = home_dir.join("bin");

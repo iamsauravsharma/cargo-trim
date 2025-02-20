@@ -1,3 +1,4 @@
+#![expect(unused_crate_dependencies)]
 use std::process::{Command, Stdio};
 
 fn run_cargo_trim(args: &[&str]) {
