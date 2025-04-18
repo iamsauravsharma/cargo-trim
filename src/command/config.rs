@@ -43,8 +43,9 @@ impl Config {
         }
         if self.location {
             println!(
-                "{}: {config_file_location:?}",
+                "{}: \"{}\"",
                 "Config file location".blue(),
+                config_file_location.display()
             );
         }
         if self.print {

@@ -491,7 +491,11 @@ fn git_compress(
 // run combination of commands which git compress a index of registry
 fn run_git_compress_commands(repo_path: &Path, dry_run: bool, is_aggressive: bool) -> Result<()> {
     if dry_run {
-        println!("{} git compressing {repo_path:?}", "Dry run:".yellow());
+        println!(
+            "{} git compressing {}",
+            "Dry run:".yellow(),
+            repo_path.display()
+        );
     } else {
         let mut commands = vec![
             // Pack unpacked objects in a repository
@@ -581,19 +585,15 @@ fn run_cargo_update_command(cargo_lock_files: &[PathBuf], dry_run: bool) -> Resu
         let Some(location) = lock_file.parent() else {
             return Err(anyhow::anyhow!("cannot get parent for parent"));
         };
+        let location_str = location.display();
         if dry_run {
             println!(
-                "{} Updating project at path {location:?}",
+                "{} Updating project at \"{}\"",
                 "Dry run:".yellow(),
+                location_str
             );
         } else {
-            println!(
-                "Updating project at {}",
-                location
-                    .to_str()
-                    .context("failed to convert location file path to str")?
-                    .blue()
-            );
+            println!("Updating project at {}", location_str.blue());
             if !std::process::Command::new("cargo")
                 .arg("update")
                 .current_dir(location)
