@@ -7,7 +7,7 @@ repository = "https://github.com/iamsauravsharma/cargo-trim"
 description = "Binary application to cleanup $CARGO_HOME cache"
 license = "MIT"
 readme = "README.MD"
-edition = "2021"
+edition = "2024"
 keywords = ["cargo", "cache", "remove", "manage", "clean"]
 categories = ["command-line-utilities"]
 
