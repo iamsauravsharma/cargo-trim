@@ -369,6 +369,10 @@ fn clear_empty_index(
             .registry_crates_source()
             .iter()
             .any(|metadata| {
+                #[allow(
+                    clippy::collapsible_if,
+                    reason = "Not supported in stable at version 1.87.0"
+                )]
                 if let Some(source) = metadata.source() {
                     if source == index_name {
                         return true;

@@ -31,14 +31,14 @@ impl Config {
     pub(super) fn run(&self, config_file: &ConfigFile, config_file_location: &Path) -> Result<()> {
         if self.directory {
             let read_directory = config_file.directory();
-            for name in read_directory {
-                println!("{}: {name}", "Directory".blue());
+            for (index, name) in read_directory.iter().enumerate() {
+                println!("{}: {name}", format!("Directory [{index}]").blue());
             }
         }
         if self.ignore {
             let read_ignore_file_name = config_file.ignore_file_name();
-            for name in read_ignore_file_name {
-                println!("{}: {name}", "Ignored name".blue());
+            for (index, name) in read_ignore_file_name.iter().enumerate() {
+                println!("{}: {name}", format!("Ignored name [{index}]").blue());
             }
         }
         if self.location {
