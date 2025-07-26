@@ -23,11 +23,30 @@ toml = "0.8.11"
 url = { version = "2.5.0", features = ["serde"] }
 
 [lints.rust]
-anonymous_parameters = "warn"
+ambiguous_negative_literals = "warn"
+elided_lifetimes_in_paths = "warn"
+meta_variable_misuse = "warn"
+redundant_imports = "warn"
 unreachable_pub = "warn"
-unused_crate_dependencies = "warn"
+unstable_features = "deny"
 unsafe_code = "deny"
+unused_lifetimes = "warn"
+unused_macro_rules = "warn"
+unused_qualifications = "warn"
+unused_crate_dependencies = "warn"
 
 [lints.clippy]
-all = "deny"
+allow_attributes = "warn"
+dbg_macro = "warn"
+exhaustive_enums = "warn"
+infinite_loop = "warn"
+multiple_inherent_impl = "warn"
+panic = "warn"
+redundant_test_prefix = "warn"
+tests_outside_test_module = "warn"
+todo = "warn"
+unimplemented = "warn"
+unreachable = "warn"
+unused_trait_names = "warn"
+all = { level = "deny", priority = -1 }
 pedantic = "warn"

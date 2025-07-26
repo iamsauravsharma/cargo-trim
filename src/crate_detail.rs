@@ -4,10 +4,9 @@ use std::default::Default;
 use std::fs;
 use std::hash::Hash;
 use std::path::{Path, PathBuf};
-use std::str::FromStr;
-use std::string::ToString;
+use std::str::FromStr as _;
 
-use anyhow::{Context, Result};
+use anyhow::{Context as _, Result};
 use semver::Version;
 use serde::Deserialize;
 use url::Url;

@@ -1,8 +1,8 @@
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::str::FromStr;
+use std::str::FromStr as _;
 
-use anyhow::{Context, Result};
+use anyhow::{Context as _, Result};
 use semver::Version;
 use serde::Deserialize;
 use url::Url;
@@ -203,7 +203,7 @@ fn read_content(
     let mut present_crate_git = Vec::new();
     for cargo_lock_file in cargo_lock_paths {
         if cargo_lock_file.exists() {
-            let file_content = std::fs::read_to_string(cargo_lock_file)
+            let file_content = fs::read_to_string(cargo_lock_file)
                 .context("failed to read cargo lock content to string")?;
             let cargo_lock_data: LockData =
                 toml::from_str(&file_content).context("failed to convert to toml format")?;

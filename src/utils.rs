@@ -1,11 +1,11 @@
 use std::fs;
 #[cfg(unix)]
-use std::os::unix::fs::MetadataExt;
+use std::os::unix::fs::MetadataExt as _;
 use std::path::Path;
-use std::str::FromStr;
+use std::str::FromStr as _;
 
-use anyhow::{Context, Result};
-use owo_colors::OwoColorize;
+use anyhow::{Context as _, Result};
+use owo_colors::OwoColorize as _;
 use semver::Version;
 
 /// split name and semver version part from crates full name
@@ -132,7 +132,10 @@ pub(crate) fn get_inode_handled_size(path: &Path, inodes: &mut Vec<u64>) -> Resu
 }
 
 /// Convert size to pretty number
-#[allow(clippy::cast_precision_loss)]
+#[expect(
+    clippy::cast_precision_loss,
+    reason = "converting u32 to usize with loss is allowed"
+)]
 pub(crate) fn convert_pretty(num: u64) -> String {
     let units = ["B", "kB", "MB", "GB", "TB", "PB", "EB"];
     let power_factor = if num == 0 { 0 } else { num.ilog10() / 3 };

@@ -1,12 +1,12 @@
 use clap::Parser;
-use owo_colors::OwoColorize;
+use owo_colors::OwoColorize as _;
 
 use super::utils::crate_list_type;
 use crate::list_crate::CrateList;
 
 #[derive(Debug, Parser)]
 #[command(about = "List crates", arg_required_else_help = true)]
-#[allow(clippy::struct_excessive_bools)]
+#[expect(clippy::struct_excessive_bools)]
 pub(crate) struct List {
     #[arg(long = "all", short = 'a', help = "List all installed crate")]
     all: bool,

@@ -1,8 +1,8 @@
 use std::path::Path;
 
-use anyhow::{Context, Result};
+use anyhow::{Context as _, Result};
 use clap::Parser;
-use owo_colors::OwoColorize;
+use owo_colors::OwoColorize as _;
 
 use crate::config_file::ConfigFile;
 
@@ -11,7 +11,7 @@ use crate::config_file::ConfigFile;
     about = "Query about config file data used by CLI",
     arg_required_else_help = true
 )]
-#[allow(clippy::struct_excessive_bools)]
+#[expect(clippy::struct_excessive_bools)]
 pub(crate) struct Config {
     #[arg(long = "directory", short = 'd', help = "Query about directory data")]
     directory: bool,

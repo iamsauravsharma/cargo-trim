@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use anyhow::{Context, Result};
+use anyhow::{Context as _, Result};
 
 fn get_cargo_home() -> Result<String> {
     if let Ok(cargo_home) = std::env::var("CARGO_HOME") {

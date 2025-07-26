@@ -1,4 +1,5 @@
 #![expect(unused_crate_dependencies)]
+#![expect(clippy::tests_outside_test_module)]
 use std::process::{Command, Stdio};
 
 fn run_cargo_trim(args: &[&str]) {
@@ -13,7 +14,7 @@ fn run_cargo_trim(args: &[&str]) {
 
 // test check trim subcommand is run currently and exit with status success
 #[test]
-fn command_line_success_test() {
+fn command_line_success() {
     run_cargo_trim(&["help"]);
     run_cargo_trim(&["help", "list"]);
     run_cargo_trim(&["help", "config"]);

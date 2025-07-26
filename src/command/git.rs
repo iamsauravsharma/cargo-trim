@@ -1,9 +1,9 @@
-use std::io::Write;
+use std::io::Write as _;
 use std::path::Path;
 
-use anyhow::{Context, Result};
+use anyhow::{Context as _, Result};
 use clap::Parser;
-use owo_colors::OwoColorize;
+use owo_colors::OwoColorize as _;
 
 use super::utils::{print_dash, show_top_number_crates};
 use super::{query_full_width, query_print};
@@ -17,7 +17,7 @@ use crate::utils::{convert_pretty, get_size};
     about = "Perform operation only to git related cache file",
     arg_required_else_help = true
 )]
-#[allow(clippy::struct_excessive_bools)]
+#[expect(clippy::struct_excessive_bools)]
 pub(crate) struct Git {
     #[arg(long = "all", short = 'a', help = "Clean up all git crates")]
     all: bool,
@@ -66,7 +66,7 @@ pub(crate) struct Git {
 }
 
 impl Git {
-    #[allow(clippy::too_many_lines)]
+    #[expect(clippy::too_many_lines)]
     pub(super) fn run(
         &self,
         dir_path: &DirPath,

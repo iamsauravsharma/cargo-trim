@@ -1,10 +1,10 @@
 use std::fs;
-use std::io::Write;
+use std::io::Write as _;
 use std::path::{Path, PathBuf};
 
-use anyhow::{Context, Result};
+use anyhow::{Context as _, Result};
 use clap::{Parser, ValueEnum};
-use owo_colors::OwoColorize;
+use owo_colors::OwoColorize as _;
 
 use self::utils::{print_dash, query_full_width, query_print, show_top_number_crates};
 use crate::command::git::clean_git;
@@ -46,7 +46,7 @@ enum SubCommand {
     author=clap::crate_authors!(),
     about=clap::crate_description!()
 )]
-#[allow(clippy::struct_excessive_bools)]
+#[expect(clippy::struct_excessive_bools)]
 pub(crate) struct Command {
     #[arg(long = "all", short = 'a', help = "Clean up all registry & git crates")]
     all: bool,
@@ -180,7 +180,7 @@ enum GitCompressAction {
 }
 
 impl Command {
-    #[allow(clippy::too_many_lines)]
+    #[expect(clippy::too_many_lines)]
     pub(crate) fn run(&self) -> Result<()> {
         let dry_run = self.dry_run;
 
@@ -194,8 +194,7 @@ impl Command {
         let mut crate_detail = CrateDetail::new(dir_path.index_dir(), dir_path.db_dir())?;
 
         // List crates
-        let crate_list =
-            crate::list_crate::CrateList::create_list(&dir_path, &config_file, &mut crate_detail)?;
+        let crate_list = CrateList::create_list(&dir_path, &config_file, &mut crate_detail)?;
 
         if let Some(directories) = &self.directory {
             for directory in directories {
@@ -269,10 +268,8 @@ impl Command {
             query_size(&dir_path, &crate_list, &crate_detail);
         }
 
-        let mut registry_crates_location = crate::registry_dir::RegistryDir::new(
-            dir_path.index_dir(),
-            crate_list.installed_registry(),
-        )?;
+        let mut registry_crates_location =
+            RegistryDir::new(dir_path.index_dir(), crate_list.installed_registry())?;
 
         if self.old {
             old_clean(
@@ -369,14 +366,10 @@ fn clear_empty_index(
             .registry_crates_source()
             .iter()
             .any(|metadata| {
-                #[allow(
-                    clippy::collapsible_if,
-                    reason = "Not supported in stable at version 1.87.0"
-                )]
-                if let Some(source) = metadata.source() {
-                    if source == index_name {
-                        return true;
-                    }
+                if let Some(source) = metadata.source()
+                    && source == index_name
+                {
+                    return true;
                 }
                 false
             })
@@ -386,12 +379,9 @@ fn clear_empty_index(
     }
     let mut is_success = true;
     for index in to_remove_indexes {
-        is_success = crate::utils::delete_folder(src_dir.join(index).as_path(), dry_run).is_ok()
-            && is_success;
-        is_success = crate::utils::delete_folder(cache_dir.join(index).as_path(), dry_run).is_ok()
-            && is_success;
-        is_success = crate::utils::delete_folder(index_dir.join(index).as_path(), dry_run).is_ok()
-            && is_success;
+        is_success = delete_folder(src_dir.join(index).as_path(), dry_run).is_ok() && is_success;
+        is_success = delete_folder(cache_dir.join(index).as_path(), dry_run).is_ok() && is_success;
+        is_success = delete_folder(index_dir.join(index).as_path(), dry_run).is_ok() && is_success;
     }
     if is_success {
         println!("{}", "Cleaned empty index".blue());

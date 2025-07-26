@@ -10,7 +10,7 @@ mod utils;
 use std::env;
 
 use anyhow::Result;
-use clap::Parser;
+use clap::Parser as _;
 
 fn main() -> Result<()> {
     let args = env::args();

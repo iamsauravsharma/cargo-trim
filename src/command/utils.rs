@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use owo_colors::OwoColorize;
+use owo_colors::OwoColorize as _;
 
 use crate::crate_detail::CrateMetaData;
 use crate::utils::convert_pretty;

@@ -1,10 +1,10 @@
 use std::ffi::OsStr;
-use std::io::Read;
+use std::io::Read as _;
 use std::path::{Path, PathBuf};
 use std::{env, fs};
 
-use anyhow::{Context, Result};
-use owo_colors::OwoColorize;
+use anyhow::{Context as _, Result};
+use owo_colors::OwoColorize as _;
 use serde::{Deserialize, Serialize};
 
 use crate::list_crate::CargoLockFiles;
@@ -179,7 +179,7 @@ impl ConfigFile {
         let mut cargo_lock_files = CargoLockFiles::new();
         if path.exists() && !self.need_to_be_ignored(path)? {
             if path.is_dir() {
-                for entry in std::fs::read_dir(path)
+                for entry in fs::read_dir(path)
                     .context("failed to read directory while trying to find cargo.toml")?
                 {
                     cargo_lock_files.append(self.list_cargo_locks(&entry?.path())?);

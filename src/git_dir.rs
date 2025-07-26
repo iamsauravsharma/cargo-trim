@@ -1,5 +1,5 @@
-use anyhow::{Context, Result};
-use owo_colors::OwoColorize;
+use anyhow::{Context as _, Result};
+use owo_colors::OwoColorize as _;
 
 use crate::crate_detail::{CrateDetail, CrateMetaData};
 use crate::utils::delete_folder;
