@@ -194,13 +194,11 @@ impl CrateDetail {
     pub(crate) fn index_names_from_url(&self, url: &Url) -> Vec<String> {
         self.source_infos
             .iter()
-            .filter_map(|(key, val)| {
-                if val == url {
-                    Some(key.to_string())
-                } else {
-                    None
-                }
-            })
+            .filter_map(
+                |(key, val)| {
+                    if val == url { Some(key.clone()) } else { None }
+                },
+            )
             .collect()
     }
 

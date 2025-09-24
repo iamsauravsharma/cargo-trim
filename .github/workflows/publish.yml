@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Setup rust toolchain
         uses: dtolnay/rust-toolchain@stable
       - name: Publish to crates.io
@@ -23,9 +23,11 @@ jobs:
     name: Publish release note
     runs-on: ubuntu-latest
     needs: publish_crate
+    permissions:
+      contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Generate a changelog

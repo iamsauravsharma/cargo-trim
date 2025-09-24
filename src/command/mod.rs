@@ -595,7 +595,7 @@ fn run_cargo_update_command(cargo_lock_files: &[PathBuf], dry_run: bool) -> Resu
                 .context("failed to run cargo update command")?
                 .success()
             {
-                return Err(anyhow::anyhow!("Failed to update {location:?}"));
+                return Err(anyhow::anyhow!("Failed to update {location_str}"));
             }
         }
     }
