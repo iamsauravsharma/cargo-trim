@@ -162,7 +162,7 @@ impl ConfigFile {
         save: bool,
     ) -> Result<()> {
         if dry_run {
-            println!("{} {} {file_name:?}", "Dry run:".yellow(), "Removed".red(),);
+            println!("{} {} {file_name:?}", "Dry run:".yellow(), "Removed".red());
         } else {
             self.ignore_file_name.retain(|data| data != file_name);
             if save {
