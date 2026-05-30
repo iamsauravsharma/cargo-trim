@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::fs;
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
@@ -190,12 +191,8 @@ impl Command {
         // Read config file data
         let mut config_file = ConfigFile::init(dir_path.config_file())?;
 
-        // create new CrateDetail struct
-        let mut crate_detail = CrateDetail::new(dir_path.index_dir(), dir_path.db_dir())?;
-
-        // List crates
-        let crate_list = CrateList::create_list(&dir_path, &config_file, &mut crate_detail)?;
-
+        // Apply CLI overrides to config before building crate lists so that
+        // the current invocation uses the updated settings.
         if let Some(directories) = &self.directory {
             for directory in directories {
                 config_file.add_directory(directory, dry_run, false)?;
@@ -206,7 +203,6 @@ impl Command {
                 config_file.add_ignore_file_name(file, dry_run, false)?;
             }
         }
-
         if self.no_scan_hidden_folder {
             config_file.set_scan_hidden_folder(false, dry_run, false)?;
         } else if self.scan_hidden_folder {
@@ -217,6 +213,12 @@ impl Command {
         } else if self.scan_target_folder {
             config_file.set_scan_target_folder(true, dry_run, false)?;
         }
+
+        // create new CrateDetail struct
+        let mut crate_detail = CrateDetail::new(dir_path.index_dir(), dir_path.db_dir())?;
+
+        // List crates (uses the already-mutated config)
+        let crate_list = CrateList::create_list(&dir_path, &config_file, &mut crate_detail)?;
 
         if let Some(values) = &self.git_compress {
             for value in values {
@@ -528,11 +530,15 @@ fn run_git_compress_commands(repo_path: &Path, dry_run: bool, is_aggressive: boo
             } else {
                 '\u{251c}'
             };
-            std::process::Command::new("git")
+            let output = std::process::Command::new("git")
                 .args(args)
                 .current_dir(repo_path)
                 .output()
                 .context(format!("failed to execute {position} command"))?;
+            if !output.status.success() {
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                anyhow::bail!("git command at step {position}/{total_len} failed: {stderr}");
+            }
             println!(
                 "{:70}.......Step {position}/{total_len}",
                 format!("  {symbol} {message}")
@@ -637,7 +643,8 @@ fn top_crates(crate_detail: &CrateDetail, number: usize) {
 // information
 fn query_size(dir_path: &DirPath, crate_list: &CrateList, crate_detail: &CrateDetail) {
     let mut final_size = 0_u64;
-    let bin_dir_size = get_inode_handled_size(dir_path.bin_dir(), &mut vec![]).unwrap_or(0_u64);
+    let bin_dir_size =
+        get_inode_handled_size(dir_path.bin_dir(), &mut HashSet::new()).unwrap_or(0_u64);
     final_size += bin_dir_size;
     query_print(
         &format!(

@@ -177,14 +177,21 @@ impl ConfigFile {
     /// folder present in directory
     pub(crate) fn list_cargo_locks(&self, path: &Path) -> Result<CargoLockFiles> {
         let mut cargo_lock_files = CargoLockFiles::new();
-        if path.exists() && !self.need_to_be_ignored(path)? {
-            if path.is_dir() {
+        // Use symlink_metadata so we don't follow symlinks when checking existence/type
+        let Ok(sym_meta) = path.symlink_metadata() else {
+            return Ok(cargo_lock_files);
+        };
+        if sym_meta.is_symlink() {
+            return Ok(cargo_lock_files);
+        }
+        if !self.need_to_be_ignored(path)? {
+            if sym_meta.is_dir() {
                 for entry in fs::read_dir(path)
                     .context("failed to read directory while trying to find cargo.toml")?
                 {
                     cargo_lock_files.append(self.list_cargo_locks(&entry?.path())?);
                 }
-            } else if path.is_file() && path.file_name() == Some(OsStr::new("Cargo.lock")) {
+            } else if sym_meta.is_file() && path.file_name() == Some(OsStr::new("Cargo.lock")) {
                 cargo_lock_files.add_path(path.to_path_buf());
             }
         }
@@ -193,11 +200,15 @@ impl ConfigFile {
 
     /// check if directory should be scanned for listing crates or not
     fn need_to_be_ignored(&self, path: &Path) -> Result<bool> {
-        let file_name = path
-            .file_name()
-            .context("failed to get need to be ignored path file name")?
-            .to_str()
-            .context("failed to convert folder name Osstr to str")?;
+        let file_name = match path.file_name() {
+            Some(name) => {
+                name.to_str()
+                    .context("failed to convert folder name OsStr to str")?
+            }
+            // Paths without a final component (e.g. "/") have no meaningful name to
+            // match against ignore rules, so we treat them as not ignored.
+            None => return Ok(false),
+        };
         if self.ignore_file_name().contains(&file_name.to_owned()) {
             return Ok(true);
         }

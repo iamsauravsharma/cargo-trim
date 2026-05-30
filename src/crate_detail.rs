@@ -165,6 +165,9 @@ impl CrateDetail {
         if db_dir.exists() && db_dir.is_dir() {
             for entry in fs::read_dir(db_dir)? {
                 let git_dir = entry?.path();
+                if !git_dir.is_dir() {
+                    continue;
+                }
                 let git_file_name = git_dir
                     .file_name()
                     .context("failed to get file name of git dir")?
@@ -399,8 +402,10 @@ impl CrateDetail {
                         let file_name = file_path
                             .to_str()
                             .context("failed to convert file path file name to str")?;
-                        let splitted_file_name = file_name.rsplitn(2, '-').collect::<Vec<_>>();
-                        let crate_name_initial = splitted_file_name[1];
+                        let crate_name_initial = file_name
+                            .rsplit_once('-')
+                            .context("failed to split git cache directory name")?
+                            .0;
                         let full_name = format!("{crate_name_initial}-{git_sha}");
                         let crate_metadata = CrateMetaData {
                             name: full_name,
@@ -422,14 +427,19 @@ impl CrateDetail {
         if db_dir.exists() && db_dir.is_dir() {
             for entry in fs::read_dir(db_dir).context("failed to read db dir")? {
                 let entry_path = entry?.path();
+                if !entry_path.is_dir() {
+                    continue;
+                }
                 let crate_size =
                     get_size(&entry_path).context("failed to get size of db dir folders")?;
                 let file_name = entry_path.file_name().context("failed to get file name")?;
                 let file_name_str = file_name
                     .to_str()
                     .context("failed to convert db dir file name to str")?;
-                let splitted_file_name = file_name_str.rsplitn(2, '-').collect::<Vec<_>>();
-                let crate_name_initial = splitted_file_name[1];
+                let crate_name_initial = file_name_str
+                    .rsplit_once('-')
+                    .context("failed to split db dir entry name")?
+                    .0;
                 let full_name = format!("{crate_name_initial}-HEAD");
                 let crate_metadata = CrateMetaData {
                     name: full_name,
