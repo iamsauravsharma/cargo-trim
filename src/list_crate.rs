@@ -193,6 +193,46 @@ impl CrateList {
     }
 }
 
+/// Parse a `git+…` source string from Cargo.lock and return `(repo_url,
+/// short_sha)`.
+fn parse_git_source(source: &str) -> Result<(Url, String)> {
+    let url_with_kind;
+    let sha_part;
+    if source.contains("?rev=") || source.contains("?branch=") || source.contains("?tag=") {
+        let (base, query_and_hash) = if source.contains("?rev=") {
+            source
+                .split_once("?rev=")
+                .context("failed to split ?rev= from git source")?
+        } else if source.contains("?branch=") {
+            source
+                .split_once("?branch=")
+                .context("failed to split ?branch= from git source")?
+        } else {
+            source
+                .split_once("?tag=")
+                .context("failed to split ?tag= from git source")?
+        };
+        sha_part = query_and_hash
+            .split_once('#')
+            .context("failed to find # in git source query param")?
+            .1;
+        url_with_kind = base;
+    } else {
+        let (base, hash) = source
+            .split_once('#')
+            .context("failed to find # in git source")?;
+        sha_part = hash;
+        url_with_kind = base;
+    }
+    let rev_short_form = sha_part
+        .get(..7)
+        .context("git SHA in Cargo.lock is shorter than 7 characters")?
+        .to_string();
+    let url = Url::from_str(&url_with_kind.replace("git+", ""))
+        .context("failed git source url kind with query params conversion")?;
+    Ok((url, rev_short_form))
+}
+
 /// Read out content of Cargo.lock file to List crates present so can be
 /// used for orphan clean
 fn read_content(
@@ -239,31 +279,7 @@ fn read_content(
                             }
                         }
                         if source.contains("git+") {
-                            let url_with_kind;
-                            let rev_sha_vec: Vec<&str>;
-                            // determine url with kind according to git source have query param or
-                            // not
-                            if source.contains("?rev=")
-                                || source.contains("?branch=")
-                                || source.contains("?tag=")
-                            {
-                                let split_url: Vec<&str> = if source.contains("?rev=") {
-                                    source.split("?rev=").collect()
-                                } else if source.contains("?branch=") {
-                                    source.split("?branch=").collect()
-                                } else {
-                                    source.split("?tag=").collect()
-                                };
-                                rev_sha_vec = split_url[1].split('#').collect();
-                                url_with_kind = split_url[0];
-                            } else {
-                                rev_sha_vec = source.split('#').collect();
-                                url_with_kind = rev_sha_vec[0];
-                            }
-                            let rev_short_form = &rev_sha_vec[1][..=6];
-                            let url = Url::from_str(&url_with_kind.replace("git+", "")).context(
-                                "failed git source url kind with query params conversion",
-                            )?;
+                            let (url, rev_short_form) = parse_git_source(source)?;
                             let last_path_segment = url
                                 .path_segments()
                                 .context("url doesn't have segment")?
@@ -373,7 +389,7 @@ fn list_used_crates(
     used_crate_registry.sort();
     used_crate_registry.dedup();
     used_crate_git.sort();
-    used_crate_registry.dedup();
+    used_crate_git.dedup();
     Ok((cargo_lock_files, used_crate_registry, used_crate_git))
 }
 
@@ -420,6 +436,9 @@ fn latest_rev_value(path: &Path) -> Result<String> {
     fetch_head_file.push(path);
     fetch_head_file.push("FETCH_HEAD");
     let content = fs::read_to_string(fetch_head_file).context("failed to read FETCH_HEAD file")?;
-    // read first 7 value which is same as hash for git based checkout folder
-    Ok(content[..7].to_string())
+    // read first 7 characters which is the short form of the git commit hash
+    content
+        .get(..7)
+        .context("FETCH_HEAD content is shorter than 7 characters")
+        .map(ToString::to_string)
 }

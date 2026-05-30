@@ -121,7 +121,7 @@ pub(super) fn crate_list_type(
                     .source()
                     .as_ref()
                     .map_or("N/A".to_string(), ToString::to_string),
-                format!("{}", crate_metadata.name()),
+                crate_metadata.name(),
                 convert_pretty(size)
             );
         }

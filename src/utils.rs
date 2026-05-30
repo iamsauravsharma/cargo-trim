@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::fs;
 #[cfg(unix)]
 use std::os::unix::fs::MetadataExt as _;
@@ -102,7 +103,7 @@ pub(crate) fn get_size(path: &Path) -> Result<u64> {
 }
 
 ///  get accurate bin size
-pub(crate) fn get_inode_handled_size(path: &Path, inodes: &mut Vec<u64>) -> Result<u64> {
+pub(crate) fn get_inode_handled_size(path: &Path, inodes: &mut HashSet<u64>) -> Result<u64> {
     let mut total_size = 0;
     let metadata = path.metadata();
     if let Ok(meta) = metadata {
@@ -119,7 +120,7 @@ pub(crate) fn get_inode_handled_size(path: &Path, inodes: &mut Vec<u64>) -> Resu
                 let file_inode = path_metadata.ino();
                 if !inodes.contains(&file_inode) {
                     total_size += file_size;
-                    inodes.push(file_inode);
+                    inodes.insert(file_inode);
                 }
             }
             #[cfg(not(unix))]
