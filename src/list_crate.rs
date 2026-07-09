@@ -173,7 +173,7 @@ impl CrateList {
         let mut old_orphan_registry = Vec::new();
         let orphan_list = self.orphan_registry();
         for crates in self.old_registry() {
-            if orphan_list.contains(crates) {
+            if orphan_list.binary_search(crates).is_ok() {
                 old_orphan_registry.push(crates.clone());
             }
         }
@@ -185,7 +185,7 @@ impl CrateList {
         let mut old_orphan_git = Vec::new();
         let orphan_list = self.orphan_git();
         for crates in self.old_git() {
-            if orphan_list.contains(crates) {
+            if orphan_list.binary_search(crates).is_ok() {
                 old_orphan_git.push(crates.clone());
             }
         }
@@ -196,34 +196,32 @@ impl CrateList {
 /// Parse a `git+…` source string from Cargo.lock and return `(repo_url,
 /// short_sha)`.
 fn parse_git_source(source: &str) -> Result<(Url, String)> {
-    let url_with_kind;
-    let sha_part;
-    if source.contains("?rev=") || source.contains("?branch=") || source.contains("?tag=") {
-        let (base, query_and_hash) = if source.contains("?rev=") {
-            source
-                .split_once("?rev=")
-                .context("failed to split ?rev= from git source")?
-        } else if source.contains("?branch=") {
-            source
-                .split_once("?branch=")
-                .context("failed to split ?branch= from git source")?
+    let (url_with_kind, sha_part) =
+        if source.contains("?rev=") || source.contains("?branch=") || source.contains("?tag=") {
+            let (base, query_and_hash) = if source.contains("?rev=") {
+                source
+                    .split_once("?rev=")
+                    .context("failed to split ?rev= from git source")?
+            } else if source.contains("?branch=") {
+                source
+                    .split_once("?branch=")
+                    .context("failed to split ?branch= from git source")?
+            } else {
+                source
+                    .split_once("?tag=")
+                    .context("failed to split ?tag= from git source")?
+            };
+            let sha_part = query_and_hash
+                .split_once('#')
+                .context("failed to find # in git source query param")?
+                .1;
+            (base, sha_part)
         } else {
-            source
-                .split_once("?tag=")
-                .context("failed to split ?tag= from git source")?
+            let (base, hash) = source
+                .split_once('#')
+                .context("failed to find # in git source")?;
+            (base, hash)
         };
-        sha_part = query_and_hash
-            .split_once('#')
-            .context("failed to find # in git source query param")?
-            .1;
-        url_with_kind = base;
-    } else {
-        let (base, hash) = source
-            .split_once('#')
-            .context("failed to find # in git source")?;
-        sha_part = hash;
-        url_with_kind = base;
-    }
     let rev_short_form = sha_part
         .get(..7)
         .context("git SHA in Cargo.lock is shorter than 7 characters")?
@@ -402,8 +400,9 @@ fn list_orphan_crates(
 ) -> (Vec<CrateMetaData>, Vec<CrateMetaData>) {
     let mut orphan_crate_registry = Vec::new();
     let mut orphan_crate_git = Vec::new();
+    // `used_crate_registry` is sorted, so binary search beats linear `contains`
     for crates in installed_crate_registry {
-        if !used_crate_registry.contains(crates) {
+        if used_crate_registry.binary_search(crates).is_err() {
             orphan_crate_registry.push(crates.clone());
         }
     }
@@ -419,7 +418,10 @@ fn list_orphan_crates(
             {
                 orphan_crate_git.push(installed_crate_metadata.clone());
             }
-        } else if !used_crate_git.contains(installed_crate_metadata) {
+        } else if used_crate_git
+            .binary_search(installed_crate_metadata)
+            .is_err()
+        {
             orphan_crate_git.push(installed_crate_metadata.clone());
         }
     }
@@ -441,4 +443,59 @@ fn latest_rev_value(path: &Path) -> Result<String> {
         .get(..7)
         .context("FETCH_HEAD content is shorter than 7 characters")
         .map(ToString::to_string)
+}
+
+#[cfg(test)]
+mod tests {
+    use url::Url;
+
+    use super::parse_git_source;
+
+    #[test]
+    fn parse_git_source_plain_hash_test() {
+        let (url, sha) =
+            parse_git_source("git+https://github.com/foo/bar#0123456789abcdef0123456789ab")
+                .unwrap();
+        assert_eq!(url, Url::parse("https://github.com/foo/bar").unwrap());
+        assert_eq!(sha, "0123456");
+    }
+
+    #[test]
+    fn parse_git_source_rev_query_test() {
+        let (url, sha) =
+            parse_git_source("git+https://github.com/foo/bar?rev=v1.2.3#abcdef1234567890").unwrap();
+        assert_eq!(url, Url::parse("https://github.com/foo/bar").unwrap());
+        assert_eq!(sha, "abcdef1");
+    }
+
+    #[test]
+    fn parse_git_source_branch_query_test() {
+        let (url, sha) =
+            parse_git_source("git+https://github.com/foo/bar?branch=main#deadbeefcafe0").unwrap();
+        assert_eq!(url, Url::parse("https://github.com/foo/bar").unwrap());
+        assert_eq!(sha, "deadbee");
+    }
+
+    #[test]
+    fn parse_git_source_tag_query_test() {
+        let (url, sha) =
+            parse_git_source("git+https://github.com/foo/bar?tag=v0.1.0#0f1e2d3c4b5a").unwrap();
+        assert_eq!(url, Url::parse("https://github.com/foo/bar").unwrap());
+        assert_eq!(sha, "0f1e2d3");
+    }
+
+    #[test]
+    fn parse_git_source_missing_hash_is_error_test() {
+        assert!(parse_git_source("git+https://github.com/foo/bar").is_err());
+    }
+
+    #[test]
+    fn parse_git_source_short_sha_is_error_test() {
+        assert!(parse_git_source("git+https://github.com/foo/bar#abc").is_err());
+    }
+
+    #[test]
+    fn parse_git_source_rev_without_hash_is_error_test() {
+        assert!(parse_git_source("git+https://github.com/foo/bar?rev=v1").is_err());
+    }
 }

@@ -326,7 +326,7 @@ impl CrateDetail {
                             path: Some(dir_entry_path),
                         };
                         self.add_registry_crate_source(&crate_metadata);
-                        update_crate_list(&mut installed_crate_registry, &crate_metadata)?;
+                        update_crate_list(&mut installed_crate_registry, &crate_metadata);
                     }
                 }
             }
@@ -359,7 +359,7 @@ impl CrateDetail {
                             path: Some(dir_entry_path),
                         };
                         self.add_registry_crate_archive(&crate_metadata);
-                        update_crate_list(&mut installed_crate_registry, &crate_metadata)?;
+                        update_crate_list(&mut installed_crate_registry, &crate_metadata);
                     }
                 }
             }
@@ -418,7 +418,7 @@ impl CrateDetail {
                             path: Some(git_sha_entry_path),
                         };
                         self.add_git_crate_archive(&crate_metadata);
-                        update_crate_list(&mut installed_crate_git, &crate_metadata)?;
+                        update_crate_list(&mut installed_crate_git, &crate_metadata);
                     }
                 }
             }
@@ -452,7 +452,7 @@ impl CrateDetail {
                     path: Some(entry_path),
                 };
                 self.add_git_crate_source(&crate_metadata);
-                update_crate_list(&mut installed_crate_git, &crate_metadata)?;
+                update_crate_list(&mut installed_crate_git, &crate_metadata);
             }
         }
         let mut installed_crates = Vec::new();
@@ -464,22 +464,67 @@ impl CrateDetail {
     }
 }
 
-fn update_crate_list(
-    hash_set: &mut HashSet<CrateMetaData>,
-    temp_crate_metadata: &CrateMetaData,
-) -> Result<()> {
-    let meta_data_exists = hash_set.get(temp_crate_metadata).is_some();
-    let mut current_size = temp_crate_metadata.size;
-    if meta_data_exists {
-        current_size += hash_set
-            .get(temp_crate_metadata)
-            .context("failed to get metadata from hash set")?
-            .size;
+fn update_crate_list(hash_set: &mut HashSet<CrateMetaData>, temp_crate_metadata: &CrateMetaData) {
+    let mut crate_metadata = temp_crate_metadata.clone();
+    // accumulate size of an existing equal entry before reinserting
+    if let Some(existing) = hash_set.take(temp_crate_metadata) {
+        crate_metadata.size += existing.size;
     }
-    hash_set.remove(temp_crate_metadata);
-    hash_set.insert(CrateMetaData {
-        size: current_size,
-        ..temp_crate_metadata.clone()
-    });
-    Ok(())
+    hash_set.insert(crate_metadata);
+}
+
+#[cfg(test)]
+mod tests {
+    use std::cmp::Ordering;
+    use std::collections::HashSet;
+
+    use semver::Version;
+
+    use super::{CrateMetaData, update_crate_list};
+
+    fn meta(name: &str, version: &str, source: &str, size: u64) -> CrateMetaData {
+        CrateMetaData {
+            name: name.to_string(),
+            version: Some(Version::parse(version).unwrap()),
+            size,
+            source: Some(source.to_string()),
+            path: None,
+        }
+    }
+
+    #[test]
+    fn crate_metadata_equality_ignores_size_test() {
+        let a = meta("serde", "1.0.0", "registry", 100);
+        let b = meta("serde", "1.0.0", "registry", 999);
+        assert_eq!(a, b);
+        assert_eq!(a.cmp(&b), Ordering::Equal);
+    }
+
+    #[test]
+    fn crate_metadata_ordering_prefers_name_then_version_then_source_test() {
+        let base = meta("serde", "1.0.0", "registry", 0);
+        // name has the highest priority
+        assert!(meta("aaa", "9.9.9", "zzz", 0) < base);
+        // then version
+        assert!(base < meta("serde", "1.2.0", "registry", 0));
+        // then source
+        assert!(meta("serde", "1.0.0", "aaa", 0) < base);
+    }
+
+    #[test]
+    fn update_crate_list_accumulates_size_for_equal_entry_test() {
+        let mut set = HashSet::new();
+        update_crate_list(&mut set, &meta("serde", "1.0.0", "registry", 100));
+        update_crate_list(&mut set, &meta("serde", "1.0.0", "registry", 50));
+        assert_eq!(set.len(), 1);
+        assert_eq!(set.iter().next().unwrap().size(), 150);
+    }
+
+    #[test]
+    fn update_crate_list_keeps_distinct_entries_test() {
+        let mut set = HashSet::new();
+        update_crate_list(&mut set, &meta("serde", "1.0.0", "registry", 100));
+        update_crate_list(&mut set, &meta("serde", "2.0.0", "registry", 100));
+        assert_eq!(set.len(), 2);
+    }
 }

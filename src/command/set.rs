@@ -20,9 +20,10 @@ pub(crate) struct Set {
     #[arg(
         long = "ignore",
         short = 'i',
-        help = "Add file name/directory name to ignore list in configuration file which are \
-                ignored while scanning Cargo.lock file",
-        value_name = "file"
+        help = "Add a relative or absolute path to ignore list in configuration file which is \
+                ignored while scanning Cargo.lock file. A relative path is matched against the \
+                trailing path components while an absolute path is matched against the full path",
+        value_name = "path"
     )]
     ignore: Option<Vec<String>>,
     #[arg(long = "scan-hidden-folder", help = "Set scan hidden folder as true")]
@@ -41,9 +42,12 @@ impl Set {
                 config_file.add_directory(path, dry_run, true)?;
             }
         }
-        if let Some(files) = &self.ignore {
-            for file in files {
-                config_file.add_ignore_file_name(file, dry_run, true)?;
+        if let Some(ignores) = &self.ignore {
+            for ignore in ignores {
+                // trim trailing separator so a path matches with or without it
+                let path_separator = std::path::MAIN_SEPARATOR;
+                let ignore = ignore.trim_end_matches(path_separator);
+                config_file.add_ignore(ignore, dry_run, true)?;
             }
         }
         if self.scan_hidden_folder {

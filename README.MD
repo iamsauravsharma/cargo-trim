@@ -78,7 +78,7 @@ Options:
   -d, --directory <DIRECTORY>  Extra list of directory of Rust projects for current command [env: TRIM_DIRECTORY=]
   -n, --dry-run                Run command in dry run mode to see what would be done
   -g, --gc <GIT_COMPRESS>      Git compress to reduce size of .cargo (git command required) [possible values: aggressive-checkout, aggressive-db, aggressive-index, checkout, db, index]
-  -i, --ignore <IGNORE>        Extra list of ignore file name which should be ignored for current command [env: TRIM_IGNORE=]
+  -i, --ignore <IGNORE>        Extra list of relative or absolute path which should be ignored for current command [env: TRIM_IGNORE=]
   -l, --light                  Light cleanup without removing files required for future compilation without internet
       --no-scan-hidden-folder  Do not scan hidden folder for current command. Takes precedence over scan-hidden-folder [env: TRIM_NOT_SCAN_HIDDEN_FOLDER=]
       --no-scan-target-folder  Do not scan target folder for current command. Takes precedence over scan-target-folder [env: TRIM_NOT_SCAN_TARGET_FOLDER=]
@@ -114,14 +114,21 @@ Here are some configuration options and their default values:
 
 List of directory to scan for a Rust projects
 
-#### 2. **ignore_file_name**
+#### 2. **ignore**
 
 **default: []**
 
 **env: TRIM_IGNORE**
 
-List of file or directory names to ignore during scanning.
-This is useful for excluding folders like `node_modules` or `venv` to enhance performance.
+List of relative or absolute paths to ignore during scanning. Each entry may be either:
+
+- a **relative path**, which preserves the old file-name behavior. A single-component entry such
+  as `node_modules` or `target` matches that folder name anywhere in the tree, and a multi-component
+  entry such as `crates/demo` matches any path ending in `crates/demo`. Useful for excluding folders
+  to enhance performance.
+- an **absolute path** such as `/home/user/projects/demo`, which is matched against the full scanned
+  path and skips that whole project subtree. Useful for excluding an individual project whose
+  `Cargo.lock` you don't want to count as "used".
 
 #### 3. **scan_hidden_folder**
 

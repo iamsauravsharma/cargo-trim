@@ -20,6 +20,12 @@ pub(crate) struct List {
     old_orphan: bool,
     #[arg(long = "orphan", short = 'x', help = "List orphan crates")]
     orphan: bool,
+    #[arg(
+        long = "project",
+        short = 'p',
+        help = "List all detected Rust projects (directories containing a scanned Cargo.lock)"
+    )]
+    project: bool,
 }
 
 impl List {
@@ -41,6 +47,26 @@ impl List {
         if self.orphan {
             list_orphan(crate_list, source_url_max_width, directory_is_empty);
         }
+        if self.project {
+            list_projects(crate_list);
+        }
+    }
+}
+
+fn list_projects(crate_list: &CrateList) {
+    let lock_files = crate_list.cargo_lock_files().paths();
+    println!(
+        "{}",
+        format!("Total detected projects: {}", lock_files.len()).blue()
+    );
+    for (index, lock_file) in lock_files.iter().enumerate() {
+        // A project is the directory that contains the detected Cargo.lock.
+        let project_dir = lock_file.parent().unwrap_or(lock_file);
+        println!(
+            "{}: {}",
+            format!("Project [{index}]").blue(),
+            project_dir.display()
+        );
     }
 }
 

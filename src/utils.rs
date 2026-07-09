@@ -96,7 +96,7 @@ pub(crate) fn get_size(path: &Path) -> Result<u64> {
                 total_size += get_size(&entry_path)?;
             }
         } else if meta.is_file() {
-            total_size += path.metadata()?.len();
+            total_size += meta.len();
         }
     }
     Ok(total_size)
@@ -113,11 +113,10 @@ pub(crate) fn get_inode_handled_size(path: &Path, inodes: &mut HashSet<u64>) -> 
                 total_size += get_inode_handled_size(&entry_path, inodes)?;
             }
         } else if meta.is_file() {
-            let path_metadata = path.metadata()?;
-            let file_size = path_metadata.len();
+            let file_size = meta.len();
             #[cfg(unix)]
             {
-                let file_inode = path_metadata.ino();
+                let file_inode = meta.ino();
                 if !inodes.contains(&file_inode) {
                     total_size += file_size;
                     inodes.insert(file_inode);
@@ -198,6 +197,20 @@ mod tests {
                 Version::parse("0.12.0-rc.1+name0.4.6").unwrap()
             )
         );
+    }
+
+    #[test]
+    fn split_name_version_strips_crate_suffix_test() {
+        assert_eq!(
+            split_name_version("serde-1.0.0.crate").unwrap(),
+            ("serde".to_string(), Version::parse("1.0.0").unwrap())
+        );
+    }
+
+    #[test]
+    fn split_name_version_without_version_is_error_test() {
+        assert!(split_name_version("no_version_here").is_err());
+        assert!(split_name_version("also-no-version").is_err());
     }
 
     #[test]

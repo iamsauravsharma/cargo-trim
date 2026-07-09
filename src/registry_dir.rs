@@ -167,6 +167,7 @@ impl RegistryDir {
 fn remove_index_cache(path: &Path, crate_metadata: &CrateMetaData, dry_run: bool) -> Result<()> {
     let mut crate_index_cache_location = path.to_path_buf();
     let name = crate_metadata.name();
+    // slice with `get` so a multi-byte crate name errors instead of panicking
     match name.len() {
         1 => {
             crate_index_cache_location.push("1");
@@ -178,12 +179,21 @@ fn remove_index_cache(path: &Path, crate_metadata: &CrateMetaData, dry_run: bool
         }
         3 => {
             crate_index_cache_location.push("3");
-            crate_index_cache_location.push(&name[..1]);
+            crate_index_cache_location.push(
+                name.get(..1)
+                    .context("crate name is not valid for index cache slicing")?,
+            );
             crate_index_cache_location.push(name);
         }
         _ => {
-            crate_index_cache_location.push(&name[..2]);
-            crate_index_cache_location.push(&name[2..4]);
+            crate_index_cache_location.push(
+                name.get(..2)
+                    .context("crate name is not valid for index cache slicing")?,
+            );
+            crate_index_cache_location.push(
+                name.get(2..4)
+                    .context("crate name is not valid for index cache slicing")?,
+            );
             crate_index_cache_location.push(name);
         }
     }
