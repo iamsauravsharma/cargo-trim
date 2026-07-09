@@ -76,7 +76,8 @@ pub(crate) struct Command {
     #[arg(
         long = "ignore",
         short = 'i',
-        help = "Extra list of ignore file name which should be ignored for current command",
+        help = "Extra list of relative or absolute path which should be ignored for current \
+                command",
         env = "TRIM_IGNORE"
     )]
     ignore: Option<Vec<String>>,
@@ -198,9 +199,10 @@ impl Command {
                 config_file.add_directory(directory, dry_run, false)?;
             }
         }
-        if let Some(ignore_file_names) = &self.ignore {
-            for file in ignore_file_names {
-                config_file.add_ignore_file_name(file, dry_run, false)?;
+        if let Some(ignores) = &self.ignore {
+            for ignore in ignores {
+                let ignore = ignore.trim_end_matches(std::path::MAIN_SEPARATOR);
+                config_file.add_ignore(ignore, dry_run, false)?;
             }
         }
         if self.no_scan_hidden_folder {
@@ -390,7 +392,6 @@ fn clear_empty_index(
     } else {
         println!("Failed to remove unused index");
     }
-    if is_success {}
 }
 
 // Git compress git files according to provided value if option

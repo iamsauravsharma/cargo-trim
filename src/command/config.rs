@@ -15,11 +15,7 @@ use crate::config_file::ConfigFile;
 pub(crate) struct Config {
     #[arg(long = "directory", short = 'd', help = "Query about directory data")]
     directory: bool,
-    #[arg(
-        long = "ignore",
-        short = 'i',
-        help = "Query about ignored file name data"
-    )]
+    #[arg(long = "ignore", short = 'i', help = "Query about ignore path data")]
     ignore: bool,
     #[arg(long = "location", short = 'l', help = "Return config file location")]
     location: bool,
@@ -36,9 +32,9 @@ impl Config {
             }
         }
         if self.ignore {
-            let read_ignore_file_name = config_file.ignore_file_name();
-            for (index, name) in read_ignore_file_name.iter().enumerate() {
-                println!("{}: {name}", format!("Ignored name [{index}]").blue());
+            let read_ignore = config_file.ignore();
+            for (index, name) in read_ignore.iter().enumerate() {
+                println!("{}: {name}", format!("Ignore [{index}]").blue());
             }
         }
         if self.location {
