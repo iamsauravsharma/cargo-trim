@@ -11,8 +11,9 @@ use semver::Version;
 
 /// split name and semver version part from crates full name
 pub(crate) fn split_name_version(full_name: &str) -> Result<(String, Version)> {
-    let mut name = full_name.to_string();
-    name = name.replace(".crate", "");
+    // only strip a trailing archive extension so a `.crate` occurring inside a
+    // name is preserved
+    let name = full_name.strip_suffix(".crate").unwrap_or(full_name);
     let version_split: Vec<&str> = name.split('-').collect();
     let mut version_start_position = version_split.len();
     // check a split part to check from where a semver start for crate
@@ -32,28 +33,17 @@ pub(crate) fn split_name_version(full_name: &str) -> Result<(String, Version)> {
 /// delete folder with folder path provided
 pub(crate) fn delete_folder(path: &Path, dry_run: bool) -> Result<()> {
     if path.exists() {
-        if path.is_file() {
-            if dry_run {
-                println!(
-                    "{} {} {}",
-                    "Dry run:".yellow(),
-                    "Removed".red(),
-                    path.to_str().unwrap_or_default()
-                );
-            } else {
-                fs::remove_file(path)?;
-            }
+        if dry_run {
+            println!(
+                "{} {} {}",
+                "Dry run:".yellow(),
+                "Removed".red(),
+                path.display()
+            );
+        } else if path.is_file() {
+            fs::remove_file(path)?;
         } else if path.is_dir() {
-            if dry_run {
-                println!(
-                    "{} {} {}",
-                    "Dry run:".yellow(),
-                    "Removed".red(),
-                    path.to_str().unwrap_or_default()
-                );
-            } else {
-                fs::remove_dir_all(path)?;
-            }
+            fs::remove_dir_all(path)?;
         }
     }
     Ok(())
@@ -105,7 +95,7 @@ pub(crate) fn get_size(path: &Path) -> Result<u64> {
 ///  get accurate bin size
 pub(crate) fn get_inode_handled_size(path: &Path, inodes: &mut HashSet<u64>) -> Result<u64> {
     let mut total_size = 0;
-    let metadata = path.metadata();
+    let metadata = path.symlink_metadata();
     if let Ok(meta) = metadata {
         if meta.is_dir() {
             for entry in fs::read_dir(path)? {
@@ -134,7 +124,7 @@ pub(crate) fn get_inode_handled_size(path: &Path, inodes: &mut HashSet<u64>) -> 
 /// Convert size to pretty number
 #[expect(
     clippy::cast_precision_loss,
-    reason = "converting u32 to usize with loss is allowed"
+    reason = "u64 to f64 precision loss is negligible for a human readable size"
 )]
 pub(crate) fn convert_pretty(num: u64) -> String {
     let units = ["B", "kB", "MB", "GB", "TB", "PB", "EB"];

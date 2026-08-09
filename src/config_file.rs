@@ -1,6 +1,7 @@
 use std::ffi::OsStr;
 use std::io::Read as _;
 use std::path::{Path, PathBuf};
+use std::sync::LazyLock;
 use std::{env, fs};
 
 use anyhow::{Context as _, Result};
@@ -8,6 +9,14 @@ use owo_colors::OwoColorize as _;
 use serde::{Deserialize, Serialize};
 
 use crate::list_crate::CargoLockFiles;
+
+/// name of the cargo target folder, resolved once since it is checked for
+/// every path visited during the recursive scan
+static TARGET_DIR_NAME: LazyLock<String> = LazyLock::new(|| {
+    env::var("CARGO_BUILD_TARGET_DIR")
+        .or_else(|_| env::var("CARGO_TARGET_DIR"))
+        .unwrap_or_else(|_| String::from("target"))
+});
 
 /// Stores config file information
 #[derive(Serialize, Deserialize, Default)]
@@ -174,7 +183,7 @@ impl ConfigFile {
         if sym_meta.is_symlink() {
             return Ok(cargo_lock_files);
         }
-        if !self.need_to_be_ignored(path)? {
+        if !self.need_to_be_ignored(path) {
             if sym_meta.is_dir() {
                 for entry in fs::read_dir(path)
                     .context("failed to read directory while trying to find cargo.toml")?
@@ -189,40 +198,34 @@ impl ConfigFile {
     }
 
     /// check if directory should be scanned for listing crates or not
-    fn need_to_be_ignored(&self, path: &Path) -> Result<bool> {
+    fn need_to_be_ignored(&self, path: &Path) -> bool {
         // match ignore entries as relative or absolute paths
         if self
             .ignore
             .iter()
             .any(|ignore| path == Path::new(ignore) || path.ends_with(ignore))
         {
-            return Ok(true);
+            return true;
         }
         // a path without a final component cannot match the name based rules below
         let Some(file_name) = path.file_name() else {
-            return Ok(false);
+            return false;
         };
-        let file_name = file_name
-            .to_str()
-            .context("failed to convert folder name OsStr to str")?;
+        // a non UTF-8 name should not abort the whole scan; compare lossily
+        let file_name = file_name.to_string_lossy();
         // skip hidden folder unless configured to be scanned
         if file_name.starts_with('.') && !self.scan_hidden_folder() {
-            return Ok(true);
+            return true;
         }
         // skip target folder unless configured to be scanned
-        let target_dir_name = env::var("CARGO_BUILD_TARGET_DIR")
-            .or_else(|_| env::var("CARGO_TARGET_DIR"))
-            .unwrap_or_else(|_| String::from("target"));
-        Ok(file_name == target_dir_name && !self.scan_target_folder())
+        file_name == TARGET_DIR_NAME.as_str() && !self.scan_target_folder()
     }
 
     /// save struct in the config file
     fn save(&self) -> Result<()> {
-        let mut buffer = String::new();
         let serialized =
-            toml::to_string_pretty(&self).context("config cannot to converted to pretty toml")?;
-        buffer.push_str(&serialized);
-        fs::write(&self.location, buffer).context("failed to write a value to config file")?;
+            toml::to_string_pretty(&self).context("config cannot be converted to pretty toml")?;
+        fs::write(&self.location, serialized).context("failed to write a value to config file")?;
         Ok(())
     }
 }
@@ -243,53 +246,35 @@ mod tests {
     #[test]
     fn ignore_relative_name_matches_anywhere_test() {
         let cfg = config_with_ignore(&["node_modules"]);
-        assert!(
-            cfg.need_to_be_ignored(Path::new("/a/b/node_modules"))
-                .unwrap()
-        );
-        assert!(
-            cfg.need_to_be_ignored(Path::new("/x/node_modules"))
-                .unwrap()
-        );
+        assert!(cfg.need_to_be_ignored(Path::new("/a/b/node_modules")));
+        assert!(cfg.need_to_be_ignored(Path::new("/x/node_modules")));
         // a whole component must match, not a substring
-        assert!(
-            !cfg.need_to_be_ignored(Path::new("/a/node_modules_old"))
-                .unwrap()
-        );
+        assert!(!cfg.need_to_be_ignored(Path::new("/a/node_modules_old")));
     }
 
     #[test]
     fn ignore_relative_multi_component_matches_suffix_test() {
         let cfg = config_with_ignore(&["crates/demo"]);
-        assert!(
-            cfg.need_to_be_ignored(Path::new("/home/a/crates/demo"))
-                .unwrap()
-        );
-        assert!(
-            cfg.need_to_be_ignored(Path::new("/home/b/crates/demo"))
-                .unwrap()
-        );
-        assert!(
-            !cfg.need_to_be_ignored(Path::new("/home/a/crates/other"))
-                .unwrap()
-        );
+        assert!(cfg.need_to_be_ignored(Path::new("/home/a/crates/demo")));
+        assert!(cfg.need_to_be_ignored(Path::new("/home/b/crates/demo")));
+        assert!(!cfg.need_to_be_ignored(Path::new("/home/a/crates/other")));
     }
 
     #[test]
     fn ignore_absolute_matches_only_exact_test() {
         let cfg = config_with_ignore(&["/abc/def"]);
-        assert!(cfg.need_to_be_ignored(Path::new("/abc/def")).unwrap());
+        assert!(cfg.need_to_be_ignored(Path::new("/abc/def")));
         // an absolute entry must not match a deeper or relative path by suffix
-        assert!(!cfg.need_to_be_ignored(Path::new("xyz/abc/def")).unwrap());
-        assert!(!cfg.need_to_be_ignored(Path::new("/xyz/abc/def")).unwrap());
+        assert!(!cfg.need_to_be_ignored(Path::new("xyz/abc/def")));
+        assert!(!cfg.need_to_be_ignored(Path::new("/xyz/abc/def")));
     }
 
     #[test]
     fn no_ignore_entry_matches_nothing_test() {
         let cfg = config_with_ignore(&[]);
-        assert!(!cfg.need_to_be_ignored(Path::new("/a/b/keep_me")).unwrap());
+        assert!(!cfg.need_to_be_ignored(Path::new("/a/b/keep_me")));
         // a path without a final component is not ignored
-        assert!(!cfg.need_to_be_ignored(Path::new("/")).unwrap());
+        assert!(!cfg.need_to_be_ignored(Path::new("/")));
     }
 
     #[test]
@@ -299,12 +284,12 @@ mod tests {
             scan_hidden_folder: false,
             ..ConfigFile::default()
         };
-        assert!(cfg.need_to_be_ignored(hidden).unwrap());
+        assert!(cfg.need_to_be_ignored(hidden));
         let cfg = ConfigFile {
             scan_hidden_folder: true,
             ..ConfigFile::default()
         };
-        assert!(!cfg.need_to_be_ignored(hidden).unwrap());
+        assert!(!cfg.need_to_be_ignored(hidden));
     }
 
     #[test]
@@ -325,12 +310,12 @@ mod tests {
             scan_target_folder: false,
             ..ConfigFile::default()
         };
-        assert!(cfg.need_to_be_ignored(&path).unwrap());
+        assert!(cfg.need_to_be_ignored(&path));
         let cfg = ConfigFile {
             scan_target_folder: true,
             ..ConfigFile::default()
         };
-        assert!(!cfg.need_to_be_ignored(&path).unwrap());
+        assert!(!cfg.need_to_be_ignored(&path));
     }
 
     #[test]
@@ -341,26 +326,20 @@ mod tests {
             scan_hidden_folder: true,
             ..ConfigFile::default()
         };
-        assert!(cfg.need_to_be_ignored(Path::new("/a/.cache")).unwrap());
+        assert!(cfg.need_to_be_ignored(Path::new("/a/.cache")));
         // without the ignore entry the same folder would be scanned
         let cfg = ConfigFile {
             scan_hidden_folder: true,
             ..ConfigFile::default()
         };
-        assert!(!cfg.need_to_be_ignored(Path::new("/a/.cache")).unwrap());
+        assert!(!cfg.need_to_be_ignored(Path::new("/a/.cache")));
     }
 
     #[test]
     fn multiple_ignore_entries_test() {
         let cfg = config_with_ignore(&["node_modules", "crates/demo"]);
-        assert!(
-            cfg.need_to_be_ignored(Path::new("/x/node_modules"))
-                .unwrap()
-        );
-        assert!(cfg.need_to_be_ignored(Path::new("/y/crates/demo")).unwrap());
-        assert!(
-            !cfg.need_to_be_ignored(Path::new("/y/crates/other"))
-                .unwrap()
-        );
+        assert!(cfg.need_to_be_ignored(Path::new("/x/node_modules")));
+        assert!(cfg.need_to_be_ignored(Path::new("/y/crates/demo")));
+        assert!(!cfg.need_to_be_ignored(Path::new("/y/crates/other")));
     }
 }

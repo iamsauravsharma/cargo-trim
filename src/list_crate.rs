@@ -196,37 +196,26 @@ impl CrateList {
 /// Parse a `git+…` source string from Cargo.lock and return `(repo_url,
 /// short_sha)`.
 fn parse_git_source(source: &str) -> Result<(Url, String)> {
-    let (url_with_kind, sha_part) =
-        if source.contains("?rev=") || source.contains("?branch=") || source.contains("?tag=") {
-            let (base, query_and_hash) = if source.contains("?rev=") {
-                source
-                    .split_once("?rev=")
-                    .context("failed to split ?rev= from git source")?
-            } else if source.contains("?branch=") {
-                source
-                    .split_once("?branch=")
-                    .context("failed to split ?branch= from git source")?
-            } else {
-                source
-                    .split_once("?tag=")
-                    .context("failed to split ?tag= from git source")?
-            };
-            let sha_part = query_and_hash
-                .split_once('#')
-                .context("failed to find # in git source query param")?
-                .1;
-            (base, sha_part)
-        } else {
-            let (base, hash) = source
-                .split_once('#')
-                .context("failed to find # in git source")?;
-            (base, hash)
-        };
+    let base_and_query_optional = source
+        .split_once("?rev=")
+        .or_else(|| source.split_once("?branch="))
+        .or_else(|| source.split_once("?tag="));
+    let (url_with_kind, sha_part) = if let Some((base, query_and_hash)) = base_and_query_optional {
+        let sha_part = query_and_hash
+            .split_once('#')
+            .context("failed to find # in git source query param")?
+            .1;
+        (base, sha_part)
+    } else {
+        source
+            .split_once('#')
+            .context("failed to find # in git source")?
+    };
     let rev_short_form = sha_part
         .get(..7)
         .context("git SHA in Cargo.lock is shorter than 7 characters")?
         .to_string();
-    let url = Url::from_str(&url_with_kind.replace("git+", ""))
+    let url = Url::from_str(url_with_kind.strip_prefix("git+").unwrap_or(url_with_kind))
         .context("failed git source url kind with query params conversion")?;
     Ok((url, rev_short_form))
 }
@@ -239,6 +228,12 @@ fn read_content(
 ) -> Result<(Vec<CrateMetaData>, Vec<CrateMetaData>)> {
     let mut present_crate_registry = Vec::new();
     let mut present_crate_git = Vec::new();
+    let crates_io_git_url = Url::from_str("https://github.com/rust-lang/crates.io-index")?;
+    let index_crates_url = Url::from_str("https://index.crates.io")?;
+    let sparse_crates_io_present = crate_detail
+        .source_infos()
+        .values()
+        .any(|source_url| source_url == &index_crates_url);
     for cargo_lock_file in cargo_lock_paths {
         if cargo_lock_file.exists() {
             let file_content = fs::read_to_string(cargo_lock_file)
@@ -250,33 +245,25 @@ fn read_content(
                     if let Some(source) = package.source() {
                         let name = package.name();
                         let version = package.version();
-                        if source.contains("registry+") {
-                            let mut url = Url::from_str(&source.replace("registry+", ""))
+                        if let Some(registry_url) = source.strip_prefix("registry+") {
+                            let mut url = Url::from_str(registry_url)
                                 .context("failed registry source url kind conversion")?;
                             // Only add sparse registry if sparse registry is present in place of
                             // git based registry for crates.io
-                            let index_crates_url = Url::from_str("https://index.crates.io")?;
-                            if url == Url::from_str("https://github.com/rust-lang/crates.io-index")?
-                                && crate_detail
-                                    .source_infos()
-                                    .values()
-                                    .collect::<Vec<_>>()
-                                    .contains(&&index_crates_url)
-                            {
-                                url = index_crates_url;
+                            if url == crates_io_git_url && sparse_crates_io_present {
+                                url = index_crates_url.clone();
                             }
                             for index_name in crate_detail.index_names_from_url(&url) {
                                 present_crate_registry.push(CrateMetaData::new(
                                     name.to_string(),
-                                    Some(Version::parse(version).context(
-                                        "failed Cargo.lock semver
-                            version parse",
-                                    )?),
+                                    Some(
+                                        Version::parse(version)
+                                            .context("failed Cargo.lock semver version parse")?,
+                                    ),
                                     Some(index_name),
                                 ));
                             }
-                        }
-                        if source.contains("git+") {
+                        } else if source.starts_with("git+") {
                             let (url, rev_short_form) = parse_git_source(source)?;
                             let last_path_segment = url
                                 .path_segments()
@@ -291,9 +278,8 @@ fn read_content(
                                     Some(index_name),
                                 ));
                             }
-                        }
-                        if source.contains("sparse+") {
-                            let url = Url::from_str(&source.replace("sparse+", ""))
+                        } else if let Some(sparse_url) = source.strip_prefix("sparse+") {
+                            let url = Url::from_str(sparse_url)
                                 .context("failed sparse source url kind conversion")?;
                             for index_name in crate_detail.index_names_from_url(&url) {
                                 present_crate_registry.push(CrateMetaData::new(
@@ -409,9 +395,6 @@ fn list_orphan_crates(
     for installed_crate_metadata in installed_crate_git {
         let crate_name = installed_crate_metadata.name();
         if crate_name.contains("-HEAD") {
-            if used_crate_git.is_empty() {
-                orphan_crate_git.push(installed_crate_metadata.clone());
-            }
             if !used_crate_git
                 .iter()
                 .any(|used| used.source() == installed_crate_metadata.source())

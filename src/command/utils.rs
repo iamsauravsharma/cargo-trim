@@ -1,9 +1,64 @@
 use std::collections::HashSet;
+use std::io::Write as _;
 
+use anyhow::{Context as _, Result};
 use owo_colors::OwoColorize as _;
 
-use crate::crate_detail::CrateMetaData;
+use crate::crate_detail::{CrateDetail, CrateMetaData};
 use crate::utils::convert_pretty;
+
+/// print provided warning text and ask user to confirm if they want to continue
+/// If user enters "y" or "yes" (case insensitive), returns true, otherwise
+/// returns false
+///
+/// # Errors
+/// Returns an error if there is an issue flushing the output stream or reading
+/// user input
+pub(super) fn confirm_continue(warning_text: &str) -> Result<bool> {
+    println!("{}", warning_text.yellow());
+    print!("Do you want to continue? (y/N) ");
+    std::io::stdout()
+        .flush()
+        .context("failed to flush output stream")?;
+    let mut input = String::new();
+    std::io::stdin()
+        .read_line(&mut input)
+        .context("error: unable to read user input")?;
+    let trimmed_input = input.trim().to_ascii_lowercase();
+    Ok(["y", "yes"].contains(&trimmed_input.as_str()))
+}
+
+/// width of the location column based on the longest source name
+/// Minimum width is 9 + 2 (for padding)
+pub(super) fn source_name_max_width(crate_detail: &CrateDetail) -> usize {
+    let max_length = crate_detail
+        .source_infos()
+        .keys()
+        .map(String::len)
+        .max()
+        .unwrap_or_default();
+    std::cmp::max(max_length, 9) + 2
+}
+
+/// width of the crate column based on the longest crate name with version
+/// Minimum width is 30 + 2 (for padding)
+pub(super) fn crate_name_max_width<'a, I>(crates: I) -> usize
+where
+    I: IntoIterator<Item = &'a CrateMetaData>,
+{
+    // width = crate name length + version length + 1 (for the hyphen) (if version
+    // exists) width = crate name length (if version does not exist)
+    let crate_name_max_width = crates
+        .into_iter()
+        .map(|cm| {
+            cm.version().map_or(cm.name().len(), |version| {
+                cm.name().len() + version.to_string().len() + 1
+            })
+        })
+        .max()
+        .unwrap_or_default();
+    std::cmp::max(crate_name_max_width, 30) + 2
+}
 
 /// show title
 pub(super) fn show_title(
@@ -62,31 +117,13 @@ pub(super) fn show_top_number_crates(
     first_width: usize,
     number: usize,
 ) {
-    // sort crates by size
-    let mut crates = crates.iter().collect::<Vec<_>>();
-    crates.sort_by_key(|a| std::cmp::Reverse(a.size()));
-    let top_number = std::cmp::min(crates.len(), number);
-    let title = format!("Top {top_number} {crate_type}");
-    let mut listed_crates = Vec::new();
-    for &crate_metadata in crates.iter().take(top_number) {
-        listed_crates.push(crate_metadata.clone());
-    }
-    let top_number_crates = &listed_crates[..top_number];
-    let second_width = std::cmp::max(
-        top_number_crates
-            .iter()
-            .map(|cm| {
-                if let Some(version) = cm.version() {
-                    cm.name().len() + version.to_string().len() + 1
-                } else {
-                    cm.name().len()
-                }
-            })
-            .max()
-            .unwrap_or(30),
-        30,
-    ) + 2;
-    crate_list_type(top_number_crates, first_width, second_width, &title);
+    // sort crates by size and keep only the largest ones
+    let mut top_crates = crates.iter().cloned().collect::<Vec<_>>();
+    top_crates.sort_by_key(|a| std::cmp::Reverse(a.size()));
+    top_crates.truncate(number);
+    let title = format!("Top {} {crate_type}", top_crates.len());
+    let second_width = crate_name_max_width(&top_crates);
+    crate_list_type(&top_crates, first_width, second_width, &title);
 }
 
 // list certain crate type to terminal

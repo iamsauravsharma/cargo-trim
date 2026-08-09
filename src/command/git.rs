@@ -1,11 +1,10 @@
-use std::io::Write as _;
 use std::path::Path;
 
-use anyhow::{Context as _, Result};
+use anyhow::Result;
 use clap::Parser;
 use owo_colors::OwoColorize as _;
 
-use super::utils::{print_dash, show_top_number_crates};
+use super::utils::{confirm_continue, print_dash, show_top_number_crates, source_name_max_width};
 use super::{query_full_width, query_print};
 use crate::crate_detail::{CrateDetail, CrateMetaData};
 use crate::dir_path::DirPath;
@@ -66,7 +65,6 @@ pub(crate) struct Git {
 }
 
 impl Git {
-    #[expect(clippy::too_many_lines)]
     pub(super) fn run(
         &self,
         dir_path: &DirPath,
@@ -84,15 +82,7 @@ impl Git {
         }
 
         if let Some(number) = self.top {
-            let max_width = std::cmp::max(
-                crate_detail
-                    .source_infos()
-                    .keys()
-                    .map(String::len)
-                    .max()
-                    .unwrap_or(9),
-                9,
-            ) + 2;
+            let max_width = source_name_max_width(crate_detail);
             top_crates_git(crate_detail, max_width, number);
         }
 
@@ -122,18 +112,7 @@ impl Git {
                                     init' to initialize current directory as rust project \
                                     directory or pass cargo trim set -d <directory> for setting \
                                     rust project directory";
-                println!("{}", warning_text.yellow());
-                let mut input = String::new();
-                print!("Do you want to continue? (y/N) ");
-                std::io::stdout()
-                    .flush()
-                    .context("failed to flush output stream")?;
-                std::io::stdin()
-                    .read_line(&mut input)
-                    .context("error: unable to read user input")?;
-                let trimmed_input = input.trim().to_ascii_lowercase();
-                // if answer is any instead of yes and y return
-                if !["y", "yes"].contains(&trimmed_input.as_str()) {
+                if !confirm_continue(warning_text)? {
                     return Ok(());
                 }
             }
@@ -159,18 +138,7 @@ impl Git {
                                     trim init' to initialize current directory as rust project \
                                     directory or pass cargo trim set -d <directory> for setting \
                                     rust project directory";
-                println!("{}", warning_text.yellow());
-                let mut input = String::new();
-                print!("Do you want to continue? (y/N) ");
-                std::io::stdout()
-                    .flush()
-                    .context("failed to flush output stream")?;
-                std::io::stdin()
-                    .read_line(&mut input)
-                    .context("error: unable to read user input")?;
-                let trimmed_input = input.trim().to_ascii_lowercase();
-                // If answer is not y or yes then return
-                if !["y", "yes"].contains(&trimmed_input.as_str()) {
+                if !confirm_continue(warning_text)? {
                     return Ok(());
                 }
             }
