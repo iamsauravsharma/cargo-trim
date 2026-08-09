@@ -1,5 +1,5 @@
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::{Context as _, Result};
 use owo_colors::OwoColorize as _;
@@ -9,7 +9,7 @@ use crate::utils::delete_folder;
 
 /// Stores .cargo/registry cache & src information
 pub(crate) struct RegistryDir {
-    index_cache_dir: Vec<String>,
+    index_cache_dir: Vec<PathBuf>,
     installed_crate: Vec<CrateMetaData>,
 }
 
@@ -23,12 +23,7 @@ impl RegistryDir {
                 let mut entry_path = entry?.path();
                 entry_path.push(".cache");
                 if entry_path.exists() {
-                    index_cache_dir.push(
-                        entry_path
-                            .to_str()
-                            .context("unable to convert index cache folder to str")?
-                            .to_string(),
-                    );
+                    index_cache_dir.push(entry_path);
                 }
             }
         }
@@ -46,7 +41,8 @@ impl RegistryDir {
         crate_metadata: &CrateMetaData,
         dry_run: bool,
     ) -> Result<bool> {
-        // remove crate from cache dir
+        // remove crate from cache dir. Always attempt every deletion so an
+        // earlier failure does not short circuit and skip the remaining ones
         let mut is_success = true;
         if let Some(found_crate_metadata) = crate_detail
             .registry_crates_archive()
@@ -56,7 +52,7 @@ impl RegistryDir {
             let path = found_crate_metadata
                 .path()
                 .context("expected path from crate detail metadata")?;
-            is_success = is_success && delete_folder(path, dry_run).is_ok();
+            is_success = delete_folder(path, dry_run).is_ok() && is_success;
         }
         if let Some(found_crate_metadata) = crate_detail
             .registry_crates_source()
@@ -66,14 +62,13 @@ impl RegistryDir {
             let path = found_crate_metadata
                 .path()
                 .context("expected path from crate detail metadata")?;
-            is_success = is_success && delete_folder(path, dry_run).is_ok();
+            is_success = delete_folder(path, dry_run).is_ok() && is_success;
         }
 
         // remove index cache dir if their is only one crate. It will also clean crate
         // name from installed crate name owned locally by it so when two version of
         // same crate is deleted it properly remove index cache
-        for index_cache_dir in &self.index_cache_dir {
-            let index = Path::new(&index_cache_dir);
+        for index in &self.index_cache_dir {
             let index_parent = index
                 .parent()
                 .and_then(|p| p.file_name())
@@ -155,8 +150,7 @@ impl RegistryDir {
                 crate_removed += 1;
             }
         }
-        for index_cache_dir in &self.index_cache_dir {
-            let index = Path::new(&index_cache_dir);
+        for index in &self.index_cache_dir {
             remove_empty_index_cache_dir(index, dry_run)?;
         }
         Ok((size_cleaned, crate_removed))

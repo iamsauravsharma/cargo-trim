@@ -1,7 +1,7 @@
 use clap::Parser;
 use owo_colors::OwoColorize as _;
 
-use super::utils::crate_list_type;
+use super::utils::{crate_list_type, crate_name_max_width};
 use crate::list_crate::CrateList;
 
 #[derive(Debug, Parser)]
@@ -71,23 +71,13 @@ fn list_projects(crate_list: &CrateList) {
 }
 
 fn list_all(crate_list: &CrateList, first_width: usize) {
-    let second_width = std::cmp::max(
+    let second_width = crate_name_max_width(
         crate_list
             .installed_bin()
             .iter()
             .chain(crate_list.installed_registry())
-            .chain(crate_list.installed_git())
-            .map(|cm| {
-                if let Some(version) = cm.version() {
-                    cm.name().len() + version.to_string().len() + 1
-                } else {
-                    cm.name().len()
-                }
-            })
-            .max()
-            .unwrap_or(30),
-        30,
-    ) + 2;
+            .chain(crate_list.installed_git()),
+    );
     crate_list_type(
         crate_list.installed_bin(),
         first_width,
@@ -109,22 +99,8 @@ fn list_all(crate_list: &CrateList, first_width: usize) {
 }
 
 fn list_old(crate_list: &CrateList, first_width: usize) {
-    let second_width = std::cmp::max(
-        crate_list
-            .old_registry()
-            .iter()
-            .chain(crate_list.old_git())
-            .map(|cm| {
-                if let Some(version) = cm.version() {
-                    cm.name().len() + version.to_string().len() + 1
-                } else {
-                    cm.name().len()
-                }
-            })
-            .max()
-            .unwrap_or(30),
-        30,
-    ) + 2;
+    let second_width =
+        crate_name_max_width(crate_list.old_registry().iter().chain(crate_list.old_git()));
     crate_list_type(
         crate_list.old_registry(),
         first_width,
@@ -140,30 +116,17 @@ fn list_old(crate_list: &CrateList, first_width: usize) {
 }
 
 fn list_old_orphan(crate_list: &CrateList, first_width: usize, directory_is_empty: bool) {
-    let second_width = std::cmp::max(
-        crate_list
-            .old_orphan_registry()
-            .iter()
-            .chain(&crate_list.old_orphan_git())
-            .map(|cm| {
-                if let Some(version) = cm.version() {
-                    cm.name().len() + version.to_string().len() + 1
-                } else {
-                    cm.name().len()
-                }
-            })
-            .max()
-            .unwrap_or(30),
-        30,
-    ) + 2;
+    let old_orphan_registry = crate_list.old_orphan_registry();
+    let old_orphan_git = crate_list.old_orphan_git();
+    let second_width = crate_name_max_width(old_orphan_registry.iter().chain(&old_orphan_git));
     crate_list_type(
-        &crate_list.old_orphan_registry(),
+        &old_orphan_registry,
         first_width,
         second_width,
         "REGISTRY OLD+ORPHAN CRATE",
     );
     crate_list_type(
-        &crate_list.old_orphan_git(),
+        &old_orphan_git,
         first_width,
         second_width,
         "GIT OLD+ORPHAN CRATE",
@@ -180,22 +143,12 @@ fn list_old_orphan(crate_list: &CrateList, first_width: usize, directory_is_empt
 }
 
 fn list_orphan(crate_list: &CrateList, first_width: usize, directory_is_empty: bool) {
-    let second_width = std::cmp::max(
+    let second_width = crate_name_max_width(
         crate_list
             .orphan_registry()
             .iter()
-            .chain(crate_list.orphan_git())
-            .map(|cm| {
-                if let Some(version) = cm.version() {
-                    cm.name().len() + version.to_string().len() + 1
-                } else {
-                    cm.name().len()
-                }
-            })
-            .max()
-            .unwrap_or(30),
-        30,
-    ) + 2;
+            .chain(crate_list.orphan_git()),
+    );
     crate_list_type(
         crate_list.orphan_registry(),
         first_width,

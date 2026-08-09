@@ -1,16 +1,17 @@
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use anyhow::{Context as _, Result};
 
-fn get_cargo_home() -> Result<String> {
-    if let Ok(cargo_home) = std::env::var("CARGO_HOME") {
-        return Ok(cargo_home);
+fn get_cargo_home() -> Result<PathBuf> {
+    if let Some(cargo_home) = std::env::var_os("CARGO_HOME") {
+        return Ok(PathBuf::from(cargo_home));
     }
 
-    option_env!("CARGO_HOME")
-        .map(String::from)
-        .context("Failed to get CARGO_HOME directory")
+    // fall back to `~/.cargo` if CARGO_HOME is not set
+    dirs_next::home_dir()
+        .map(|home_dir| home_dir.join(".cargo"))
+        .context("failed to get CARGO_HOME directory")
 }
 /// Struct for storing Directory path
 pub(crate) struct DirPath {
@@ -41,7 +42,7 @@ impl DirPath {
             fs::File::create(&config_file).context("failed to create config file")?;
         }
 
-        let home_dir = Path::new(&get_cargo_home()?).to_path_buf();
+        let home_dir = get_cargo_home()?;
 
         // set bin directory path
         let bin_dir = home_dir.join("bin");

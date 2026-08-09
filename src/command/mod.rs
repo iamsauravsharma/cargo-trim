@@ -1,13 +1,15 @@
 use std::collections::HashSet;
 use std::fs;
-use std::io::Write as _;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context as _, Result};
 use clap::{Parser, ValueEnum};
 use owo_colors::OwoColorize as _;
 
-use self::utils::{print_dash, query_full_width, query_print, show_top_number_crates};
+use self::utils::{
+    confirm_continue, print_dash, query_full_width, query_print, show_top_number_crates,
+    source_name_max_width,
+};
 use crate::command::git::clean_git;
 use crate::command::registry::clean_registry;
 use crate::config_file::ConfigFile;
@@ -264,7 +266,7 @@ impl Command {
         }
 
         if self.update {
-            let cargo_lock_files = &crate_list.cargo_lock_files().paths();
+            let cargo_lock_files = crate_list.cargo_lock_files().paths();
             run_cargo_update_command(cargo_lock_files, dry_run)?;
         }
 
@@ -319,15 +321,7 @@ impl Command {
                 SubCommand::Clear(clear) => clear.run(&mut config_file)?,
                 SubCommand::Config(config) => config.run(&config_file, dir_path.config_file())?,
                 SubCommand::List(list) => {
-                    let max_width = std::cmp::max(
-                        crate_detail
-                            .source_infos()
-                            .keys()
-                            .map(String::len)
-                            .max()
-                            .unwrap_or(9),
-                        9,
-                    ) + 2;
+                    let max_width = source_name_max_width(&crate_detail);
                     list.run(&crate_list, max_width, config_file.directory().is_empty());
                 }
                 SubCommand::Set(set) => set.run(&mut config_file)?,
@@ -366,18 +360,12 @@ fn clear_empty_index(
 ) {
     let mut to_remove_indexes = vec![];
     for index_name in crate_detail.source_infos().keys() {
-        if !crate_detail
+        let index_used = crate_detail
             .registry_crates_source()
             .iter()
-            .any(|metadata| {
-                if let Some(source) = metadata.source()
-                    && source == index_name
-                {
-                    return true;
-                }
-                false
-            })
-        {
+            .chain(crate_detail.registry_crates_archive())
+            .any(|metadata| metadata.source() == Some(index_name));
+        if !index_used {
             to_remove_indexes.push(index_name);
         }
     }
@@ -584,7 +572,10 @@ fn wipe_directory(wipe: &Wipe, dir_path: &DirPath, dry_run: bool) {
 fn run_cargo_update_command(cargo_lock_files: &[PathBuf], dry_run: bool) -> Result<()> {
     for lock_file in cargo_lock_files {
         let Some(location) = lock_file.parent() else {
-            return Err(anyhow::anyhow!("cannot get parent for parent"));
+            anyhow::bail!(
+                "cannot get parent directory of Cargo.lock file {}",
+                lock_file.display()
+            );
         };
         let location_str = location.display();
         if dry_run {
@@ -626,15 +617,7 @@ fn run_cargo_update_command(cargo_lock_files: &[PathBuf], dry_run: bool) -> Resu
 
 // show top n crates
 fn top_crates(crate_detail: &CrateDetail, number: usize) {
-    let max_width = std::cmp::max(
-        crate_detail
-            .source_infos()
-            .keys()
-            .map(String::len)
-            .max()
-            .unwrap_or(9),
-        9,
-    ) + 2;
+    let max_width = source_name_max_width(crate_detail);
     show_top_number_crates(crate_detail.bin(), "bin", max_width, number);
     registry::top_crates_registry(crate_detail, max_width, number);
     git::top_crates_git(crate_detail, max_width, number);
@@ -701,18 +684,7 @@ fn old_orphan_clean(
                             not orphan crates. Run command 'cargo trim init' to initialize \
                             current directory as rust project directory or pass cargo trim set -d \
                             <directory> for setting rust project directory";
-        println!("{}", warning_text.yellow());
-        let mut input = String::new();
-        print!("Do you want to continue? (y/N) ");
-        std::io::stdout()
-            .flush()
-            .context("failed to flush output stream")?;
-        std::io::stdin()
-            .read_line(&mut input)
-            .context("error: unable to read user input")?;
-        let trimmed_input = input.trim().to_ascii_lowercase();
-        // if answer is any instead of yes and y return
-        if !["y", "yes"].contains(&trimmed_input.as_str()) {
+        if !confirm_continue(warning_text)? {
             return Ok(());
         }
     }
@@ -751,18 +723,7 @@ fn orphan_clean(
                             classified as orphan crate. Run command 'cargo trim init' to \
                             initialize current directory as rust project directory or pass cargo \
                             trim set -d <directory> for setting rust project directory";
-        println!("{}", warning_text.yellow());
-        let mut input = String::new();
-        print!("Do you want to continue? (y/N) ");
-        std::io::stdout()
-            .flush()
-            .context("failed to flush output stream")?;
-        std::io::stdin()
-            .read_line(&mut input)
-            .context("error: unable to read user input")?;
-        let trimmed_input = input.trim().to_ascii_lowercase();
-        // If answer is not y or yes then return
-        if !["y", "yes"].contains(&trimmed_input.as_str()) {
+        if !confirm_continue(warning_text)? {
             return Ok(());
         }
     }

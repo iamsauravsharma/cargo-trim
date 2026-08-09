@@ -28,7 +28,7 @@ pub(crate) struct Set {
     ignore: Option<Vec<String>>,
     #[arg(long = "scan-hidden-folder", help = "Set scan hidden folder as true")]
     scan_hidden_folder: bool,
-    #[arg(long = "scan-target-folder", help = "Set scan hidden folder as true")]
+    #[arg(long = "scan-target-folder", help = "Set scan target folder as true")]
     scan_target_folder: bool,
 }
 
