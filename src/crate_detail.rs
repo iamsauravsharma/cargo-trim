@@ -175,16 +175,20 @@ impl CrateDetail {
                     .context("failed to convert osstr to str")?;
                 let mut fetch_head_file = git_dir.clone();
                 fetch_head_file.push("FETCH_HEAD");
-                let content = fs::read_to_string(fetch_head_file)
-                    .context("failed to read FETCH_HEAD file")?;
-                let url_path = content
-                    .split_whitespace()
-                    .last()
-                    .context("failed to get url part from content")?;
-                source_infos.insert(
-                    git_file_name.to_string(),
-                    Url::from_str(url_path).context("failed to convert db dir FETCH_HEAD")?,
-                );
+                // git db repos which were initialized but never fetched have no
+                // FETCH_HEAD file; skip them instead of aborting
+                if fetch_head_file.exists() {
+                    let content = fs::read_to_string(fetch_head_file)
+                        .context("failed to read FETCH_HEAD file")?;
+                    let url_path = content
+                        .split_whitespace()
+                        .last()
+                        .context("failed to get url part from content")?;
+                    source_infos.insert(
+                        git_file_name.to_string(),
+                        Url::from_str(url_path).context("failed to convert db dir FETCH_HEAD")?,
+                    );
+                }
             }
         }
         Ok(Self {

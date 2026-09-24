@@ -335,9 +335,9 @@ fn list_old_crates(
                 .context("failed to get sold crate db dir file name")?
                 .to_str()
                 .context("failed to convert db dir entry file name to str")?;
-            let rev_value = latest_rev_value(&entry)?;
-            let full_name = format!("{file_name}-{rev_value}");
-            full_name_list.push(full_name);
+            if let Some(rev_value) = latest_rev_value(&entry) {
+                full_name_list.push(format!("{file_name}-{rev_value}"));
+            }
         }
         for crate_metadata in installed_crate_git {
             let crate_name = crate_metadata.name();
@@ -415,17 +415,12 @@ fn list_orphan_crates(
     (orphan_crate_registry, orphan_crate_git)
 }
 
-/// get latest commit rev value from git repository
-fn latest_rev_value(path: &Path) -> Result<String> {
-    let mut fetch_head_file = PathBuf::new();
-    fetch_head_file.push(path);
-    fetch_head_file.push("FETCH_HEAD");
-    let content = fs::read_to_string(fetch_head_file).context("failed to read FETCH_HEAD file")?;
+/// get latest commit rev value from git repository, `None` if the repository
+/// has no usable `FETCH_HEAD` file (e.g. it was never fetched)
+fn latest_rev_value(path: &Path) -> Option<String> {
+    let content = fs::read_to_string(path.join("FETCH_HEAD")).ok()?;
     // read first 7 characters which is the short form of the git commit hash
-    content
-        .get(..7)
-        .context("FETCH_HEAD content is shorter than 7 characters")
-        .map(ToString::to_string)
+    content.get(..7).map(ToString::to_string)
 }
 
 #[cfg(test)]
