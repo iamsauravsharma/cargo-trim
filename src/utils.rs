@@ -4,6 +4,7 @@ use std::fs;
 use std::os::unix::fs::MetadataExt as _;
 use std::path::Path;
 use std::str::FromStr as _;
+use std::time::SystemTime;
 
 use anyhow::{Context as _, Result};
 use owo_colors::OwoColorize as _;
@@ -75,6 +76,27 @@ pub(crate) fn delete_index_cache(index_dir: &Path, dry_run: bool) -> Result<()> 
     Ok(())
 }
 
+/// return true if `path` or any entry inside it was modified after `cutoff`.
+/// stops descending as soon as a recent entry is found
+pub(crate) fn modified_since(path: &Path, cutoff: SystemTime) -> bool {
+    let Ok(meta) = path.symlink_metadata() else {
+        return false;
+    };
+    if meta.modified().is_ok_and(|time| time > cutoff) {
+        return true;
+    }
+    if meta.is_dir()
+        && let Ok(entries) = fs::read_dir(path)
+    {
+        for entry in entries.flatten() {
+            if modified_since(&entry.path(), cutoff) {
+                return true;
+            }
+        }
+    }
+    false
+}
+
 ///  get size of path
 pub(crate) fn get_size(path: &Path) -> Result<u64> {
     let mut total_size = 0;
@@ -139,9 +161,36 @@ pub(crate) fn convert_pretty(num: u64) -> String {
 
 #[cfg(test)]
 mod tests {
+    use std::fs::FileTimes;
+    use std::time::{Duration, SystemTime};
+
     use semver::Version;
 
-    use super::{convert_pretty, split_name_version};
+    use super::{convert_pretty, modified_since, split_name_version};
+
+    #[test]
+    fn modified_since_test() {
+        let base = std::env::temp_dir().join(format!("cargo-trim-test-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&base);
+        std::fs::create_dir_all(base.join("nested")).unwrap();
+        let file_path = base.join("nested/file.rs");
+        let file = std::fs::File::create(&file_path).unwrap();
+        let old = SystemTime::now() - Duration::from_hours(60 * 24);
+        let cutoff = SystemTime::now() - Duration::from_hours(30 * 24);
+        // make the file and its parent directories look old
+        file.set_times(FileTimes::new().set_modified(old)).unwrap();
+        for dir in [&base, &base.join("nested")] {
+            std::fs::File::open(dir)
+                .unwrap()
+                .set_times(FileTimes::new().set_modified(old))
+                .unwrap();
+        }
+        assert!(!modified_since(&base, cutoff));
+        file.set_times(FileTimes::new().set_modified(SystemTime::now()))
+            .unwrap();
+        assert!(modified_since(&base, cutoff));
+        std::fs::remove_dir_all(&base).unwrap();
+    }
 
     #[test]
     fn split_name_version_test() {

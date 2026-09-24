@@ -2,6 +2,7 @@ use std::ffi::OsStr;
 use std::io::Read as _;
 use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
+use std::time::{Duration, SystemTime};
 use std::{env, fs};
 
 use anyhow::{Context as _, Result};
@@ -29,6 +30,8 @@ pub(crate) struct ConfigFile {
     scan_hidden_folder: bool,
     #[serde(default)]
     scan_target_folder: bool,
+    #[serde(default)]
+    stale_days: Option<u64>,
     #[serde(skip)]
     location: PathBuf,
 }
@@ -70,6 +73,41 @@ impl ConfigFile {
     /// scan target folder
     pub(crate) fn scan_target_folder(&self) -> bool {
         self.scan_target_folder
+    }
+
+    /// point in time before which a project without activity is considered
+    /// stale, `None` if stale days is not configured
+    pub(crate) fn stale_cutoff(&self) -> Option<SystemTime> {
+        self.stale_days
+            .map(|days| SystemTime::now() - Duration::from_secs(days.saturating_mul(24 * 60 * 60)))
+    }
+
+    /// Set stale days to value
+    pub(crate) fn set_stale_days(&mut self, value: u64, dry_run: bool, save: bool) -> Result<()> {
+        if dry_run {
+            println!("{} Set stale_days to {value}", "Dry run:".yellow());
+        } else {
+            self.stale_days = Some(value);
+            if save {
+                self.save()?;
+            }
+            println!("Set stale_days to {value}");
+        }
+        Ok(())
+    }
+
+    /// Unset stale days
+    pub(crate) fn unset_stale_days(&mut self, dry_run: bool, save: bool) -> Result<()> {
+        if dry_run {
+            println!("{} Unset stale_days", "Dry run:".yellow());
+        } else {
+            self.stale_days = None;
+            if save {
+                self.save()?;
+            }
+            println!("Unset stale_days");
+        }
+        Ok(())
     }
 
     /// Set scan hidden folder to value
@@ -191,14 +229,60 @@ impl ConfigFile {
                     cargo_lock_files.append(self.list_cargo_locks(&entry?.path())?);
                 }
             } else if sym_meta.is_file() && path.file_name() == Some(OsStr::new("Cargo.lock")) {
-                cargo_lock_files.add_path(path.to_path_buf());
+                let is_stale = self.stale_cutoff().is_some_and(|cutoff| {
+                    path.parent()
+                        .is_some_and(|dir| is_stale_project(dir, cutoff))
+                });
+                if is_stale {
+                    println!("Ignoring stale project {}", path.display());
+                } else {
+                    cargo_lock_files.add_path(path.to_path_buf());
+                }
             }
         }
         Ok(cargo_lock_files)
     }
 
+    /// Collect target directories which have not been built to since `cutoff`
+    pub(crate) fn stale_target_dirs(
+        &self,
+        path: &Path,
+        cutoff: SystemTime,
+        target_dirs: &mut Vec<PathBuf>,
+    ) -> Result<()> {
+        let Ok(sym_meta) = path.symlink_metadata() else {
+            return Ok(());
+        };
+        if sym_meta.is_symlink() || !sym_meta.is_dir() || self.is_ignored_path(path) {
+            return Ok(());
+        }
+        if is_target_dir(path) {
+            if !crate::utils::modified_since(path, cutoff) {
+                target_dirs.push(path.to_path_buf());
+            }
+            // never descend into a target directory
+            return Ok(());
+        }
+        for entry in fs::read_dir(path)
+            .context("failed to read directory while trying to find target folders")?
+        {
+            self.stale_target_dirs(&entry?.path(), cutoff, target_dirs)?;
+        }
+        Ok(())
+    }
+
     /// check if directory should be scanned for listing crates or not
     fn need_to_be_ignored(&self, path: &Path) -> bool {
+        if self.is_ignored_path(path) {
+            return true;
+        }
+        // skip target folder unless configured to be scanned
+        is_target_dir(path) && !self.scan_target_folder()
+    }
+
+    /// check if path is ignored by the user configured ignore list or the
+    /// hidden folder rule
+    fn is_ignored_path(&self, path: &Path) -> bool {
         // match ignore entries as relative or absolute paths
         if self
             .ignore
@@ -214,11 +298,7 @@ impl ConfigFile {
         // a non UTF-8 name should not abort the whole scan; compare lossily
         let file_name = file_name.to_string_lossy();
         // skip hidden folder unless configured to be scanned
-        if file_name.starts_with('.') && !self.scan_hidden_folder() {
-            return true;
-        }
-        // skip target folder unless configured to be scanned
-        file_name == TARGET_DIR_NAME.as_str() && !self.scan_target_folder()
+        file_name.starts_with('.') && !self.scan_hidden_folder()
     }
 
     /// save struct in the config file
@@ -228,6 +308,31 @@ impl ConfigFile {
         fs::write(&self.location, serialized).context("failed to write a value to config file")?;
         Ok(())
     }
+}
+
+/// check if path is a cargo target directory
+fn is_target_dir(path: &Path) -> bool {
+    path.file_name()
+        .is_some_and(|name| name.to_string_lossy() == TARGET_DIR_NAME.as_str())
+}
+
+/// check if a project has shown no manifest changes or builds since `cutoff`
+fn is_stale_project(project_dir: &Path, cutoff: SystemTime) -> bool {
+    // a recent modification of the project directory itself or its manifest
+    // files counts as activity
+    for path in [
+        project_dir.to_path_buf(),
+        project_dir.join("Cargo.toml"),
+        project_dir.join("Cargo.lock"),
+    ] {
+        if let Ok(meta) = path.symlink_metadata()
+            && meta.modified().is_ok_and(|time| time > cutoff)
+        {
+            return false;
+        }
+    }
+    // any recent write inside the target directory counts as a build
+    !crate::utils::modified_since(&project_dir.join(TARGET_DIR_NAME.as_str()), cutoff)
 }
 
 #[cfg(test)]

@@ -17,7 +17,7 @@ use crate::crate_detail::CrateDetail;
 use crate::dir_path::DirPath;
 use crate::list_crate::CrateList;
 use crate::registry_dir::RegistryDir;
-use crate::utils::{convert_pretty, delete_folder, get_inode_handled_size};
+use crate::utils::{convert_pretty, delete_folder, get_inode_handled_size, get_size};
 
 mod clear;
 mod config;
@@ -138,6 +138,21 @@ pub(crate) struct Command {
     )]
     scan_target_folder: bool,
     #[arg(
+        long = "stale-days",
+        help = "Consider projects without manifest changes or builds for this \
+                many days as stale; their Cargo.lock files are excluded from \
+                used crate detection",
+        env = "TRIM_STALE_DAYS",
+        value_name = "days"
+    )]
+    stale_days: Option<u64>,
+    #[arg(
+        long = "stale-target",
+        help = "Delete target folders which have not been built to within the \
+                configured stale days"
+    )]
+    stale_target: bool,
+    #[arg(
         long = "top",
         short = 't',
         help = "Show certain number of top crates which have highest size"
@@ -217,6 +232,9 @@ impl Command {
         } else if self.scan_target_folder {
             config_file.set_scan_target_folder(true, dry_run, false)?;
         }
+        if let Some(stale_days) = self.stale_days {
+            config_file.set_stale_days(stale_days, dry_run, false)?;
+        }
 
         // create new CrateDetail struct
         let mut crate_detail = CrateDetail::new(dir_path.index_dir(), dir_path.db_dir())?;
@@ -243,6 +261,10 @@ impl Command {
                 dir_path.index_dir(),
                 dry_run,
             );
+        }
+
+        if self.stale_target {
+            clean_stale_targets(&config_file, dry_run)?;
         }
 
         if self.clear_empty_index {
@@ -547,6 +569,42 @@ fn light_cleanup(checkout_dir: &Path, src_dir: &Path, index_dir: &Path, dry_run:
     if !light_cleanup_success {
         println!("failed to delete some folder during light cleanup");
     }
+}
+
+// delete target directories of projects which have not been built to within
+// the configured stale days
+fn clean_stale_targets(config_file: &ConfigFile, dry_run: bool) -> Result<()> {
+    let Some(cutoff) = config_file.stale_cutoff() else {
+        println!(
+            "stale_days is not configured. Set it with 'cargo trim set --stale-days <days>' or \
+             pass --stale-days"
+        );
+        return Ok(());
+    };
+    let mut target_dirs = Vec::new();
+    for directory in config_file.directory() {
+        config_file.stale_target_dirs(Path::new(directory), cutoff, &mut target_dirs)?;
+    }
+    let mut sized_cleaned = 0_u64;
+    let mut removed = 0_usize;
+    for target_dir in &target_dirs {
+        let size = get_size(target_dir).unwrap_or(0);
+        if delete_folder(target_dir, dry_run).is_ok() {
+            sized_cleaned += size;
+            removed += 1;
+        } else {
+            println!("Failed to remove {}", target_dir.display());
+        }
+    }
+    println!(
+        "{}",
+        format!(
+            "{removed} stale target folders removed which had occupied {}",
+            convert_pretty(sized_cleaned)
+        )
+        .blue()
+    );
+    Ok(())
 }
 
 // wipe certain directory

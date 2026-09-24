@@ -146,6 +146,19 @@ Indicates whether hidden folders (those starting with a dot) should be scanned.
 
 Indicates whether the target folder should be scanned. The target folder name is determined by the `CARGO_BUILD_TARGET_DIR`, `CARGO_TARGET_DIR` environment variables, or defaults to `target`.
 
+#### 5. **stale_days**
+
+**default: none**
+
+**env: TRIM_STALE_DAYS**
+
+Number of days without activity after which a project is considered stale. A project is active if
+its directory, `Cargo.toml`, `Cargo.lock` or any file inside its target folder was modified within
+the period. When set, `Cargo.lock` files of stale projects are excluded from used crate detection
+so their dependencies can be cleaned as orphan crates, and `cargo trim --stale-target` deletes
+target folders which have not been built to within the period. Set it with
+`cargo trim set --stale-days <days>` and remove it with `cargo trim unset --stale-days`.
+
 [license_badge]: https://img.shields.io/github/license/iamsauravsharma/cargo-trim.svg?style=for-the-badge
 [license_link]: LICENSE
 [cratesio_badge]: https://img.shields.io/crates/v/cargo-trim.svg?style=for-the-badge
