@@ -47,8 +47,7 @@ impl GitDir {
                 crate_metadata
                     .source()
                     .as_ref()
-                    .map(ToString::to_string)
-                    .unwrap_or_default(),
+                    .map_or_default(ToString::to_string),
                 crate_metadata.name(),
             );
             Ok(true)
@@ -59,8 +58,7 @@ impl GitDir {
                 crate_metadata
                     .source()
                     .as_ref()
-                    .map(ToString::to_string)
-                    .unwrap_or_default(),
+                    .map_or_default(ToString::to_string),
                 crate_metadata.name()
             );
             Ok(true)
@@ -70,8 +68,7 @@ impl GitDir {
                 crate_metadata
                     .source()
                     .as_ref()
-                    .map(ToString::to_string)
-                    .unwrap_or_default(),
+                    .map_or_default(ToString::to_string),
                 crate_metadata.name(),
             );
             Ok(false)

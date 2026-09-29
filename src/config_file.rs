@@ -176,7 +176,8 @@ impl ConfigFile {
     /// folder present in directory
     pub(crate) fn list_cargo_locks(&self, path: &Path) -> Result<CargoLockFiles> {
         let mut cargo_lock_files = CargoLockFiles::new();
-        // Use symlink_metadata so we don't follow symlinks when checking existence/type
+        // Use symlink_metadata so we don't follow symlinks when checking
+        // existence/type
         let Ok(sym_meta) = path.symlink_metadata() else {
             return Ok(cargo_lock_files);
         };
@@ -207,7 +208,8 @@ impl ConfigFile {
         {
             return true;
         }
-        // a path without a final component cannot match the name based rules below
+        // a path without a final component cannot match the name based rules
+        // below
         let Some(file_name) = path.file_name() else {
             return false;
         };
@@ -297,7 +299,8 @@ mod tests {
         let target = std::env::var("CARGO_BUILD_TARGET_DIR")
             .or_else(|_| std::env::var("CARGO_TARGET_DIR"))
             .unwrap_or_else(|_| String::from("target"));
-        // only meaningful when the resolved target dir is a single plain component
+        // only meaningful when the resolved target dir is a single plain
+        // component
         if target.is_empty()
             || target.contains(std::path::MAIN_SEPARATOR)
             || target.starts_with('.')
@@ -320,7 +323,8 @@ mod tests {
 
     #[test]
     fn ignore_entry_matches_regardless_of_scan_hidden_test() {
-        // a hidden folder listed in ignore is skipped even when hidden scanning is on
+        // a hidden folder listed in ignore is skipped even when hidden scanning
+        // is on
         let cfg = ConfigFile {
             ignore: vec![".cache".to_string()],
             scan_hidden_folder: true,

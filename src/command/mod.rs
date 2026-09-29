@@ -584,8 +584,8 @@ fn run_cargo_update_command(cargo_lock_files: &[PathBuf], dry_run: bool) -> Resu
                 "Dry run:".yellow(),
                 location_str
             );
-            // in dry run mode we will not actually update the cargo lock file but we will
-            // run cargo update command in dry run mode
+            // in dry run mode we will not actually update the cargo lock file
+            // but we will run cargo update command in dry run mode
             if !std::process::Command::new("cargo")
                 .arg("update")
                 .current_dir(location)

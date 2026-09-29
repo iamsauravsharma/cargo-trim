@@ -1,4 +1,3 @@
-#![expect(unused_crate_dependencies)]
 #![expect(clippy::tests_outside_test_module)]
 use std::process::{Command, Stdio};
 
