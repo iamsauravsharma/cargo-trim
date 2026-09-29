@@ -1,10 +1,10 @@
 use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use std::default::Default;
-use std::fs;
 use std::hash::Hash;
 use std::path::{Path, PathBuf};
 use std::str::FromStr as _;
+use std::{fs, io};
 
 use anyhow::{Context as _, Result};
 use semver::Version;
@@ -129,19 +129,13 @@ impl CrateDetail {
                 let mut config_file = registry_dir.clone();
                 config_file.push("config.json");
 
-                // Check if fetch head file exists if it exists than index is old registry based
-                // index instead of new sparse based
+                // Check if fetch head file exists if it exists than index is
+                // old registry based index instead of new
+                // sparse based
                 if fetch_head_file.exists() {
-                    let content = fs::read_to_string(fetch_head_file)
-                        .context("failed to read FETCH_HEAD file")?;
-                    let url_path = content
-                        .split_whitespace()
-                        .last()
-                        .context("failed to get url part from content")?;
-                    source_infos.insert(
-                        registry_file_name.to_string(),
-                        Url::from_str(url_path).context("fail FETCH_HEAD url conversion")?,
-                    );
+                    if let Some(url) = fetch_head_url(&fetch_head_file)? {
+                        source_infos.insert(registry_file_name.to_string(), url);
+                    }
                 // Else if config file exists it is based on sparse registry
                 } else if config_file.exists() {
                     let domain = registry_file_name
@@ -152,8 +146,9 @@ impl CrateDetail {
                     let content = fs::read_to_string(config_file)
                         .context("failed to read config.json file")?;
                     let json: IndexConfig = serde_json::from_str(&content)?;
-                    // First use api url if api url exists else use dl url for determining scheme
-                    // since file name have no information about scheme
+                    // First use api url if api url exists else use dl url for
+                    // determining scheme since file name
+                    // have no information about scheme
                     let scheme_url = json.api.unwrap_or(json.dl);
                     let scheme = scheme_url.scheme();
                     let url = Url::from_str(&format!("{scheme}://{domain}"))
@@ -175,16 +170,9 @@ impl CrateDetail {
                     .context("failed to convert osstr to str")?;
                 let mut fetch_head_file = git_dir.clone();
                 fetch_head_file.push("FETCH_HEAD");
-                let content = fs::read_to_string(fetch_head_file)
-                    .context("failed to read FETCH_HEAD file")?;
-                let url_path = content
-                    .split_whitespace()
-                    .last()
-                    .context("failed to get url part from content")?;
-                source_infos.insert(
-                    git_file_name.to_string(),
-                    Url::from_str(url_path).context("failed to convert db dir FETCH_HEAD")?,
-                );
+                if let Some(url) = fetch_head_url(&fetch_head_file)? {
+                    source_infos.insert(git_file_name.to_string(), url);
+                }
             }
         }
         Ok(Self {
@@ -380,7 +368,8 @@ impl CrateDetail {
     ) -> Result<Vec<CrateMetaData>> {
         let mut installed_crate_git = HashSet::new();
         if checkout_dir.exists() && checkout_dir.is_dir() {
-            // read checkout dir to list crate name in form of crate_name-rev_sha
+            // read checkout dir to list crate name in form of
+            // crate_name-rev_sha
             for entry in fs::read_dir(checkout_dir).context("failed to read checkout directory")? {
                 let entry_path = entry?.path();
                 if entry_path.is_dir() {
@@ -423,7 +412,8 @@ impl CrateDetail {
                 }
             }
         }
-        // read a database directory to list a git crate in form of crate_name-HEAD
+        // read a database directory to list a git crate in form of
+        // crate_name-HEAD
         if db_dir.exists() && db_dir.is_dir() {
             for entry in fs::read_dir(db_dir).context("failed to read db dir")? {
                 let entry_path = entry?.path();
@@ -462,6 +452,25 @@ impl CrateDetail {
         installed_crates.sort();
         Ok(installed_crates)
     }
+}
+
+/// read the remote url a git repository recorded in its `FETCH_HEAD` file,
+/// `None` if the repository has no usable `FETCH_HEAD`
+fn fetch_head_url(fetch_head_file: &Path) -> Result<Option<Url>> {
+    let content = match fs::read_to_string(fetch_head_file) {
+        Ok(content) => content,
+        Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(None),
+        Err(error) => {
+            return Err(error)
+                .with_context(|| format!("failed to read {}", fetch_head_file.display()));
+        }
+    };
+    let Some(url_path) = content.split_whitespace().last() else {
+        return Ok(None);
+    };
+    Url::from_str(url_path)
+        .with_context(|| format!("failed to convert url of {}", fetch_head_file.display()))
+        .map(Some)
 }
 
 fn update_crate_list(hash_set: &mut HashSet<CrateMetaData>, temp_crate_metadata: &CrateMetaData) {

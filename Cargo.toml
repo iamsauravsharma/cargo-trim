@@ -2,7 +2,6 @@
 name = "cargo-trim"
 version = "0.16.0"
 authors = ["Saurav Sharma <appdroiddeveloper@gmail.com>"]
-homepage = "https://github.com/iamsauravsharma/cargo-trim"
 repository = "https://github.com/iamsauravsharma/cargo-trim"
 description = "Binary application to cleanup $CARGO_HOME cache"
 license = "MIT"

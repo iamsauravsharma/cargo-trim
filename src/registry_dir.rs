@@ -17,7 +17,8 @@ impl RegistryDir {
     /// Create new registry dir
     pub(crate) fn new(index_dir: &Path, installed_crate: &[CrateMetaData]) -> Result<Self> {
         let mut index_cache_dir = Vec::new();
-        // read a index .cache dir folder for each registry by analyzing index folder
+        // read a index .cache dir folder for each registry by analyzing index
+        // folder
         if index_dir.exists() && index_dir.is_dir() {
             for entry in fs::read_dir(index_dir).context("failed to read index directory")? {
                 let mut entry_path = entry?.path();
@@ -65,9 +66,10 @@ impl RegistryDir {
             is_success = delete_folder(path, dry_run).is_ok() && is_success;
         }
 
-        // remove index cache dir if their is only one crate. It will also clean crate
-        // name from installed crate name owned locally by it so when two version of
-        // same crate is deleted it properly remove index cache
+        // remove index cache dir if their is only one crate. It will also clean
+        // crate name from installed crate name owned locally by it so
+        // when two version of same crate is deleted it properly remove
+        // index cache
         for index in &self.index_cache_dir {
             let index_parent = index
                 .parent()
@@ -95,8 +97,7 @@ impl RegistryDir {
                 crate_metadata
                     .source()
                     .as_ref()
-                    .map(ToString::to_string)
-                    .unwrap_or_default(),
+                    .map_or_default(ToString::to_string),
                 crate_metadata.name(),
                 crate_metadata
                     .version()
@@ -110,8 +111,7 @@ impl RegistryDir {
                 crate_metadata
                     .source()
                     .as_ref()
-                    .map(ToString::to_string)
-                    .unwrap_or_default(),
+                    .map_or_default(ToString::to_string),
                 crate_metadata.name(),
                 crate_metadata
                     .version()
@@ -125,8 +125,7 @@ impl RegistryDir {
                 crate_metadata
                     .source()
                     .as_ref()
-                    .map(ToString::to_string)
-                    .unwrap_or_default(),
+                    .map_or_default(ToString::to_string),
                 crate_metadata
                     .version()
                     .context("failed to convert crate version")?,

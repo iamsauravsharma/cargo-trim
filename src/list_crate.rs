@@ -1,6 +1,6 @@
-use std::fs;
 use std::path::{Path, PathBuf};
 use std::str::FromStr as _;
+use std::{fs, io};
 
 use anyhow::{Context as _, Result};
 use semver::Version;
@@ -248,7 +248,8 @@ fn read_content(
                         if let Some(registry_url) = source.strip_prefix("registry+") {
                             let mut url = Url::from_str(registry_url)
                                 .context("failed registry source url kind conversion")?;
-                            // Only add sparse registry if sparse registry is present in place of
+                            // Only add sparse registry if sparse registry is
+                            // present in place of
                             // git based registry for crates.io
                             if url == crates_io_git_url && sparse_crates_io_present {
                                 url = index_crates_url.clone();
@@ -330,14 +331,17 @@ fn list_old_crates(
         let mut full_name_list = Vec::new();
         for crates in fs::read_dir(db_dir).context("failed to read db dir")? {
             let entry = crates?.path();
+            if !entry.is_dir() {
+                continue;
+            }
             let file_name = entry
                 .file_name()
                 .context("failed to get sold crate db dir file name")?
                 .to_str()
                 .context("failed to convert db dir entry file name to str")?;
-            let rev_value = latest_rev_value(&entry)?;
-            let full_name = format!("{file_name}-{rev_value}");
-            full_name_list.push(full_name);
+            if let Some(rev_value) = latest_rev_value(&entry)? {
+                full_name_list.push(format!("{file_name}-{rev_value}"));
+            }
         }
         for crate_metadata in installed_crate_git {
             let crate_name = crate_metadata.name();
@@ -415,17 +419,20 @@ fn list_orphan_crates(
     (orphan_crate_registry, orphan_crate_git)
 }
 
-/// get latest commit rev value from git repository
-fn latest_rev_value(path: &Path) -> Result<String> {
-    let mut fetch_head_file = PathBuf::new();
-    fetch_head_file.push(path);
-    fetch_head_file.push("FETCH_HEAD");
-    let content = fs::read_to_string(fetch_head_file).context("failed to read FETCH_HEAD file")?;
+/// get latest commit rev value from git repository, `None` if the repository
+/// has no usable `FETCH_HEAD`
+fn latest_rev_value(path: &Path) -> Result<Option<String>> {
+    let fetch_head_file = path.join("FETCH_HEAD");
+    let content = match fs::read_to_string(&fetch_head_file) {
+        Ok(content) => content,
+        Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(None),
+        Err(error) => {
+            return Err(error)
+                .with_context(|| format!("failed to read {}", fetch_head_file.display()));
+        }
+    };
     // read first 7 characters which is the short form of the git commit hash
-    content
-        .get(..7)
-        .context("FETCH_HEAD content is shorter than 7 characters")
-        .map(ToString::to_string)
+    Ok(content.get(..7).map(ToString::to_string))
 }
 
 #[cfg(test)]

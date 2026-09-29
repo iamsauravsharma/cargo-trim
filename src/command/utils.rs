@@ -46,8 +46,8 @@ pub(super) fn crate_name_max_width<'a, I>(crates: I) -> usize
 where
     I: IntoIterator<Item = &'a CrateMetaData>,
 {
-    // width = crate name length + version length + 1 (for the hyphen) (if version
-    // exists) width = crate name length (if version does not exist)
+    // width = crate name length + version length + 1 (for the hyphen) (if
+    // version exists) width = crate name length (if version does not exist)
     let crate_name_max_width = crates
         .into_iter()
         .map(|cm| {
