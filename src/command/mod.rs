@@ -7,8 +7,8 @@ use clap::{Parser, ValueEnum};
 use owo_colors::OwoColorize as _;
 
 use self::utils::{
-    confirm_continue, print_dash, query_full_width, query_print, show_top_number_crates,
-    source_name_max_width,
+    OLD_ORPHAN_CLEAN_WARNING, ORPHAN_CLEAN_WARNING, confirm_orphan_clean, print_dash,
+    query_full_width, query_print, show_top_number_crates, source_name_max_width,
 };
 use crate::command::git::clean_git;
 use crate::command::registry::clean_registry;
@@ -704,15 +704,8 @@ fn old_orphan_clean(
     directory_is_empty: bool,
     dry_run: bool,
 ) -> Result<()> {
-    if directory_is_empty {
-        let warning_text = "WARNING: You have not initialized any directory as rust project \
-                            directory. This command will clean all old crates even if they are \
-                            not orphan crates. Run command 'cargo trim init' to initialize \
-                            current directory as rust project directory or pass cargo trim set -d \
-                            <directory> for setting rust project directory";
-        if !confirm_continue(warning_text)? {
-            return Ok(());
-        }
+    if !confirm_orphan_clean(directory_is_empty, OLD_ORPHAN_CLEAN_WARNING, dry_run)? {
+        return Ok(());
     }
     let (registry_sized_cleaned, total_registry_crate_removed) = clean_registry(
         registry_crates_location,
@@ -743,15 +736,8 @@ fn orphan_clean(
     directory_is_empty: bool,
     dry_run: bool,
 ) -> Result<()> {
-    if directory_is_empty {
-        let warning_text = "WARNING: You have not initialized any directory as rust project \
-                            directory. This command will clean all crates since all crates are \
-                            classified as orphan crate. Run command 'cargo trim init' to \
-                            initialize current directory as rust project directory or pass cargo \
-                            trim set -d <directory> for setting rust project directory";
-        if !confirm_continue(warning_text)? {
-            return Ok(());
-        }
+    if !confirm_orphan_clean(directory_is_empty, ORPHAN_CLEAN_WARNING, dry_run)? {
+        return Ok(());
     }
     let (registry_sized_cleaned, total_registry_crate_removed) = clean_registry(
         registry_crates_location,

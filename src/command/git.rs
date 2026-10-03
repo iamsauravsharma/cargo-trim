@@ -4,7 +4,10 @@ use anyhow::Result;
 use clap::Parser;
 use owo_colors::OwoColorize as _;
 
-use super::utils::{confirm_continue, print_dash, show_top_number_crates, source_name_max_width};
+use super::utils::{
+    OLD_ORPHAN_CLEAN_WARNING, ORPHAN_CLEAN_WARNING, confirm_orphan_clean, print_dash,
+    show_top_number_crates, source_name_max_width,
+};
 use super::{query_full_width, query_print};
 use crate::crate_detail::{CrateDetail, CrateMetaData};
 use crate::dir_path::DirPath;
@@ -105,18 +108,9 @@ impl Git {
             );
         }
 
-        if self.old_orphan {
-            if directory_is_empty {
-                let warning_text = "WARNING: You have not initialized any directory as rust \
-                                    project directory. This command will clean all old crates \
-                                    even if they are not orphan crates. Run command 'cargo trim \
-                                    init' to initialize current directory as rust project \
-                                    directory or pass cargo trim set -d <directory> for setting \
-                                    rust project directory";
-                if !confirm_continue(warning_text)? {
-                    return Ok(());
-                }
-            }
+        if self.old_orphan
+            && confirm_orphan_clean(directory_is_empty, OLD_ORPHAN_CLEAN_WARNING, dry_run)?
+        {
             let (sized_cleaned, total_crate_removed) =
                 clean_git(&crate_list.old_orphan_git(), crate_detail, dry_run)?;
 
@@ -131,18 +125,7 @@ impl Git {
             );
         }
 
-        if self.orphan {
-            if directory_is_empty {
-                let warning_text = "WARNING: You have not initialized any directory as rust \
-                                    project directory. This command will clean all crates since \
-                                    all crates are classified as orphan crate. Run command 'cargo \
-                                    trim init' to initialize current directory as rust project \
-                                    directory or pass cargo trim set -d <directory> for setting \
-                                    rust project directory";
-                if !confirm_continue(warning_text)? {
-                    return Ok(());
-                }
-            }
+        if self.orphan && confirm_orphan_clean(directory_is_empty, ORPHAN_CLEAN_WARNING, dry_run)? {
             let (sized_cleaned, total_crate_removed) =
                 clean_git(crate_list.orphan_git(), crate_detail, dry_run)?;
 

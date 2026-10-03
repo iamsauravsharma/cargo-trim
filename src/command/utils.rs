@@ -7,6 +7,34 @@ use owo_colors::OwoColorize as _;
 use crate::crate_detail::{CrateDetail, CrateMetaData};
 use crate::utils::convert_pretty;
 
+pub(super) const OLD_ORPHAN_CLEAN_WARNING: &str =
+    "WARNING: You have not initialized any directory as rust project directory. This command will \
+     clean all old crates even if they are not orphan crates. Run command 'cargo trim init' to \
+     initialize current directory as rust project directory or pass cargo trim set -d <directory> \
+     for setting rust project directory";
+
+pub(super) const ORPHAN_CLEAN_WARNING: &str =
+    "WARNING: You have not initialized any directory as rust project directory. This command will \
+     clean all crates since all crates are classified as orphan crate. Run command 'cargo trim \
+     init' to initialize current directory as rust project directory or pass cargo trim set -d \
+     <directory> for setting rust project directory";
+
+/// check if crates classified as orphan can be cleaned.
+pub(super) fn confirm_orphan_clean(
+    directory_is_empty: bool,
+    warning_text: &str,
+    dry_run: bool,
+) -> Result<bool> {
+    if !directory_is_empty {
+        return Ok(true);
+    }
+    if dry_run {
+        println!("{}", warning_text.yellow());
+        return Ok(true);
+    }
+    confirm_continue(warning_text)
+}
+
 /// print provided warning text and ask user to confirm if they want to continue
 /// If user enters "y" or "yes" (case insensitive), returns true, otherwise
 /// returns false
