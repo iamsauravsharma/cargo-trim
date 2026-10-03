@@ -121,11 +121,11 @@ impl RegistryDir {
         } else {
             println!(
                 "Failed to remove {} {}-{}",
-                crate_metadata.name(),
                 crate_metadata
                     .source()
                     .as_ref()
                     .map_or_default(ToString::to_string),
+                crate_metadata.name(),
                 crate_metadata
                     .version()
                     .context("failed to convert crate version")?,
