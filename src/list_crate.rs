@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::str::FromStr as _;
 use std::{fs, io};
@@ -98,11 +99,8 @@ impl CrateList {
         let installed_crate_git = crate_detail.list_installed_crate_git(checkout_dir, db_dir)?;
 
         // list old registry crate
-        let (old_crate_registry, old_crate_git) = list_old_crates(
-            db_dir,
-            installed_crate_registry.clone(),
-            &installed_crate_git,
-        )?;
+        let (old_crate_registry, old_crate_git) =
+            list_old_crates(db_dir, &installed_crate_registry, &installed_crate_git)?;
 
         // list all used crates in rust program
         let (cargo_lock_files, used_crate_registry, used_crate_git) =
@@ -304,31 +302,13 @@ fn read_content(
 /// List old crates
 fn list_old_crates(
     db_dir: &Path,
-    installed_crate_registry: Vec<CrateMetaData>,
+    installed_crate_registry: &[CrateMetaData],
     installed_crate_git: &[CrateMetaData],
 ) -> Result<(Vec<CrateMetaData>, Vec<CrateMetaData>)> {
-    let mut old_crate_registry = Vec::new();
-    let mut registry_crates = installed_crate_registry;
-    registry_crates.sort();
-    if registry_crates.len() > 1 {
-        for i in 0..(registry_crates.len() - 1) {
-            let crate_metadata = &registry_crates[i];
-            let next_crate_metadata = &registry_crates[i + 1];
-            if crate_metadata.name() == next_crate_metadata.name()
-                && crate_metadata.source() == next_crate_metadata.source()
-            {
-                old_crate_registry.push(crate_metadata.clone());
-            }
-        }
-    }
-    old_crate_registry.sort();
-    old_crate_registry.dedup();
-
-    // list old git crate
-    let mut old_crate_git = Vec::new();
-    // analyze each crates of db dir and create list of head rev value
+    // latest fetched revision of every git db, keyed by db folder name which is
+    // also the source of its checkouts
+    let mut latest_revs = HashMap::new();
     if db_dir.exists() && db_dir.is_dir() {
-        let mut full_name_list = Vec::new();
         for crates in fs::read_dir(db_dir).context("failed to read db dir")? {
             let entry = crates?.path();
             if !entry.is_dir() {
@@ -340,20 +320,69 @@ fn list_old_crates(
                 .to_str()
                 .context("failed to convert db dir entry file name to str")?;
             if let Some(rev_value) = latest_rev_value(&entry)? {
-                full_name_list.push(format!("{file_name}-{rev_value}"));
-            }
-        }
-        for crate_metadata in installed_crate_git {
-            let crate_name = crate_metadata.name();
-            if !crate_name.contains("-HEAD") && !full_name_list.contains(crate_name) {
-                old_crate_git.push(crate_metadata.clone());
+                latest_revs.insert(file_name.to_string(), rev_value);
             }
         }
     }
+    Ok((
+        old_registry_crates(installed_crate_registry),
+        old_git_crates(installed_crate_git, &latest_revs),
+    ))
+}
+
+/// registry crates for which the same registry holds a newer version
+fn old_registry_crates(installed_crate_registry: &[CrateMetaData]) -> Vec<CrateMetaData> {
+    let mut newest: HashMap<(&String, Option<&String>), &Version> = HashMap::new();
+    for crate_metadata in installed_crate_registry {
+        if let Some(version) = crate_metadata.version() {
+            let key = (crate_metadata.name(), crate_metadata.source());
+            if newest.get(&key).is_none_or(|newest| version > *newest) {
+                newest.insert(key, version);
+            }
+        }
+    }
+    let mut old_crate_registry = installed_crate_registry
+        .iter()
+        .filter(|crate_metadata| {
+            let key = (crate_metadata.name(), crate_metadata.source());
+            crate_metadata
+                .version()
+                .is_some_and(|version| newest.get(&key).is_some_and(|newest| version < *newest))
+        })
+        .cloned()
+        .collect::<Vec<_>>();
+    old_crate_registry.sort();
+    old_crate_registry.dedup();
+    old_crate_registry
+}
+
+/// git checkouts whose revision is not the latest fetched revision of their
+/// repository. A checkout of a repository whose latest revision is unknown is
+/// not old so it is never removed by mistake
+fn old_git_crates(
+    installed_crate_git: &[CrateMetaData],
+    latest_revs: &HashMap<String, String>,
+) -> Vec<CrateMetaData> {
+    let mut old_crate_git = installed_crate_git
+        .iter()
+        .filter(|crate_metadata| {
+            // checkout is named repo-rev while git db is named repo-HEAD
+            let Some((_, rev)) = crate_metadata.name().rsplit_once('-') else {
+                return false;
+            };
+            // checkout folder is an abbreviation of the full latest hash when
+            // it is the latest revision
+            rev != "HEAD"
+                && crate_metadata
+                    .source()
+                    .and_then(|source| latest_revs.get(source))
+                    .is_some_and(|latest| !latest.starts_with(rev))
+        })
+        .cloned()
+        .collect::<Vec<_>>();
     old_crate_git.sort();
     old_crate_git.dedup();
-
-    Ok((old_crate_registry, old_crate_git))
+    old_crate_git
 }
 
 /// list used crates
@@ -419,8 +448,8 @@ fn list_orphan_crates(
     (orphan_crate_registry, orphan_crate_git)
 }
 
-/// get latest commit rev value from git repository, `None` if the repository
-/// has no usable `FETCH_HEAD`
+/// get full hash of latest fetched commit from git repository, `None` if the
+/// repository has no usable `FETCH_HEAD`
 fn latest_rev_value(path: &Path) -> Result<Option<String>> {
     let fetch_head_file = path.join("FETCH_HEAD");
     let content = match fs::read_to_string(&fetch_head_file) {
@@ -431,15 +460,87 @@ fn latest_rev_value(path: &Path) -> Result<Option<String>> {
                 .with_context(|| format!("failed to read {}", fetch_head_file.display()));
         }
     };
-    // read first 7 characters which is the short form of the git commit hash
-    Ok(content.get(..7).map(ToString::to_string))
+    // first word is the full hash of the latest fetched commit
+    Ok(content.split_whitespace().next().map(ToString::to_string))
 }
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+
+    use semver::Version;
     use url::Url;
 
-    use super::parse_git_source;
+    use super::{old_git_crates, old_registry_crates, parse_git_source};
+    use crate::crate_detail::CrateMetaData;
+
+    fn registry(name: &str, version: &str, source: &str) -> CrateMetaData {
+        CrateMetaData::new(
+            name.to_string(),
+            Some(Version::parse(version).unwrap()),
+            Some(source.to_string()),
+        )
+    }
+
+    fn git(name: &str, source: &str) -> CrateMetaData {
+        CrateMetaData::new(name.to_string(), None, Some(source.to_string()))
+    }
+
+    #[test]
+    fn old_registry_crate_is_per_registry_test() {
+        // sorted order puts serde 1.0.0 of registry b between the two versions
+        // of registry a
+        let mut installed = vec![
+            registry("serde", "2.0.0", "a"),
+            registry("serde", "1.0.0", "b"),
+            registry("serde", "1.0.0", "a"),
+            registry("tokio", "1.0.0", "a"),
+        ];
+        installed.sort();
+        assert_eq!(
+            old_registry_crates(&installed),
+            [registry("serde", "1.0.0", "a")]
+        );
+    }
+
+    #[test]
+    fn old_registry_crate_with_several_newer_versions_test() {
+        let installed = vec![
+            registry("syn", "1.0.0", "a"),
+            registry("syn", "1.0.1", "a"),
+            registry("syn", "2.0.0", "a"),
+        ];
+        assert_eq!(
+            old_registry_crates(&installed),
+            [registry("syn", "1.0.0", "a"), registry("syn", "1.0.1", "a")]
+        );
+    }
+
+    #[test]
+    fn latest_git_checkout_is_not_old_test() {
+        let installed = vec![
+            git("repo-HEAD", "repo-1a2b3c"),
+            git("repo-abcdef1", "repo-1a2b3c"),
+            git("repo-1234567", "repo-1a2b3c"),
+            git("repo-abcdef12", "repo-1a2b3c"),
+            git("repo-abcdef9", "repo-1a2b3c"),
+            git("other-7654321", "other-9f8e7d"),
+        ];
+        let latest_revs = HashMap::from([(
+            "repo-1a2b3c".to_string(),
+            "abcdef1234567890abcdef1234567890abcdef12".to_string(),
+        )]);
+        // git db is never old, latest checkout is not old whatever length its
+        // abbreviation has and a checkout of unknown latest revision is not old
+        // either
+        assert_eq!(
+            old_git_crates(&installed, &latest_revs),
+            [
+                git("repo-1234567", "repo-1a2b3c"),
+                git("repo-abcdef9", "repo-1a2b3c"),
+            ]
+        );
+    }
 
     #[test]
     fn parse_git_source_plain_hash_test() {
