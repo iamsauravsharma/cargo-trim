@@ -4,6 +4,7 @@ use clap::Parser;
 use crate::config_file::ConfigFile;
 #[derive(Debug, Parser)]
 #[command(about = "Unset values from config file", arg_required_else_help = true)]
+#[expect(clippy::struct_excessive_bools)]
 pub(crate) struct Unset {
     #[arg(
         long = "dry-run",
@@ -28,6 +29,12 @@ pub(crate) struct Unset {
     scan_hidden_folder: bool,
     #[arg(long = "scan-target-folder", help = "Set scan target folder as false")]
     scan_target_folder: bool,
+    #[arg(
+        long = "stale-days",
+        short = 's',
+        help = "Unset stale days so no project is ever considered stale"
+    )]
+    stale_days: bool,
 }
 
 impl Unset {
@@ -52,6 +59,9 @@ impl Unset {
         }
         if self.scan_target_folder {
             config_file.set_scan_target_folder(false, dry_run, true)?;
+        }
+        if self.stale_days {
+            config_file.set_stale_days(0, dry_run, true)?;
         }
 
         Ok(())

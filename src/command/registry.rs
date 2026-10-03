@@ -76,8 +76,9 @@ impl Registry {
         crate_detail: &CrateDetail,
         registry_crates_location: &mut RegistryDir,
         directory_is_empty: bool,
+        global_dry_run: bool,
     ) -> Result<()> {
-        let dry_run = self.dry_run;
+        let dry_run = self.dry_run || global_dry_run;
         if self.light_cleanup {
             let light_cleanup_success =
                 light_cleanup_registry(dir_path.src_dir(), dir_path.index_dir(), dry_run);

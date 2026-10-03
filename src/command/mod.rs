@@ -12,6 +12,7 @@ use self::utils::{
 };
 use crate::command::git::clean_git;
 use crate::command::registry::clean_registry;
+use crate::command::target::query_size_target;
 use crate::config_file::ConfigFile;
 use crate::crate_detail::CrateDetail;
 use crate::dir_path::DirPath;
@@ -26,6 +27,7 @@ mod init;
 mod list;
 mod registry;
 mod set;
+mod target;
 mod unset;
 mod utils;
 
@@ -39,6 +41,7 @@ enum SubCommand {
     List(list::List),
     Git(git::Git),
     Registry(registry::Registry),
+    Target(target::Target),
 }
 
 #[derive(Debug, Parser)]
@@ -138,6 +141,15 @@ pub(crate) struct Command {
     )]
     scan_target_folder: bool,
     #[arg(
+        long = "stale-days",
+        short = 's',
+        help = "Consider projects without any change for this many days as stale so their \
+                Cargo.lock files are excluded from used crate detection",
+        env = "TRIM_STALE_DAYS",
+        value_name = "days"
+    )]
+    stale_days: Option<u32>,
+    #[arg(
         long = "top",
         short = 't',
         help = "Show certain number of top crates which have highest size"
@@ -217,6 +229,9 @@ impl Command {
         } else if self.scan_target_folder {
             config_file.set_scan_target_folder(true, dry_run, false)?;
         }
+        if let Some(stale_days) = self.stale_days {
+            config_file.set_stale_days(stale_days, dry_run, false)?;
+        }
 
         // create new CrateDetail struct
         let mut crate_detail = CrateDetail::new(dir_path.index_dir(), dir_path.db_dir())?;
@@ -271,7 +286,7 @@ impl Command {
         }
 
         if self.query {
-            query_size(&dir_path, &crate_list, &crate_detail);
+            query_size(&dir_path, &crate_list, &crate_detail, &config_file)?;
         }
 
         let mut registry_crates_location =
@@ -332,8 +347,10 @@ impl Command {
                         &crate_list,
                         &crate_detail,
                         config_file.directory().is_empty(),
+                        dry_run,
                     )?;
                 }
+                SubCommand::Target(target) => target.run(&config_file, dry_run)?,
                 SubCommand::Registry(registry) => {
                     registry.run(
                         &dir_path,
@@ -341,6 +358,7 @@ impl Command {
                         &crate_detail,
                         &mut registry_crates_location,
                         config_file.directory().is_empty(),
+                        dry_run,
                     )?;
                 }
             }
@@ -625,7 +643,12 @@ fn top_crates(crate_detail: &CrateDetail, number: usize) {
 
 // query size of directory of cargo home folder provide some valuable size
 // information
-fn query_size(dir_path: &DirPath, crate_list: &CrateList, crate_detail: &CrateDetail) {
+fn query_size(
+    dir_path: &DirPath,
+    crate_list: &CrateList,
+    crate_detail: &CrateDetail,
+    config_file: &ConfigFile,
+) -> Result<()> {
     let mut final_size = 0_u64;
     let bin_dir_size =
         get_inode_handled_size(dir_path.bin_dir(), &mut HashSet::new()).unwrap_or(0_u64);
@@ -641,6 +664,9 @@ fn query_size(dir_path: &DirPath, crate_list: &CrateList, crate_detail: &CrateDe
     final_size += registry::query_size_registry(dir_path, crate_list, crate_detail);
     final_size += git::query_size_git(dir_path, crate_list, crate_detail);
     query_print("Total size", &convert_pretty(final_size));
+    print_dash(query_full_width());
+    query_size_target(config_file)?;
+    Ok(())
 }
 
 // Clean old crates

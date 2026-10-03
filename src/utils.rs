@@ -1,9 +1,10 @@
 use std::collections::HashSet;
-use std::fs;
 #[cfg(unix)]
 use std::os::unix::fs::MetadataExt as _;
 use std::path::Path;
 use std::str::FromStr as _;
+use std::time::SystemTime;
+use std::{fs, io};
 
 use anyhow::{Context as _, Result};
 use owo_colors::OwoColorize as _;
@@ -73,6 +74,29 @@ pub(crate) fn delete_index_cache(index_dir: &Path, dry_run: bool) -> Result<()> 
         }
     }
     Ok(())
+}
+
+/// check if `path` or anything inside it was modified after `cutoff`, stopping
+/// as soon as one recent entry is found
+pub(crate) fn modified_since(path: &Path, cutoff: SystemTime) -> bool {
+    // a path which cannot be inspected counts as modified so that callers never
+    // treat an unreadable project or target as stale and delete it
+    let meta = match path.symlink_metadata() {
+        Ok(meta) => meta,
+        Err(error) => return error.kind() != io::ErrorKind::NotFound,
+    };
+    match meta.modified() {
+        Ok(time) if time > cutoff => return true,
+        Err(_) => return true,
+        Ok(_) => {}
+    }
+    if meta.is_dir() {
+        let Ok(mut entries) = fs::read_dir(path) else {
+            return true;
+        };
+        return entries.any(|entry| entry.is_ok_and(|entry| modified_since(&entry.path(), cutoff)));
+    }
+    false
 }
 
 ///  get size of path

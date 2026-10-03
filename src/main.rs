@@ -1,3 +1,4 @@
+mod cargo_config;
 mod command;
 mod config_file;
 mod crate_detail;
