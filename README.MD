@@ -70,6 +70,7 @@ Commands:
   list      List crates
   git       Perform operation only to git related cache file
   registry  Perform operation only to registry related cache file
+  target    Perform operation only to target folder of rust project
   help      Print this message or the help of the given subcommand(s)
 
 Options:
@@ -88,6 +89,7 @@ Options:
   -q, --query                  Return size of different .cargo/cache folders
       --scan-hidden-folder     Scan hidden folder for current command [env: TRIM_SCAN_HIDDEN_FOLDER=]
       --scan-target-folder     Scan target folder for current command [env: TRIM_SCAN_TARGET_FOLDER=]
+  -s, --stale-days <days>      Consider projects without any change for this many days as stale so their Cargo.lock files are excluded from used crate detection [env: TRIM_STALE_DAYS=]
   -t, --top <TOP>              Show certain number of top crates which have highest size
   -u, --update                 Update Cargo.lock file present inside config directory folder path
   -w, --wipe <WIPE>            Wipe folder [possible values: git, checkouts, db, registry, cache, index, index-cache, src]
@@ -145,6 +147,15 @@ Indicates whether hidden folders (those starting with a dot) should be scanned.
 **env: TRIM_SCAN_TARGET_FOLDER**
 
 Indicates whether the target folder should be scanned. The target folder name is determined by the `CARGO_BUILD_TARGET_DIR`, `CARGO_TARGET_DIR` environment variables, or defaults to `target`.
+
+#### 5. **stale_days**
+
+**default: 0**
+
+**env: TRIM_STALE_DAYS**
+
+Number of days without any change after which a project is considered stale, `0` disables staleness
+so no project is ever stale.
 
 [license_badge]: https://img.shields.io/github/license/iamsauravsharma/cargo-trim.svg?style=for-the-badge
 [license_link]: LICENSE

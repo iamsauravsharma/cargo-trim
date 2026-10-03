@@ -30,6 +30,13 @@ pub(crate) struct Set {
     scan_hidden_folder: bool,
     #[arg(long = "scan-target-folder", help = "Set scan target folder as true")]
     scan_target_folder: bool,
+    #[arg(
+        long = "stale-days",
+        short = 's',
+        help = "Set number of days without any change after which a project is considered stale",
+        value_name = "days"
+    )]
+    stale_days: Option<u32>,
 }
 
 impl Set {
@@ -55,6 +62,9 @@ impl Set {
         }
         if self.scan_target_folder {
             config_file.set_scan_target_folder(true, dry_run, true)?;
+        }
+        if let Some(stale_days) = self.stale_days {
+            config_file.set_stale_days(stale_days, dry_run, true)?;
         }
 
         Ok(())

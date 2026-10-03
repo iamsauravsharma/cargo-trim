@@ -71,8 +71,9 @@ impl Git {
         crate_list: &CrateList,
         crate_detail: &CrateDetail,
         directory_is_empty: bool,
+        global_dry_run: bool,
     ) -> Result<()> {
-        let dry_run = self.dry_run;
+        let dry_run = self.dry_run || global_dry_run;
 
         if self.light_cleanup {
             let light_cleanup_success = light_cleanup_git(dir_path.checkout_dir(), dry_run);

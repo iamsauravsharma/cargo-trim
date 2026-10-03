@@ -1,22 +1,17 @@
+use std::cell::RefCell;
 use std::ffi::OsStr;
+use std::fs;
 use std::io::Read as _;
 use std::path::{Path, PathBuf};
-use std::sync::LazyLock;
-use std::{env, fs};
+use std::time::{Duration, SystemTime};
 
 use anyhow::{Context as _, Result};
 use owo_colors::OwoColorize as _;
 use serde::{Deserialize, Serialize};
 
+use crate::cargo_config;
 use crate::list_crate::CargoLockFiles;
-
-/// name of the cargo target folder, resolved once since it is checked for
-/// every path visited during the recursive scan
-static TARGET_DIR_NAME: LazyLock<String> = LazyLock::new(|| {
-    env::var("CARGO_BUILD_TARGET_DIR")
-        .or_else(|_| env::var("CARGO_TARGET_DIR"))
-        .unwrap_or_else(|_| String::from("target"))
-});
+use crate::utils::modified_since;
 
 /// Stores config file information
 #[derive(Serialize, Deserialize, Default)]
@@ -29,8 +24,12 @@ pub(crate) struct ConfigFile {
     scan_hidden_folder: bool,
     #[serde(default)]
     scan_target_folder: bool,
+    #[serde(default)]
+    stale_days: u32,
     #[serde(skip)]
     location: PathBuf,
+    #[serde(skip)]
+    target_dir_cache: RefCell<cargo_config::TargetDirCache>,
 }
 
 impl ConfigFile {
@@ -72,6 +71,33 @@ impl ConfigFile {
         self.scan_target_folder
     }
 
+    /// point in time before which a project without activity counts as stale,
+    /// `None` when stale days is 0 and no project is ever stale
+    pub(crate) fn stale_cutoff(&self) -> Option<SystemTime> {
+        if self.stale_days == 0 {
+            return None;
+        }
+        SystemTime::now().checked_sub(Duration::from_secs(
+            u64::from(self.stale_days) * 24 * 60 * 60,
+        ))
+    }
+
+    /// Set stale days to value, 0 turns staleness off
+    pub(crate) fn set_stale_days(&mut self, value: u32, dry_run: bool, save: bool) -> Result<()> {
+        if !dry_run || !save {
+            self.stale_days = value;
+        }
+        if dry_run {
+            println!("{} Set stale_days to {value}", "Dry run:".yellow());
+        } else {
+            if save {
+                self.save()?;
+            }
+            println!("Set stale_days to {value}");
+        }
+        Ok(())
+    }
+
     /// Set scan hidden folder to value
     pub(crate) fn set_scan_hidden_folder(
         &mut self,
@@ -79,13 +105,15 @@ impl ConfigFile {
         dry_run: bool,
         save: bool,
     ) -> Result<()> {
+        if !dry_run || !save {
+            self.scan_hidden_folder = value;
+        }
         if dry_run {
             println!(
                 "{} Set scan_hidden_folder to {value:?}",
                 "Dry run:".yellow(),
             );
         } else {
-            self.scan_hidden_folder = value;
             if save {
                 self.save()?;
             }
@@ -101,13 +129,15 @@ impl ConfigFile {
         dry_run: bool,
         save: bool,
     ) -> Result<()> {
+        if !dry_run || !save {
+            self.scan_target_folder = value;
+        }
         if dry_run {
             println!(
                 "{} Set scan_target_folder to {value:?}",
                 "Dry run:".yellow(),
             );
         } else {
-            self.scan_target_folder = value;
             if save {
                 self.save()?;
             }
@@ -118,10 +148,14 @@ impl ConfigFile {
 
     /// add directory
     pub(crate) fn add_directory(&mut self, path: &str, dry_run: bool, save: bool) -> Result<()> {
+        // a value given for this run only still applies under dry run so the
+        // preview reflects the requested value instead of the stored one
+        if !dry_run || !save {
+            self.directory.push(path.to_string());
+        }
         if dry_run {
             println!("{} Added {path:?}", "Dry run:".yellow());
         } else {
-            self.directory.push(path.to_string());
             if save {
                 self.save()?;
             }
@@ -132,10 +166,14 @@ impl ConfigFile {
 
     /// add ignore entry which is a relative or absolute path
     pub(crate) fn add_ignore(&mut self, ignore: &str, dry_run: bool, save: bool) -> Result<()> {
+        // a value given for this run only still applies under dry run so the
+        // preview reflects the requested value instead of the stored one
+        if !dry_run || !save {
+            self.ignore.push(ignore.to_string());
+        }
         if dry_run {
             println!("{} Added {ignore:?}", "Dry run:".yellow());
         } else {
-            self.ignore.push(ignore.to_string());
             if save {
                 self.save()?;
             }
@@ -146,10 +184,14 @@ impl ConfigFile {
 
     /// remove directory
     pub(crate) fn remove_directory(&mut self, path: &str, dry_run: bool, save: bool) -> Result<()> {
+        // a value given for this run only still applies under dry run so the
+        // preview reflects the requested value instead of the stored one
+        if !dry_run || !save {
+            self.directory.retain(|data| data != path);
+        }
         if dry_run {
             println!("{} {} {path:?}", "Dry run:".yellow(), "Removed".red());
         } else {
-            self.directory.retain(|data| data != path);
             if save {
                 self.save()?;
             }
@@ -160,10 +202,14 @@ impl ConfigFile {
 
     /// remove ignore entry
     pub(crate) fn remove_ignore(&mut self, ignore: &str, dry_run: bool, save: bool) -> Result<()> {
+        // a value given for this run only still applies under dry run so the
+        // preview reflects the requested value instead of the stored one
+        if !dry_run || !save {
+            self.ignore.retain(|data| data != ignore);
+        }
         if dry_run {
             println!("{} {} {ignore:?}", "Dry run:".yellow(), "Removed".red());
         } else {
-            self.ignore.retain(|data| data != ignore);
             if save {
                 self.save()?;
             }
@@ -186,19 +232,79 @@ impl ConfigFile {
         }
         if !self.need_to_be_ignored(path) {
             if sym_meta.is_dir() {
+                let skip_target = (!self.scan_target_folder() && path.join("Cargo.toml").is_file())
+                    .then(|| self.resolved_target_dir(path))
+                    .filter(|target| is_cargo_target_dir(target));
                 for entry in fs::read_dir(path)
                     .context("failed to read directory while trying to find cargo.toml")?
                 {
-                    cargo_lock_files.append(self.list_cargo_locks(&entry?.path())?);
+                    let entry_path = entry?.path();
+                    if skip_target.as_ref() == Some(&entry_path) {
+                        continue;
+                    }
+                    cargo_lock_files.append(self.list_cargo_locks(&entry_path)?);
                 }
             } else if sym_meta.is_file() && path.file_name() == Some(OsStr::new("Cargo.lock")) {
-                cargo_lock_files.add_path(path.to_path_buf());
+                // a project is stale when nothing inside it changed since the
+                // cutoff
+                let stale_project = self.stale_cutoff().is_some_and(|cutoff| {
+                    path.parent()
+                        .is_some_and(|dir| !modified_since(dir, cutoff))
+                });
+                if !stale_project {
+                    cargo_lock_files.add_path(path.to_path_buf());
+                }
             }
         }
         Ok(cargo_lock_files)
     }
 
-    /// check if directory should be scanned for listing crates or not
+    /// target directory cargo uses for the project
+    fn resolved_target_dir(&self, project_dir: &Path) -> PathBuf {
+        cargo_config::target_dir(project_dir, &mut self.target_dir_cache.borrow_mut())
+    }
+
+    /// collect the target directory of every rust project below `path`, keeping
+    /// only those not built to since the cutoff when one is given
+    pub(crate) fn project_target_dirs(
+        &self,
+        path: &Path,
+        only_stale_since: Option<SystemTime>,
+        target_dirs: &mut Vec<PathBuf>,
+    ) -> Result<()> {
+        let Ok(sym_meta) = path.symlink_metadata() else {
+            return Ok(());
+        };
+        if sym_meta.is_symlink() || !sym_meta.is_dir() || self.need_to_be_ignored(path) {
+            return Ok(());
+        }
+        // a directory holding a manifest is a project, so ask cargo config
+        // where its build output goes instead of assuming a folder
+        // named target
+        let mut resolved_target = None;
+        if path.join("Cargo.toml").is_file() {
+            let target = self.resolved_target_dir(path);
+            if is_cargo_target_dir(&target) {
+                if only_stale_since.is_none_or(|cutoff| !modified_since(&target, cutoff)) {
+                    target_dirs.push(target.clone());
+                }
+                resolved_target = Some(target);
+            }
+        }
+        for entry in fs::read_dir(path)
+            .context("failed to read directory while trying to find target folders")?
+        {
+            let entry_path = entry?.path();
+            if resolved_target.as_ref() == Some(&entry_path) {
+                continue;
+            }
+            self.project_target_dirs(&entry_path, only_stale_since, target_dirs)?;
+        }
+        Ok(())
+    }
+
+    /// check if directory should be scanned for listing crates or not, a build
+    /// output folder is recognised by resolution instead of by name
     fn need_to_be_ignored(&self, path: &Path) -> bool {
         // match ignore entries as relative or absolute paths
         if self
@@ -216,11 +322,7 @@ impl ConfigFile {
         // a non UTF-8 name should not abort the whole scan; compare lossily
         let file_name = file_name.to_string_lossy();
         // skip hidden folder unless configured to be scanned
-        if file_name.starts_with('.') && !self.scan_hidden_folder() {
-            return true;
-        }
-        // skip target folder unless configured to be scanned
-        file_name == TARGET_DIR_NAME.as_str() && !self.scan_target_folder()
+        (file_name.starts_with('.') || is_os_hidden(path)) && !self.scan_hidden_folder()
     }
 
     /// save struct in the config file
@@ -232,9 +334,33 @@ impl ConfigFile {
     }
 }
 
+/// cargo tags its build output, so a directory which merely shares the name or
+/// the configured location is not mistaken for one
+fn is_cargo_target_dir(path: &Path) -> bool {
+    path.join("CACHEDIR.TAG").is_file() || path.join(".rustc_info.json").is_file()
+}
+
+/// check if the file system marks the path as hidden, which on windows is an
+/// attribute rather than a leading dot
+fn is_os_hidden(path: &Path) -> bool {
+    #[cfg(windows)]
+    {
+        use std::os::windows::fs::MetadataExt as _;
+
+        const FILE_ATTRIBUTE_HIDDEN: u32 = 0x2;
+        path.symlink_metadata()
+            .is_ok_and(|meta| meta.file_attributes() & FILE_ATTRIBUTE_HIDDEN != 0)
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = path;
+        false
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use std::path::{Path, PathBuf};
+    use std::path::Path;
 
     use super::ConfigFile;
 
@@ -292,33 +418,6 @@ mod tests {
             ..ConfigFile::default()
         };
         assert!(!cfg.need_to_be_ignored(hidden));
-    }
-
-    #[test]
-    fn target_folder_skipped_unless_scanned_test() {
-        let target = std::env::var("CARGO_BUILD_TARGET_DIR")
-            .or_else(|_| std::env::var("CARGO_TARGET_DIR"))
-            .unwrap_or_else(|_| String::from("target"));
-        // only meaningful when the resolved target dir is a single plain
-        // component
-        if target.is_empty()
-            || target.contains(std::path::MAIN_SEPARATOR)
-            || target.starts_with('.')
-        {
-            return;
-        }
-        let mut path = PathBuf::from("/proj");
-        path.push(&target);
-        let cfg = ConfigFile {
-            scan_target_folder: false,
-            ..ConfigFile::default()
-        };
-        assert!(cfg.need_to_be_ignored(&path));
-        let cfg = ConfigFile {
-            scan_target_folder: true,
-            ..ConfigFile::default()
-        };
-        assert!(!cfg.need_to_be_ignored(&path));
     }
 
     #[test]
