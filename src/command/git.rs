@@ -24,12 +24,6 @@ pub(crate) struct Git {
     #[arg(long = "all", short = 'a', help = "Clean up all git crates")]
     all: bool,
     #[arg(
-        long = "dry-run",
-        short = 'n',
-        help = "Run command in dry run mode to see what would be done"
-    )]
-    dry_run: bool,
-    #[arg(
         long = "light",
         short = 'l',
         help = "Light cleanup repo by removing git checkout but stores git db for future \
@@ -40,7 +34,7 @@ pub(crate) struct Git {
     old: bool,
     #[arg(
         long = "old-orphan",
-        short = 'z',
+        short = 'O',
         help = "Clean git crates which is both old and orphan"
     )]
     old_orphan: bool,
@@ -74,10 +68,8 @@ impl Git {
         crate_list: &CrateList,
         crate_detail: &CrateDetail,
         directory_is_empty: bool,
-        global_dry_run: bool,
+        dry_run: bool,
     ) -> Result<()> {
-        let dry_run = self.dry_run || global_dry_run;
-
         if self.light_cleanup {
             let light_cleanup_success = light_cleanup_git(dir_path.checkout_dir(), dry_run);
             if !light_cleanup_success {
