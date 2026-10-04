@@ -12,7 +12,7 @@ use crate::utils::{convert_pretty, get_size, modified_since};
 
 #[derive(Debug, Parser)]
 #[command(
-    about = "Perform operation only to target folder of rust project",
+    about = "Operate only on target folders of projects",
     arg_required_else_help = true
 )]
 #[expect(clippy::struct_excessive_bools)]
@@ -20,31 +20,25 @@ pub(crate) struct Target {
     #[arg(
         long = "all",
         short = 'a',
-        help = "Clean target folder of all rust project"
+        help = "Clean target folders of all projects"
     )]
     all: bool,
-    #[arg(
-        long = "list",
-        short = 'l',
-        help = "List target folder along with their size"
-    )]
+    #[arg(long = "list", short = 'l', help = "List target folders with size")]
     list: bool,
-    #[arg(
-        long = "query",
-        short = 'q',
-        help = "Return size of target folder of rust project"
-    )]
+    #[arg(long = "query", short = 'q', help = "Show size of target folders")]
     query: bool,
     #[arg(
         long = "stale",
         short = 's',
-        help = "Clean target folder of stale project only"
+        help = "Clean target folders of stale projects",
+        long_help = "Clean target folders of stale projects. Projects without any change for \
+                     `stale_days` days"
     )]
     stale: bool,
     #[arg(
         long = "top",
         short = 't',
-        help = "Show certain number of target folder which have highest size",
+        help = "Show given number of largest target folders",
         value_name = "number"
     )]
     top: Option<usize>,

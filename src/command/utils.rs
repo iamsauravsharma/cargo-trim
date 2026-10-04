@@ -7,31 +7,22 @@ use owo_colors::OwoColorize as _;
 use crate::installed::{CrateMetaData, Sources};
 use crate::utils::convert_pretty;
 
-pub(super) const OLD_ORPHAN_CLEAN_WARNING: &str =
-    "WARNING: You have not initialized any directory as rust project directory. This command will \
-     clean all old crates even if they are not orphan crates. Run command 'cargo trim set -d \
-     <directory>' to set rust project directory, use 'cargo trim set -d .' for current directory";
-
-pub(super) const ORPHAN_CLEAN_WARNING: &str =
-    "WARNING: You have not initialized any directory as rust project directory. This command will \
-     clean all crates since all crates are classified as orphan crate. Run command 'cargo trim \
-     set -d <directory>' to set rust project directory, use 'cargo trim set -d .' for current \
-     directory";
+/// warning shown when no rust project directory is set
+pub(super) const NO_DIRECTORY_WARNING: &str = "WARNING: No rust project directory is set so every \
+                                               crate is treated as orphan crate. Run 'cargo trim \
+                                               set -d <directory>' to set rust project directory \
+                                               or 'cargo trim set -d .' for current directory";
 
 /// check if crates classified as orphan can be cleaned.
-pub(super) fn confirm_orphan_clean(
-    directory_is_empty: bool,
-    warning_text: &str,
-    dry_run: bool,
-) -> Result<bool> {
+pub(super) fn confirm_orphan_clean(directory_is_empty: bool, dry_run: bool) -> Result<bool> {
     if !directory_is_empty {
         return Ok(true);
     }
     if dry_run {
-        println!("{}", warning_text.yellow());
+        println!("{}", NO_DIRECTORY_WARNING.yellow());
         return Ok(true);
     }
-    confirm_continue(warning_text)
+    confirm_continue(NO_DIRECTORY_WARNING)
 }
 
 /// print provided warning text and ask user to confirm if they want to continue
@@ -55,12 +46,18 @@ pub(super) fn confirm_continue(warning_text: &str) -> Result<bool> {
     Ok(["y", "yes"].contains(&trimmed_input.as_str()))
 }
 
-/// print number and size of removed crates
-pub(super) fn print_removed(label: &str, (size, count): (u64, usize)) {
+/// print number and size of removed crates along with number of crates the
+/// filter kept from being removed
+pub(super) fn print_removed(label: &str, (size, count): (u64, usize), kept: usize) {
+    let kept = if kept == 0 {
+        String::new()
+    } else {
+        format!(", {kept} kept by filter")
+    };
     println!(
         "{}",
         format!(
-            "{count} {label} removed which had occupied {}",
+            "{count} {label} removed which had occupied {}{kept}",
             convert_pretty(size)
         )
         .blue()

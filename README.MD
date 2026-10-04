@@ -6,156 +6,160 @@
 | :--------------------------------------------: | :---------------------------------------: |
 | [![License: MIT][license_badge]][license_link] | [![Crate][cratesio_badge]][cratesio_link] |
 
-`cargo-trim` is a binary application designed to clean up the **\$CARGO_HOME/registry** & **\$CARGO_HOME/git** folders,
-supporting orphaned and outdated crate removal.
-The default value for $CARGO_HOME is $HOME/.cargo.
+`cargo-trim` cleans up the **\$CARGO_HOME** cache (`registry` and `git`, default `~/.cargo`) and
+the `target` folders of your Rust projects.
 
 ### Install
-
-You can install `cargo-trim` directly from the crates.io registry:
 
 ```
 cargo install cargo-trim
 ```
 
-**OR**
+Latest development version: `cargo install --git https://github.com/iamsauravsharma/cargo-trim`
 
-For bleeding edge latest development version:
-
-```
-cargo install --git https://github.com/iamsauravsharma/cargo-trim
-```
-
-### Setup
-
-To set up cargo-trim, initialize it in the directory where your Rust projects reside using:
+### Quick start
 
 ```bash
-cargo trim init
+cargo trim set -d ~/projects   # folder holding your projects, `.` adds current folder
+cargo trim -n -x               # preview removal of crates no project uses
+cargo trim -x                  # remove them
 ```
 
-This command can be run multiple times to add multiple directories.
+Add `-n` (`--dry-run`) to any command to see what would happen without changing anything.
 
-Alternatively, you can specify a directory manually with:
+### Terms
 
-```bash
-cargo trim set -d <directory-path>
+- **orphan**: a crate not used by any `Cargo.lock` found in project directories. Without any project
+  directory every crate is orphan, so cargo-trim asks before cleaning.
+- **old**: an older version of a registry crate which also has a newer version, or a git checkout of
+  a revision which is not the latest fetched one.
+- **stale**: a project without any change for `stale_days` days. Its `Cargo.lock` no longer marks
+  crates as used and its target folder can be cleaned with `cargo trim target -s`.
+
+### Common commands
+
+| Command | Effect |
+| --- | --- |
+| `cargo trim -q` | Show size of cache and target folders |
+| `cargo trim -x` | Clean orphan crates |
+| `cargo trim -o` | Clean old crates |
+| `cargo trim -O` | Clean crates which are both old and orphan |
+| `cargo trim -a` | Clean all crates, empty indexes and target folders |
+| `cargo trim -l` | Remove sources but keep archives for offline builds |
+| `cargo trim list -x` | List orphan crates |
+| `cargo trim list -k` | List crates kept by filter |
+| `cargo trim list -p` | List detected projects |
+| `cargo trim target -s` | Clean target folders of stale projects |
+| `cargo trim config -p` | Print config |
+
+`git`, `registry` and `target` subcommands limit an operation to that part. Run `cargo trim -h` for
+a short overview and `cargo trim --help` (or `cargo trim <command> --help`) for details.
+
 ```
-
-This setup is crucial for enabling commands like orphan cleaning, as it allows `cargo-trim` to track and manage crates across your projects.
-
-### Commands
-You can run `cargo-trim` commands using:
-```bash
-cargo trim <command>
-```
-For a full list of available commands, use:
-
-```bash
-cargo trim --help
-```
-
-This will display the following output:
-```
-Binary application to cleanup $CARGO_HOME cache
+Clean up $CARGO_HOME cache and target folders of rust projects
 
 Usage: cargo-trim [OPTIONS] [COMMAND]
 
 Commands:
-  init      Initialize current working directory as cargo trim directory
-  clear     Clear current working directory from cargo cache config
-  config    Query about config file data used by CLI
-  set       Set config file values
-  unset     Unset values from config file
-  list      List crates
-  git       Perform operation only to git related cache file
-  registry  Perform operation only to registry related cache file
-  target    Perform operation only to target folder of rust project
+  config    Show config file location or content
+  set       Add or change config values
+  unset     Remove config values
+  list      List crates and projects
+  git       Operate only on git cache
+  registry  Operate only on registry cache
+  target    Operate only on target folders of projects
   help      Print this message or the help of the given subcommand(s)
 
 Options:
-  -a, --all                    Clean up all registry & git crates
-      --clear-empty-index      Clear all empty index directory
-  -d, --directory <DIRECTORY>  Extra list of directory of Rust projects for current command [env: TRIM_DIRECTORY=]
-  -n, --dry-run                Run command in dry run mode to see what would be done
-  -g, --gc <GIT_COMPRESS>      Git compress to reduce size of .cargo (git command required) [possible values: aggressive-checkout, aggressive-db, aggressive-index, checkout, db, index]
-  -i, --ignore <IGNORE>        Extra list of relative or absolute path which should be ignored for current command [env: TRIM_IGNORE=]
-  -l, --light                  Light cleanup without removing files required for future compilation without internet
-      --no-scan-hidden-folder  Do not scan hidden folder for current command. Takes precedence over scan-hidden-folder [env: TRIM_NOT_SCAN_HIDDEN_FOLDER=]
-      --no-scan-target-folder  Do not scan target folder for current command. Takes precedence over scan-target-folder [env: TRIM_NOT_SCAN_TARGET_FOLDER=]
-  -o, --old                    Clean old cache crates
-  -z, --old-orphan             Clean crates which are both old and orphan
-  -x, --orphan                 Clean orphan cache crates i.e all crates which are not present in lock file generated till now
-  -q, --query                  Return size of different .cargo/cache folders
-      --scan-hidden-folder     Scan hidden folder for current command [env: TRIM_SCAN_HIDDEN_FOLDER=]
-      --scan-target-folder     Scan target folder for current command [env: TRIM_SCAN_TARGET_FOLDER=]
-  -s, --stale-days <days>      Consider projects without any change for this many days as stale so their Cargo.lock files are excluded from used crate detection [env: TRIM_STALE_DAYS=]
-  -t, --top <TOP>              Show certain number of top crates which have highest size
-  -u, --update                 Update Cargo.lock file present inside config directory folder path
-  -w, --wipe <WIPE>            Wipe folder [possible values: git, checkouts, db, registry, cache, index, index-cache, src]
-  -h, --help                   Print help
-  -V, --version                Print version
+  -a, --all                        Clean all crates, empty indexes and target folders
+  -d, --directory <path>           Add project directory for this run [env: TRIM_DIRECTORY=]
+  -n, --dry-run                    Show what would be done without changing anything
+  -g, --gc <kind>                  Git compress cache repositories (needs git) [possible values: aggressive-checkout, aggressive-db, aggressive-index, checkout, db, index]
+  -i, --ignore <path>              Ignore path while scanning for this run [env: TRIM_IGNORE=]
+  -f, --filter <spec>              Add crate filter for this run [env: TRIM_FILTER=]
+  -l, --light                      Remove sources but keep archives for offline builds
+  -o, --old                        Clean old crates
+  -O, --old-orphan                 Clean crates which are both old and orphan
+  -x, --orphan                     Clean orphan crates
+  -q, --query                      Show size of cache and target folders
+  -H, --scan-hidden-folder <bool>  Scan hidden folders for this run [env: TRIM_SCAN_HIDDEN_FOLDER=] [possible values: true, false]
+  -T, --scan-target-folder <bool>  Scan target folders for Cargo.lock files for this run [env: TRIM_SCAN_TARGET_FOLDER=] [possible values: true, false]
+  -s, --stale-days <days>          Days without change after which a project is stale for this run [env: TRIM_STALE_DAYS=]
+  -t, --top <number>               Show given number of largest crates
+  -u, --update                     Run `cargo update` in every detected project
+  -w, --wipe <folder>              Delete whole cache folder [possible values: git, checkouts, db, registry, cache, index, index-cache, src]
+  -h, --help                       Print help (see more with '--help')
+  -V, --version                    Print version
 ```
 
 ### Configuration
 
-`cargo-trim` stores its configuration in a cargo_trim_config.toml file, located in the OS's default config directory.
-The file contains various settings for scanning projects and managing crates.
+Settings live in `cargo_trim_config.toml` in the OS config directory (`cargo trim config -l`). Change
+them with `cargo trim set` / `cargo trim unset`, or override them for one run with the matching
+option or environment variable.
 
-To find the configuration file's location, use:
+| Key | Default | Option | Env | Meaning |
+| --- | --- | --- | --- | --- |
+| `directory` | `[]` | `-d <path>` | `TRIM_DIRECTORY` | Folders scanned for projects, stored as absolute paths |
+| `ignore` | `[]` | `-i <path>` | `TRIM_IGNORE` | Paths skipped while scanning |
+| `filter` | `[]` | `-f <spec>` | `TRIM_FILTER` | Crates which may or may never be cleaned, `[]` allows every crate |
+| `scan_hidden_folder` | `false` | `-H <bool>` | `TRIM_SCAN_HIDDEN_FOLDER` | Scan folders starting with `.` |
+| `scan_target_folder` | `false` | `-T <bool>` | `TRIM_SCAN_TARGET_FOLDER` | Scan target folders for `Cargo.lock` |
+| `stale_days` | `0` | `-s <days>` | `TRIM_STALE_DAYS` | Days without change until a project is stale, `0` is off |
+
+Target folders are located like cargo does, through `CARGO_TARGET_DIR`, `CARGO_BUILD_TARGET_DIR`,
+`build.target-dir` in `.cargo/config.toml` or the default `target`.
+
+#### ignore
+
+- a **relative path** such as `node_modules` or `crates/demo` matches the end of a path anywhere.
+- an **absolute path** such as `/home/user/projects/demo` matches only that path.
+- each path component may contain `*`: `*_old`, `crates/*-demo`, `/home/*/scratch`.
+- a folder holding a file or folder named `.cargo-trim-ignore` is always skipped, no config needed.
+
+Ignored folders count for neither used crates nor target cleaning.
+
+```bash
+cargo trim set -i node_modules -i '*_old'
+touch ~/projects/old-experiment/.cargo-trim-ignore
 ```
-cargo trim config --location
+
+#### filter
+
+Each entry is a package spec `[registry:]name[@version]`. The default `[]` allows every crate to be
+cleaned.
+
+- a **plain entry** such as `tokio*` restricts cleaning to matching crates. Without any plain entry
+  every crate may be cleaned.
+- an entry starting with **`!`** such as `!serde` is never cleaned and wins over plain entries. A
+  registry still holding such a crate keeps its index on `--all`.
+
+```toml
+filter = ["!serde"]                                       # clean everything except serde
+filter = ["tokio*"]                                       # clean only tokio crates
+filter = ["my-company.com:*", "!my-company.com:internal"] # clean only company registry, except internal
 ```
-Here are some configuration options and their default values:
 
-#### 1. directory
+Spec parts:
 
-**default: []**
+- **registry** is optional and matches the registry folder name with or without its hash suffix,
+  so `index.crates.io:serde` matches `serde` from `index.crates.io-1949cf8c6b5b557f`. It may contain
+  `*`: `!my-company.com:*` never cleans anything from that registry.
+- **name** may contain `*`: `windows-*`, `*-sys`. For git crates the repository name is matched.
+- **version** is a semver requirement such as `tokio@^1` or `syn@<2`, a full version such as
+  `syn@1.0.109` matches exactly and for git crates it is a revision prefix such as `repo@abc1234`.
 
-**env: TRIM_DIRECTORY**
+The filter applies to `--all`, `--old`, `--orphan`, `--old-orphan` and the matching `list` options.
+Every clean reports how many crates the filter kept, such as `3 orphan crates removed which had
+occupied 6.000 MB, 2 kept by filter`, and `cargo trim list -k` lists them.
 
-List of directory to scan for a Rust projects
+```bash
+cargo trim set -f '!serde' -f '!my-company.com:*'
+cargo trim -n -x -f 'index.crates.io:tokio*' -f '!tokio@^1'
+```
 
-#### 2. **ignore**
-
-**default: []**
-
-**env: TRIM_IGNORE**
-
-List of relative or absolute paths to ignore during scanning. Each entry may be either:
-
-- a **relative path**, which preserves the old file-name behavior. A single-component entry such
-  as `node_modules` or `target` matches that folder name anywhere in the tree, and a multi-component
-  entry such as `crates/demo` matches any path ending in `crates/demo`. Useful for excluding folders
-  to enhance performance.
-- an **absolute path** such as `/home/user/projects/demo`, which is matched against the full scanned
-  path and skips that whole project subtree. Useful for excluding an individual project whose
-  `Cargo.lock` you don't want to count as "used".
-
-#### 3. **scan_hidden_folder**
-
-**default: false**
-
-**env: TRIM_SCAN_HIDDEN_FOLDER**
-
-Indicates whether hidden folders (those starting with a dot) should be scanned.
-
-#### 4. **scan_target_folder**
-
-**default: false**
-
-**env: TRIM_SCAN_TARGET_FOLDER**
-
-Indicates whether the target folder should be scanned. The target folder name is determined by the `CARGO_BUILD_TARGET_DIR`, `CARGO_TARGET_DIR` environment variables, or defaults to `target`.
-
-#### 5. **stale_days**
-
-**default: 0**
-
-**env: TRIM_STALE_DAYS**
-
-Number of days without any change after which a project is considered stale, `0` disables staleness
-so no project is ever stale.
+Entries passed with `-f` apply to that run only. Quote `!` entries so the shell does not treat `!` as
+history expansion.
 
 [license_badge]: https://img.shields.io/github/license/iamsauravsharma/cargo-trim.svg?style=for-the-badge
 [license_link]: LICENSE

@@ -1,16 +1,30 @@
 use clap::Parser;
 use owo_colors::OwoColorize as _;
 
-use super::utils::{crate_list_type, crate_name_max_width};
+use super::utils::{NO_DIRECTORY_WARNING, crate_list_type, crate_name_max_width};
 use crate::list_crate::{CrateList, Selection};
 
 #[derive(Debug, Parser)]
-#[command(about = "List crates", arg_required_else_help = true)]
+#[command(about = "List crates and projects", arg_required_else_help = true)]
 #[expect(clippy::struct_excessive_bools)]
 pub(crate) struct List {
-    #[arg(long = "all", short = 'a', help = "List all installed crate")]
+    #[arg(long = "all", short = 'a', help = "List all installed crates")]
     all: bool,
-    #[arg(long = "old", short = 'o', help = "List old crates")]
+    #[arg(
+        long = "kept",
+        short = 'k',
+        help = "List crates kept by filter",
+        long_help = "List crates kept by filter. Crates which no clean command removes because of \
+                     an entry starting with `!` or because they match no plain entry of filter"
+    )]
+    kept: bool,
+    #[arg(
+        long = "old",
+        short = 'o',
+        help = "List old crates",
+        long_help = "List old crates. Older versions of registry crates which also have a newer \
+                     version, and git checkouts of revisions which are not the latest fetched one"
+    )]
     old: bool,
     #[arg(
         long = "old-orphan",
@@ -18,12 +32,19 @@ pub(crate) struct List {
         help = "List crates which are both old and orphan"
     )]
     old_orphan: bool,
-    #[arg(long = "orphan", short = 'x', help = "List orphan crates")]
+    #[arg(
+        long = "orphan",
+        short = 'x',
+        help = "List orphan crates",
+        long_help = "List orphan crates. Crates not used by any Cargo.lock file in project \
+                     directories. Without any project directory every crate is orphan"
+    )]
     orphan: bool,
     #[arg(
         long = "project",
         short = 'p',
-        help = "List all detected Rust projects (directories containing a scanned Cargo.lock)"
+        help = "List detected projects",
+        long_help = "List detected projects. List directories holding a scanned Cargo.lock file"
     )]
     project: bool,
 }
@@ -44,7 +65,7 @@ impl List {
             );
             list_selection(
                 crate_list,
-                Selection::All,
+                Selection::Installed,
                 "INSTALLED ",
                 source_url_max_width,
             );
@@ -61,7 +82,7 @@ impl List {
             );
             // print warning if no directory present in config file
             if directory_is_empty {
-                println!("{}", OLD_ORPHAN_LIST_WARNING.yellow());
+                println!("{}", NO_DIRECTORY_WARNING.yellow());
             }
         }
         if self.orphan {
@@ -73,25 +94,17 @@ impl List {
             );
             // print warning if directory config is empty
             if directory_is_empty {
-                println!("{}", ORPHAN_LIST_WARNING.yellow());
+                println!("{}", NO_DIRECTORY_WARNING.yellow());
             }
+        }
+        if self.kept {
+            list_selection(crate_list, Selection::Kept, "KEPT ", source_url_max_width);
         }
         if self.project {
             list_projects(crate_list);
         }
     }
 }
-
-const OLD_ORPHAN_LIST_WARNING: &str =
-    "WARNING: You have not initialized any directory as rust project directory. This will list \
-     all old crates as old orphan crates even if they are not orphan crates. Run command 'cargo \
-     trim set -d <directory>' to set rust project directory, use 'cargo trim set -d .' for \
-     current directory";
-
-const ORPHAN_LIST_WARNING: &str =
-    "WARNING: You have not initialized any directory as rust project directory. This will list \
-     all crates as orphan crate. Run command 'cargo trim set -d <directory>' to set rust project \
-     directory, use 'cargo trim set -d .' for current directory";
 
 /// list registry and git crates of a selection
 fn list_selection(crate_list: &CrateList, selection: Selection, label: &str, first_width: usize) {

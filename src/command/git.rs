@@ -4,8 +4,8 @@ use anyhow::Result;
 use clap::Parser;
 
 use super::utils::{
-    OLD_ORPHAN_CLEAN_WARNING, ORPHAN_CLEAN_WARNING, confirm_orphan_clean, count_in, print_dash,
-    print_removed, show_top_number_crates, source_name_max_width,
+    confirm_orphan_clean, count_in, print_dash, print_removed, show_top_number_crates,
+    source_name_max_width,
 };
 use super::{query_full_width, query_print};
 use crate::dir_path::DirPath;
@@ -14,47 +14,45 @@ use crate::list_crate::{CrateList, Selection};
 use crate::remove::{delete_folder, remove_git_crates};
 use crate::utils::{convert_pretty, get_size};
 #[derive(Debug, Parser)]
-#[command(
-    about = "Perform operation only to git related cache file",
-    arg_required_else_help = true
-)]
+#[command(about = "Operate only on git cache", arg_required_else_help = true)]
 #[expect(clippy::struct_excessive_bools)]
 pub(crate) struct Git {
-    #[arg(long = "all", short = 'a', help = "Clean up all git crates")]
+    #[arg(long = "all", short = 'a', help = "Clean all git crates")]
     all: bool,
     #[arg(
         long = "light",
         short = 'l',
-        help = "Light cleanup repo by removing git checkout but stores git db for future \
-                compilation"
+        help = "Remove git checkouts but keep git db"
     )]
     light_cleanup: bool,
-    #[arg(long = "old", short = 'o', help = "Clean old git cache crates")]
+    #[arg(
+        long = "old",
+        short = 'o',
+        help = "Clean old git crates",
+        long_help = "Clean old git crates. Git checkouts of revisions which are not the latest \
+                     fetched one"
+    )]
     old: bool,
     #[arg(
         long = "old-orphan",
         short = 'O',
-        help = "Clean git crates which is both old and orphan"
+        help = "Clean git crates which are both old and orphan"
     )]
     old_orphan: bool,
     #[arg(
         long = "orphan",
         short = 'x',
-        help = "Clean orphan cache git crates i.e all crates which are not present in lock file \
-                generated till now use cargo trim -u to guarantee your all project generate lock \
-                file"
+        help = "Clean orphan git crates",
+        long_help = "Clean orphan git crates. Crates not used by any Cargo.lock file in project \
+                     directories. Without any project directory every crate is orphan"
     )]
     orphan: bool,
-    #[arg(
-        long = "query",
-        short = 'q',
-        help = "Return size of different .cargo/git cache folders"
-    )]
+    #[arg(long = "query", short = 'q', help = "Show size of git cache")]
     query: bool,
     #[arg(
         long = "top",
         short = 't',
-        help = "Show certain number of top crates which have highest size",
+        help = "Show given number of largest git crates",
         value_name = "number"
     )]
     top: Option<usize>,
@@ -90,22 +88,23 @@ impl Git {
             print_removed(
                 "old git crates",
                 clean_git(&crate_list.git(Selection::Old), dry_run),
+                crate_list.git_kept(Selection::Old),
             );
         }
 
-        if self.old_orphan
-            && confirm_orphan_clean(directory_is_empty, OLD_ORPHAN_CLEAN_WARNING, dry_run)?
-        {
+        if self.old_orphan && confirm_orphan_clean(directory_is_empty, dry_run)? {
             print_removed(
                 "old orphan git crates",
                 clean_git(&crate_list.git(Selection::OldOrphan), dry_run),
+                crate_list.git_kept(Selection::OldOrphan),
             );
         }
 
-        if self.orphan && confirm_orphan_clean(directory_is_empty, ORPHAN_CLEAN_WARNING, dry_run)? {
+        if self.orphan && confirm_orphan_clean(directory_is_empty, dry_run)? {
             print_removed(
                 "orphan git crates",
                 clean_git(&crate_list.git(Selection::Orphan), dry_run),
+                crate_list.git_kept(Selection::Orphan),
             );
         }
 
@@ -113,6 +112,7 @@ impl Git {
             print_removed(
                 "git crates",
                 clean_git(&crate_list.git(Selection::All), dry_run),
+                crate_list.git_kept(Selection::All),
             );
         }
 
@@ -128,11 +128,16 @@ pub(super) fn light_cleanup_git(checkout_dir: &Path, dry_run: bool) -> bool {
 
 // Show top git crates
 pub(super) fn top_crates_git(crate_list: &CrateList, first_width: usize, number: usize) {
-    show_top_number_crates(&crate_list.git(Selection::All), "git", first_width, number);
+    show_top_number_crates(
+        &crate_list.git(Selection::Installed),
+        "git",
+        first_width,
+        number,
+    );
 }
 
 pub(super) fn query_size_git(dir_path: &DirPath, crate_list: &CrateList) -> u64 {
-    let installed = crate_list.git(Selection::All);
+    let installed = crate_list.git(Selection::Installed);
     let git_dir_size = get_size(dir_path.git_dir()).unwrap_or(0_u64);
     query_print(
         &format!("Total size of {} .cargo/git crates:", installed.len()),
