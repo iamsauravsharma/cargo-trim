@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::ffi::OsStr;
 use std::fs;
 use std::io::Read as _;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use std::time::{Duration, SystemTime};
 
 use anyhow::{Context as _, Result};
@@ -54,11 +54,6 @@ impl ConfigFile {
     /// return vector of directory value in config file
     pub(crate) fn directory(&self) -> &Vec<String> {
         &self.directory
-    }
-
-    /// return vector of ignore values, each a relative or absolute path
-    pub(crate) fn ignore(&self) -> &Vec<String> {
-        &self.ignore
     }
 
     /// scan hidden folder
@@ -148,10 +143,11 @@ impl ConfigFile {
 
     /// add directory
     pub(crate) fn add_directory(&mut self, path: &str, dry_run: bool, save: bool) -> Result<()> {
+        let path = &absolute_directory(path)?;
         // a value given for this run only still applies under dry run so the
         // preview reflects the requested value instead of the stored one
         if !dry_run || !save {
-            self.directory.push(path.to_string());
+            self.directory.push(path.clone());
         }
         if dry_run {
             println!("{} Added {path:?}", "Dry run:".yellow());
@@ -184,6 +180,7 @@ impl ConfigFile {
 
     /// remove directory
     pub(crate) fn remove_directory(&mut self, path: &str, dry_run: bool, save: bool) -> Result<()> {
+        let path = &absolute_directory(path)?;
         // a value given for this run only still applies under dry run so the
         // preview reflects the requested value instead of the stored one
         if !dry_run || !save {
@@ -334,6 +331,27 @@ impl ConfigFile {
     }
 }
 
+/// convert directory to an absolute path with `.` and `..` resolved and without
+/// trailing separator so `cargo trim set -d .` stores the current directory
+fn absolute_directory(path: &str) -> Result<String> {
+    let absolute = std::path::absolute(path)
+        .with_context(|| format!("failed to get absolute path of {path:?}"))?;
+    let mut normalized = PathBuf::new();
+    for component in absolute.components() {
+        match component {
+            Component::CurDir => {}
+            Component::ParentDir => {
+                normalized.pop();
+            }
+            other => normalized.push(other),
+        }
+    }
+    normalized
+        .to_str()
+        .map(ToString::to_string)
+        .with_context(|| format!("directory {path:?} is not valid UTF-8"))
+}
+
 /// cargo tags its build output, so a directory which merely shares the name or
 /// the configured location is not mistaken for one
 fn is_cargo_target_dir(path: &Path) -> bool {
@@ -444,5 +462,31 @@ mod tests {
         assert!(cfg.need_to_be_ignored(Path::new("/x/node_modules")));
         assert!(cfg.need_to_be_ignored(Path::new("/y/crates/demo")));
         assert!(!cfg.need_to_be_ignored(Path::new("/y/crates/other")));
+    }
+
+    #[test]
+    fn absolute_directory_test() {
+        let current = std::env::current_dir().unwrap();
+        assert_eq!(
+            super::absolute_directory(".").unwrap(),
+            current.to_str().unwrap()
+        );
+        assert_eq!(
+            super::absolute_directory("..").unwrap(),
+            current.parent().unwrap().to_str().unwrap()
+        );
+        // build paths from the current directory so they are absolute on every
+        // platform, a windows absolute path also needs a drive prefix
+        let separator = std::path::MAIN_SEPARATOR;
+        let unresolved = format!(
+            "{}{separator}a{separator}b{separator}..{separator}c{separator}.{separator}",
+            current.display()
+        );
+        assert_eq!(
+            super::absolute_directory(&unresolved).unwrap(),
+            current.join("a").join("c").to_str().unwrap()
+        );
+        let root = current.ancestors().last().unwrap().to_str().unwrap();
+        assert_eq!(super::absolute_directory(root).unwrap(), root);
     }
 }

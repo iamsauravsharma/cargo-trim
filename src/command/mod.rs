@@ -11,8 +11,8 @@ use self::utils::{
     query_full_width, query_print, show_top_number_crates, source_name_max_width,
 };
 use crate::command::git::clean_git;
-use crate::command::registry::clean_registry;
-use crate::command::target::query_size_target;
+use crate::command::registry::{clean_registry, clear_empty_index};
+use crate::command::target::{clean_all_target, query_size_target};
 use crate::config_file::ConfigFile;
 use crate::crate_detail::CrateDetail;
 use crate::dir_path::DirPath;
@@ -20,10 +20,8 @@ use crate::list_crate::CrateList;
 use crate::registry_dir::RegistryDir;
 use crate::utils::{convert_pretty, delete_folder, get_inode_handled_size};
 
-mod clear;
 mod config;
 mod git;
-mod init;
 mod list;
 mod registry;
 mod set;
@@ -33,8 +31,6 @@ mod utils;
 
 #[derive(Debug, Parser)]
 enum SubCommand {
-    Init(init::Init),
-    Clear(clear::Clear),
     Config(config::Config),
     Set(set::Set),
     Unset(unset::Unset),
@@ -54,10 +50,12 @@ enum SubCommand {
 )]
 #[expect(clippy::struct_excessive_bools)]
 pub(crate) struct Command {
-    #[arg(long = "all", short = 'a', help = "Clean up all registry & git crates")]
+    #[arg(
+        long = "all",
+        short = 'a',
+        help = "Clean up all registry & git crates, their index and target folder of rust projects"
+    )]
     all: bool,
-    #[arg(long = "clear-empty-index", help = "Clear all empty index directory")]
-    clear_empty_index: bool,
     #[arg(
         long = "directory",
         short = 'd',
@@ -68,7 +66,8 @@ pub(crate) struct Command {
     #[arg(
         long = "dry-run",
         short = 'n',
-        help = "Run command in dry run mode to see what would be done"
+        help = "Run command in dry run mode to see what would be done",
+        global = true
     )]
     dry_run: bool,
     #[arg(
@@ -93,25 +92,11 @@ pub(crate) struct Command {
                 internet"
     )]
     light_cleanup: bool,
-    #[arg(
-        long,
-        help = "Do not scan hidden folder for current command. Takes precedence over \
-                scan-hidden-folder",
-        env = "TRIM_NOT_SCAN_HIDDEN_FOLDER"
-    )]
-    no_scan_hidden_folder: bool,
-    #[arg(
-        long,
-        help = "Do not scan target folder for current command. Takes precedence over \
-                scan-target-folder",
-        env = "TRIM_NOT_SCAN_TARGET_FOLDER"
-    )]
-    no_scan_target_folder: bool,
     #[arg(long = "old", short = 'o', help = "Clean old cache crates")]
     old: bool,
     #[arg(
         long = "old-orphan",
-        short = 'z',
+        short = 'O',
         help = "Clean crates which are both old and orphan"
     )]
     old_orphan: bool,
@@ -130,16 +115,18 @@ pub(crate) struct Command {
     query: bool,
     #[arg(
         long = "scan-hidden-folder",
-        help = "Scan hidden folder for current command",
+        short = 'H',
+        help = "Override whether hidden folder is scanned for current command",
         env = "TRIM_SCAN_HIDDEN_FOLDER"
     )]
-    scan_hidden_folder: bool,
+    scan_hidden_folder: Option<bool>,
     #[arg(
         long = "scan-target-folder",
-        help = "Scan target folder for current command",
+        short = 'T',
+        help = "Override whether target folder is scanned for current command",
         env = "TRIM_SCAN_TARGET_FOLDER"
     )]
-    scan_target_folder: bool,
+    scan_target_folder: Option<bool>,
     #[arg(
         long = "stale-days",
         short = 's',
@@ -219,15 +206,11 @@ impl Command {
                 config_file.add_ignore(ignore, dry_run, false)?;
             }
         }
-        if self.no_scan_hidden_folder {
-            config_file.set_scan_hidden_folder(false, dry_run, false)?;
-        } else if self.scan_hidden_folder {
-            config_file.set_scan_hidden_folder(true, dry_run, false)?;
+        if let Some(scan_hidden_folder) = self.scan_hidden_folder {
+            config_file.set_scan_hidden_folder(scan_hidden_folder, dry_run, false)?;
         }
-        if self.no_scan_target_folder {
-            config_file.set_scan_target_folder(false, dry_run, false)?;
-        } else if self.scan_target_folder {
-            config_file.set_scan_target_folder(true, dry_run, false)?;
+        if let Some(scan_target_folder) = self.scan_target_folder {
+            config_file.set_scan_target_folder(scan_target_folder, dry_run, false)?;
         }
         if let Some(stale_days) = self.stale_days {
             config_file.set_stale_days(stale_days, dry_run, false)?;
@@ -256,16 +239,6 @@ impl Command {
                 dir_path.checkout_dir(),
                 dir_path.src_dir(),
                 dir_path.index_dir(),
-                dry_run,
-            );
-        }
-
-        if self.clear_empty_index {
-            clear_empty_index(
-                dir_path.src_dir(),
-                dir_path.cache_dir(),
-                dir_path.index_dir(),
-                &crate_detail,
                 dry_run,
             );
         }
@@ -323,24 +296,24 @@ impl Command {
 
         if self.all {
             remove_all(
+                &dir_path,
                 &crate_list,
                 &mut registry_crates_location,
                 &crate_detail,
                 dry_run,
             )?;
+            clean_all_target(&config_file, dry_run)?;
         }
 
         if let Some(sub_command) = &self.sub {
             match &sub_command {
-                SubCommand::Init(init) => init.run(&mut config_file)?,
-                SubCommand::Clear(clear) => clear.run(&mut config_file)?,
                 SubCommand::Config(config) => config.run(&config_file, dir_path.config_file())?,
                 SubCommand::List(list) => {
                     let max_width = source_name_max_width(&crate_detail);
                     list.run(&crate_list, max_width, config_file.directory().is_empty());
                 }
-                SubCommand::Set(set) => set.run(&mut config_file)?,
-                SubCommand::Unset(unset) => unset.run(&mut config_file)?,
+                SubCommand::Set(set) => set.run(&mut config_file, dry_run)?,
+                SubCommand::Unset(unset) => unset.run(&mut config_file, dry_run)?,
                 SubCommand::Git(git) => {
                     git.run(
                         &dir_path,
@@ -365,38 +338,6 @@ impl Command {
         }
 
         Ok(())
-    }
-}
-
-// Clear all unused index
-fn clear_empty_index(
-    src_dir: &Path,
-    cache_dir: &Path,
-    index_dir: &Path,
-    crate_detail: &CrateDetail,
-    dry_run: bool,
-) {
-    let mut to_remove_indexes = vec![];
-    for index_name in crate_detail.source_infos().keys() {
-        let index_used = crate_detail
-            .registry_crates_source()
-            .iter()
-            .chain(crate_detail.registry_crates_archive())
-            .any(|metadata| metadata.source() == Some(index_name));
-        if !index_used {
-            to_remove_indexes.push(index_name);
-        }
-    }
-    let mut is_success = true;
-    for index in to_remove_indexes {
-        is_success = delete_folder(src_dir.join(index).as_path(), dry_run).is_ok() && is_success;
-        is_success = delete_folder(cache_dir.join(index).as_path(), dry_run).is_ok() && is_success;
-        is_success = delete_folder(index_dir.join(index).as_path(), dry_run).is_ok() && is_success;
-    }
-    if is_success {
-        println!("{}", "Cleaned empty index".blue());
-    } else {
-        println!("Failed to remove unused index");
     }
 }
 
@@ -760,8 +701,9 @@ fn orphan_clean(
     Ok(())
 }
 
-// remove all crates
+// remove all crates along with their index
 fn remove_all(
+    dir_path: &DirPath,
     crate_list: &CrateList,
     registry_crates_location: &mut RegistryDir,
     crate_detail: &CrateDetail,
@@ -773,6 +715,7 @@ fn remove_all(
         crate_detail,
         dry_run,
     )?;
+    clear_empty_index(dir_path, dry_run)?;
     let (git_sized_cleaned, total_git_crate_removed) =
         clean_git(crate_list.installed_git(), crate_detail, dry_run)?;
 

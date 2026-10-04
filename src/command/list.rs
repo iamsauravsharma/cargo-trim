@@ -14,7 +14,7 @@ pub(crate) struct List {
     old: bool,
     #[arg(
         long = "old-orphan",
-        short = 'z',
+        short = 'O',
         help = "List crates which are both old and orphan"
     )]
     old_orphan: bool,
@@ -135,9 +135,9 @@ fn list_old_orphan(crate_list: &CrateList, first_width: usize, directory_is_empt
     if directory_is_empty {
         let warning_text = "WARNING: You have not initialized any directory as rust project \
                             directory. This will list all old crates as old orphan crates even if \
-                            they are not orphan crates. Run command 'cargo trim init' to \
-                            initialize current directory as rust project directory or pass cargo \
-                            trim set -d <directory> for setting rust project directory";
+                            they are not orphan crates. Run command 'cargo trim set -d \
+                            <directory>' to set rust project directory, use 'cargo trim set -d .' \
+                            for current directory";
         println!("{}", warning_text.yellow());
     }
 }
@@ -165,9 +165,8 @@ fn list_orphan(crate_list: &CrateList, first_width: usize, directory_is_empty: b
     if directory_is_empty {
         let warning_text = "WARNING: You have not initialized any directory as rust project \
                             directory. This will list all crates as orphan crate. Run command \
-                            'cargo trim init' to initialize current directory as rust project \
-                            directory or pass cargo trim set -d <directory> for setting rust \
-                            project directory";
+                            'cargo trim set -d <directory>' to set rust project directory, use \
+                            'cargo trim set -d .' for current directory";
         println!("{}", warning_text.yellow());
     }
 }

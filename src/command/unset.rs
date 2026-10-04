@@ -4,14 +4,7 @@ use clap::Parser;
 use crate::config_file::ConfigFile;
 #[derive(Debug, Parser)]
 #[command(about = "Unset values from config file", arg_required_else_help = true)]
-#[expect(clippy::struct_excessive_bools)]
 pub(crate) struct Unset {
-    #[arg(
-        long = "dry-run",
-        short = 'n',
-        help = "Run command in dry run mode to see what would be done"
-    )]
-    dry_run: bool,
     #[arg(
         long = "directory",
         short = 'd',
@@ -25,26 +18,13 @@ pub(crate) struct Unset {
         value_name = "path"
     )]
     ignore: Option<Vec<String>>,
-    #[arg(long = "scan-hidden-folder", help = "Set scan hidden folder as false")]
-    scan_hidden_folder: bool,
-    #[arg(long = "scan-target-folder", help = "Set scan target folder as false")]
-    scan_target_folder: bool,
-    #[arg(
-        long = "stale-days",
-        short = 's',
-        help = "Unset stale days so no project is ever considered stale"
-    )]
-    stale_days: bool,
 }
 
 impl Unset {
-    pub(super) fn run(&self, config_file: &mut ConfigFile) -> Result<()> {
-        let dry_run = self.dry_run;
+    pub(super) fn run(&self, config_file: &mut ConfigFile, dry_run: bool) -> Result<()> {
         if let Some(directories) = &self.directory {
             for directory in directories {
-                let path_separator = std::path::MAIN_SEPARATOR;
-                let path = directory.trim_end_matches(path_separator);
-                config_file.remove_directory(path, dry_run, true)?;
+                config_file.remove_directory(directory, dry_run, true)?;
             }
         }
         if let Some(ignores) = &self.ignore {
@@ -53,15 +33,6 @@ impl Unset {
                 let ignore = ignore.trim_end_matches(path_separator);
                 config_file.remove_ignore(ignore, dry_run, true)?;
             }
-        }
-        if self.scan_hidden_folder {
-            config_file.set_scan_hidden_folder(false, dry_run, true)?;
-        }
-        if self.scan_target_folder {
-            config_file.set_scan_target_folder(false, dry_run, true)?;
-        }
-        if self.stale_days {
-            config_file.set_stale_days(0, dry_run, true)?;
         }
 
         Ok(())

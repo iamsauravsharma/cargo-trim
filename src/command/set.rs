@@ -6,12 +6,6 @@ use crate::config_file::ConfigFile;
 #[command(about = "Set config file values", arg_required_else_help = true)]
 pub(crate) struct Set {
     #[arg(
-        long = "dry-run",
-        short = 'n',
-        help = "Run command in dry run mode to see what would be done"
-    )]
-    dry_run: bool,
-    #[arg(
         long = "directory",
         short = 'd',
         help = "Set directory of Rust project"
@@ -26,10 +20,18 @@ pub(crate) struct Set {
         value_name = "path"
     )]
     ignore: Option<Vec<String>>,
-    #[arg(long = "scan-hidden-folder", help = "Set scan hidden folder as true")]
-    scan_hidden_folder: bool,
-    #[arg(long = "scan-target-folder", help = "Set scan target folder as true")]
-    scan_target_folder: bool,
+    #[arg(
+        long = "scan-hidden-folder",
+        short = 'H',
+        help = "Set whether hidden folder is scanned"
+    )]
+    scan_hidden_folder: Option<bool>,
+    #[arg(
+        long = "scan-target-folder",
+        short = 'T',
+        help = "Set whether target folder is scanned"
+    )]
+    scan_target_folder: Option<bool>,
     #[arg(
         long = "stale-days",
         short = 's',
@@ -40,13 +42,10 @@ pub(crate) struct Set {
 }
 
 impl Set {
-    pub(super) fn run(&self, config_file: &mut ConfigFile) -> Result<()> {
-        let dry_run = self.dry_run;
+    pub(super) fn run(&self, config_file: &mut ConfigFile, dry_run: bool) -> Result<()> {
         if let Some(directories) = &self.directory {
             for directory in directories {
-                let path_separator = std::path::MAIN_SEPARATOR;
-                let path = directory.trim_end_matches(path_separator);
-                config_file.add_directory(path, dry_run, true)?;
+                config_file.add_directory(directory, dry_run, true)?;
             }
         }
         if let Some(ignores) = &self.ignore {
@@ -57,11 +56,11 @@ impl Set {
                 config_file.add_ignore(ignore, dry_run, true)?;
             }
         }
-        if self.scan_hidden_folder {
-            config_file.set_scan_hidden_folder(true, dry_run, true)?;
+        if let Some(scan_hidden_folder) = self.scan_hidden_folder {
+            config_file.set_scan_hidden_folder(scan_hidden_folder, dry_run, true)?;
         }
-        if self.scan_target_folder {
-            config_file.set_scan_target_folder(true, dry_run, true)?;
+        if let Some(scan_target_folder) = self.scan_target_folder {
+            config_file.set_scan_target_folder(scan_target_folder, dry_run, true)?;
         }
         if let Some(stale_days) = self.stale_days {
             config_file.set_stale_days(stale_days, dry_run, true)?;

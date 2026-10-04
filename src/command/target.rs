@@ -23,12 +23,6 @@ pub(crate) struct Target {
     )]
     all: bool,
     #[arg(
-        long = "dry-run",
-        short = 'n',
-        help = "Run command in dry run mode to see what would be done"
-    )]
-    dry_run: bool,
-    #[arg(
         long = "list",
         short = 'l',
         help = "List target folder along with their size"
@@ -56,9 +50,7 @@ pub(crate) struct Target {
 }
 
 impl Target {
-    pub(super) fn run(&self, config_file: &ConfigFile, global_dry_run: bool) -> Result<()> {
-        let dry_run = self.dry_run || global_dry_run;
-
+    pub(super) fn run(&self, config_file: &ConfigFile, dry_run: bool) -> Result<()> {
         if self.list {
             print_target(&sized_target(config_file)?, "Total target folder");
         }
@@ -75,8 +67,7 @@ impl Target {
         }
 
         if self.all {
-            let target_dirs = collect(config_file, None)?;
-            clean_target(&target_dirs, "target folder", dry_run)?;
+            clean_all_target(config_file, dry_run)?;
         }
 
         if self.stale {
@@ -93,6 +84,12 @@ impl Target {
 
         Ok(())
     }
+}
+
+/// clean target folder of all rust project
+pub(super) fn clean_all_target(config_file: &ConfigFile, dry_run: bool) -> Result<()> {
+    let target_dirs = collect(config_file, None)?;
+    clean_target(&target_dirs, "target folder", dry_run)
 }
 
 fn collect(config_file: &ConfigFile, only_stale_since: Option<SystemTime>) -> Result<Vec<PathBuf>> {
