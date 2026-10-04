@@ -10,7 +10,7 @@ use owo_colors::OwoColorize as _;
 use serde::{Deserialize, Serialize};
 
 use crate::cargo_config;
-use crate::list_crate::CargoLockFiles;
+use crate::lock_file::CargoLockFiles;
 use crate::utils::modified_since;
 
 /// Stores config file information

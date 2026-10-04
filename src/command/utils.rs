@@ -1,10 +1,10 @@
-use std::collections::HashSet;
 use std::io::Write as _;
+use std::path::Path;
 
 use anyhow::{Context as _, Result};
 use owo_colors::OwoColorize as _;
 
-use crate::crate_detail::{CrateDetail, CrateMetaData};
+use crate::installed::{CrateMetaData, Sources};
 use crate::utils::convert_pretty;
 
 pub(super) const OLD_ORPHAN_CLEAN_WARNING: &str =
@@ -55,15 +55,35 @@ pub(super) fn confirm_continue(warning_text: &str) -> Result<bool> {
     Ok(["y", "yes"].contains(&trimmed_input.as_str()))
 }
 
+/// print number and size of removed crates
+pub(super) fn print_removed(label: &str, (size, count): (u64, usize)) {
+    println!(
+        "{}",
+        format!(
+            "{count} {label} removed which had occupied {}",
+            convert_pretty(size)
+        )
+        .blue()
+    );
+}
+
+/// number of crates with a path inside dir
+pub(super) fn count_in(crates: &[CrateMetaData], dir: &Path) -> usize {
+    crates
+        .iter()
+        .filter(|crate_metadata| {
+            crate_metadata
+                .paths()
+                .iter()
+                .any(|path| path.starts_with(dir))
+        })
+        .count()
+}
+
 /// width of the location column based on the longest source name
 /// Minimum width is 9 + 2 (for padding)
-pub(super) fn source_name_max_width(crate_detail: &CrateDetail) -> usize {
-    let max_length = crate_detail
-        .source_infos()
-        .keys()
-        .map(String::len)
-        .max()
-        .unwrap_or_default();
+pub(super) fn source_name_max_width(sources: &Sources) -> usize {
+    let max_length = sources.names().map(str::len).max().unwrap_or_default();
     std::cmp::max(max_length, 9) + 2
 }
 
@@ -139,13 +159,13 @@ pub(super) fn print_dash(len: usize) {
 
 /// top crates help to List top n crates
 pub(super) fn show_top_number_crates(
-    crates: &HashSet<CrateMetaData>,
+    crates: &[CrateMetaData],
     crate_type: &str,
     first_width: usize,
     number: usize,
 ) {
     // sort crates by size and keep only the largest ones
-    let mut top_crates = crates.iter().cloned().collect::<Vec<_>>();
+    let mut top_crates = crates.to_vec();
     top_crates.sort_by_key(|a| std::cmp::Reverse(a.size()));
     top_crates.truncate(number);
     let title = format!("Top {} {crate_type}", top_crates.len());

@@ -7,7 +7,6 @@ use std::time::SystemTime;
 use std::{fs, io};
 
 use anyhow::{Context as _, Result};
-use owo_colors::OwoColorize as _;
 use semver::Version;
 
 /// split name and semver version part from crates full name
@@ -29,51 +28,6 @@ pub(crate) fn split_name_version(full_name: &str) -> Result<(String, Version)> {
     let version = Version::from_str(version_vec.join("-").as_str())
         .context("failed to parse semver version from splitted parts")?;
     Ok((clear_name, version))
-}
-
-/// delete folder with folder path provided
-pub(crate) fn delete_folder(path: &Path, dry_run: bool) -> Result<()> {
-    if path.exists() {
-        if dry_run {
-            println!(
-                "{} {} {}",
-                "Dry run:".yellow(),
-                "Removed".red(),
-                path.display()
-            );
-        } else if path.is_file() {
-            fs::remove_file(path)?;
-        } else if path.is_dir() {
-            fs::remove_dir_all(path)?;
-        }
-    }
-    Ok(())
-}
-
-/// delete index .cache file
-pub(crate) fn delete_index_cache(index_dir: &Path, dry_run: bool) -> Result<()> {
-    if index_dir.exists() && index_dir.is_dir() {
-        for entry in fs::read_dir(index_dir)? {
-            let registry_dir = entry?.path();
-            if registry_dir.is_dir() {
-                let mut config_file = registry_dir.clone();
-                config_file.push("config.json");
-                if config_file.exists() {
-                    continue;
-                }
-                for folder in fs::read_dir(registry_dir)? {
-                    let folder_path = folder?.path();
-                    let folder_name = folder_path
-                        .file_name()
-                        .context("failed to obtain index .cache file name")?;
-                    if folder_name == ".cache" {
-                        delete_folder(&folder_path, dry_run)?;
-                    }
-                }
-            }
-        }
-    }
-    Ok(())
 }
 
 /// check if `path` or anything inside it was modified after `cutoff`, stopping

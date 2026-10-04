@@ -1,5 +1,4 @@
 use std::collections::HashSet;
-use std::fs;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context as _, Result};
@@ -8,19 +7,20 @@ use owo_colors::OwoColorize as _;
 
 use self::utils::{
     OLD_ORPHAN_CLEAN_WARNING, ORPHAN_CLEAN_WARNING, confirm_orphan_clean, print_dash,
-    query_full_width, query_print, show_top_number_crates, source_name_max_width,
+    print_removed, query_full_width, query_print, show_top_number_crates, source_name_max_width,
 };
 use crate::command::git::clean_git;
 use crate::command::registry::{clean_registry, clear_empty_index};
 use crate::command::target::{clean_all_target, query_size_target};
 use crate::config_file::ConfigFile;
-use crate::crate_detail::CrateDetail;
 use crate::dir_path::DirPath;
-use crate::list_crate::CrateList;
-use crate::registry_dir::RegistryDir;
-use crate::utils::{convert_pretty, delete_folder, get_inode_handled_size};
+use crate::installed::{CrateMetaData, Sources};
+use crate::list_crate::{CrateList, Selection};
+use crate::remove::{RegistryDir, delete_folder, delete_index_cache};
+use crate::utils::{convert_pretty, get_inode_handled_size};
 
 mod config;
+mod gc;
 mod git;
 mod list;
 mod registry;
@@ -76,7 +76,7 @@ pub(crate) struct Command {
         value_enum,
         help = "Git compress to reduce size of .cargo (git command required)"
     )]
-    git_compress: Option<Vec<GitCompress>>,
+    git_compress: Option<Vec<gc::GitCompress>>,
     #[arg(
         long = "ignore",
         short = 'i',
@@ -166,22 +166,6 @@ enum Wipe {
     Src,
 }
 
-#[derive(Clone, ValueEnum, Debug)]
-enum GitCompress {
-    AggressiveCheckout,
-    AggressiveDb,
-    AggressiveIndex,
-    Checkout,
-    Db,
-    Index,
-}
-
-enum GitCompressAction {
-    Index,
-    Checkout,
-    Db,
-}
-
 impl Command {
     #[expect(clippy::too_many_lines)]
     pub(crate) fn run(&self) -> Result<()> {
@@ -216,15 +200,14 @@ impl Command {
             config_file.set_stale_days(stale_days, dry_run, false)?;
         }
 
-        // create new CrateDetail struct
-        let mut crate_detail = CrateDetail::new(dir_path.index_dir(), dir_path.db_dir())?;
+        let sources = Sources::new(dir_path.index_dir(), dir_path.db_dir())?;
 
         // List crates (uses the already-mutated config)
-        let crate_list = CrateList::create_list(&dir_path, &config_file, &mut crate_detail)?;
+        let crate_list = CrateList::create_list(&dir_path, &config_file, &sources)?;
 
         if let Some(values) = &self.git_compress {
             for value in values {
-                git_compress(
+                gc::git_compress(
                     value,
                     dir_path.index_dir(),
                     dir_path.checkout_dir(),
@@ -250,7 +233,7 @@ impl Command {
         }
 
         if let Some(number) = self.top {
-            top_crates(&crate_detail, number);
+            top_crates(&crate_list, &sources, number);
         }
 
         if self.update {
@@ -259,49 +242,63 @@ impl Command {
         }
 
         if self.query {
-            query_size(&dir_path, &crate_list, &crate_detail, &config_file)?;
+            query_size(&dir_path, &crate_list, &config_file)?;
         }
 
         let mut registry_crates_location =
-            RegistryDir::new(dir_path.index_dir(), crate_list.installed_registry())?;
+            RegistryDir::new(dir_path.index_dir(), &crate_list.registry(Selection::All))?;
+
+        let directory_is_empty = config_file.directory().is_empty();
 
         if self.old {
-            old_clean(
-                &crate_list,
+            clean_crates(
+                "old crates",
                 &mut registry_crates_location,
-                &crate_detail,
+                (
+                    &crate_list.registry(Selection::Old),
+                    &crate_list.git(Selection::Old),
+                ),
                 dry_run,
             )?;
         }
 
-        if self.old_orphan {
-            old_orphan_clean(
-                &crate_list,
+        if self.old_orphan
+            && confirm_orphan_clean(directory_is_empty, OLD_ORPHAN_CLEAN_WARNING, dry_run)?
+        {
+            clean_crates(
+                "old orphan crates",
                 &mut registry_crates_location,
-                &crate_detail,
-                config_file.directory().is_empty(),
+                (
+                    &crate_list.registry(Selection::OldOrphan),
+                    &crate_list.git(Selection::OldOrphan),
+                ),
                 dry_run,
             )?;
         }
 
-        if self.orphan {
-            orphan_clean(
-                &crate_list,
+        if self.orphan && confirm_orphan_clean(directory_is_empty, ORPHAN_CLEAN_WARNING, dry_run)? {
+            clean_crates(
+                "orphan crates",
                 &mut registry_crates_location,
-                &crate_detail,
-                config_file.directory().is_empty(),
+                (
+                    &crate_list.registry(Selection::Orphan),
+                    &crate_list.git(Selection::Orphan),
+                ),
                 dry_run,
             )?;
         }
 
         if self.all {
-            remove_all(
-                &dir_path,
-                &crate_list,
+            clean_crates(
+                "crates",
                 &mut registry_crates_location,
-                &crate_detail,
+                (
+                    &crate_list.registry(Selection::All),
+                    &crate_list.git(Selection::All),
+                ),
                 dry_run,
             )?;
+            clear_empty_index(&dir_path, dry_run)?;
             clean_all_target(&config_file, dry_run)?;
         }
 
@@ -309,8 +306,8 @@ impl Command {
             match &sub_command {
                 SubCommand::Config(config) => config.run(&config_file, dir_path.config_file())?,
                 SubCommand::List(list) => {
-                    let max_width = source_name_max_width(&crate_detail);
-                    list.run(&crate_list, max_width, config_file.directory().is_empty());
+                    let max_width = source_name_max_width(&sources);
+                    list.run(&crate_list, max_width, directory_is_empty);
                 }
                 SubCommand::Set(set) => set.run(&mut config_file, dry_run)?,
                 SubCommand::Unset(unset) => unset.run(&mut config_file, dry_run)?,
@@ -318,8 +315,8 @@ impl Command {
                     git.run(
                         &dir_path,
                         &crate_list,
-                        &crate_detail,
-                        config_file.directory().is_empty(),
+                        &sources,
+                        directory_is_empty,
                         dry_run,
                     )?;
                 }
@@ -328,9 +325,9 @@ impl Command {
                     registry.run(
                         &dir_path,
                         &crate_list,
-                        &crate_detail,
+                        &sources,
                         &mut registry_crates_location,
-                        config_file.directory().is_empty(),
+                        directory_is_empty,
                         dry_run,
                     )?;
                 }
@@ -341,160 +338,6 @@ impl Command {
     }
 }
 
-// Git compress git files according to provided value if option
-fn git_compress(
-    value: &GitCompress,
-    index_dir: &Path,
-    checkout_dir: &Path,
-    db_dir: &Path,
-    dry_run: bool,
-) -> Result<()> {
-    let (git_compress_action, is_aggressive) = match value {
-        GitCompress::AggressiveIndex if index_dir.exists() => {
-            (Some(GitCompressAction::Index), true)
-        }
-        GitCompress::AggressiveCheckout if checkout_dir.exists() => {
-            (Some(GitCompressAction::Checkout), true)
-        }
-        GitCompress::AggressiveDb if db_dir.exists() => (Some(GitCompressAction::Db), true),
-        GitCompress::Index if index_dir.exists() => (Some(GitCompressAction::Index), false),
-        GitCompress::Checkout if checkout_dir.exists() => {
-            (Some(GitCompressAction::Checkout), false)
-        }
-        GitCompress::Db if db_dir.exists() => (Some(GitCompressAction::Db), false),
-        _ => (None, false),
-    };
-    if let Some(git_compress) = git_compress_action {
-        match git_compress {
-            GitCompressAction::Index => {
-                if index_dir.exists() && index_dir.is_dir() {
-                    for entry in
-                        fs::read_dir(index_dir).context("failed to read registry index folder")?
-                    {
-                        let repo_path = entry?.path();
-                        let file_name = repo_path
-                            .file_name()
-                            .context("failed to get a file name / folder name")?;
-                        let mut git_folder = repo_path.clone();
-                        git_folder.push(".git");
-                        if git_folder.exists() {
-                            if !dry_run {
-                                println!(
-                                    "{}",
-                                    format!(
-                                        "Compressing {} registry index",
-                                        file_name
-                                            .to_str()
-                                            .context("failed to get compress file name")?
-                                    )
-                                    .blue()
-                                );
-                            }
-                            run_git_compress_commands(&repo_path, dry_run, is_aggressive)?;
-                        }
-                    }
-                }
-            }
-            GitCompressAction::Checkout => {
-                if checkout_dir.is_dir() && checkout_dir.exists() {
-                    for entry in
-                        fs::read_dir(checkout_dir).context("failed to read checkout directory")?
-                    {
-                        let repo_path = entry?.path();
-                        if repo_path.exists() && repo_path.is_dir() {
-                            for rev in fs::read_dir(repo_path)
-                                .context("failed to read checkout directory sub directory")?
-                            {
-                                let rev_path = rev?.path();
-                                if !dry_run {
-                                    println!("{}", "Compressing git checkout".blue());
-                                }
-                                run_git_compress_commands(&rev_path, dry_run, is_aggressive)?;
-                            }
-                        }
-                    }
-                }
-            }
-            GitCompressAction::Db => {
-                if db_dir.exists() && db_dir.is_dir() {
-                    for entry in fs::read_dir(db_dir).context("failed to read db dir")? {
-                        let repo_path = entry?.path();
-                        if !dry_run {
-                            println!("{}", "Compressing git db".blue());
-                        }
-                        run_git_compress_commands(&repo_path, dry_run, is_aggressive)?;
-                    }
-                }
-            }
-        }
-    }
-    println!("{}", "Git compress task completed".blue());
-    Ok(())
-}
-
-// run combination of commands which git compress a index of registry
-fn run_git_compress_commands(repo_path: &Path, dry_run: bool, is_aggressive: bool) -> Result<()> {
-    if dry_run {
-        println!(
-            "{} git compressing {}",
-            "Dry run:".yellow(),
-            repo_path.display()
-        );
-    } else {
-        let mut commands = vec![
-            // Pack unpacked objects in a repository
-            (vec!["repack", "-a", "-d"], "Repack unpacked objects"),
-            // pack refs of branches/tags etc into one file know as pack-refs file for
-            // effective repo access
-            (
-                vec!["pack-refs", "--all", "--prune"],
-                "Packed refs and tags successfully",
-            ),
-            // Remove extra objects that are already in pack files
-            (vec!["prune-packed"], "Prune packed objects"),
-            // Remove history of all checkout which will help in remove dangling commits
-            (
-                vec![
-                    "reflog",
-                    "expire",
-                    "--expire=now",
-                    "--expire-unreachable=now",
-                    "--all",
-                ],
-                "Prune older reflog",
-            ),
-        ];
-        if is_aggressive {
-            commands.push((
-                vec!["gc", "--prune=now", "--aggressive"],
-                "Prune aggressively",
-            ));
-        }
-        let total_len = commands.len();
-        for (pos, (args, message)) in commands.iter().enumerate() {
-            let position = pos + 1;
-            let symbol = if position == total_len {
-                '\u{2514}'
-            } else {
-                '\u{251c}'
-            };
-            let output = std::process::Command::new("git")
-                .args(args)
-                .current_dir(repo_path)
-                .output()
-                .context(format!("failed to execute {position} command"))?;
-            if !output.status.success() {
-                let stderr = String::from_utf8_lossy(&output.stderr);
-                anyhow::bail!("git command at step {position}/{total_len} failed: {stderr}");
-            }
-            println!(
-                "{:70}.......Step {position}/{total_len}",
-                format!("  {symbol} {message}")
-            );
-        }
-    }
-    Ok(())
-}
 // light cleanup registry directory
 fn light_cleanup(checkout_dir: &Path, src_dir: &Path, index_dir: &Path, dry_run: bool) {
     let mut light_cleanup_success = true;
@@ -517,7 +360,7 @@ fn wipe_directory(wipe: &Wipe, dir_path: &DirPath, dry_run: bool) {
         Wipe::Registry => delete_folder(dir_path.registry_dir(), dry_run),
         Wipe::Cache => delete_folder(dir_path.cache_dir(), dry_run),
         Wipe::Index => delete_folder(dir_path.index_dir(), dry_run),
-        Wipe::IndexCache => crate::utils::delete_index_cache(dir_path.index_dir(), dry_run),
+        Wipe::IndexCache => delete_index_cache(dir_path.index_dir(), dry_run),
         Wipe::Src => delete_folder(dir_path.src_dir(), dry_run),
     }
     .is_err();
@@ -575,21 +418,16 @@ fn run_cargo_update_command(cargo_lock_files: &[PathBuf], dry_run: bool) -> Resu
 }
 
 // show top n crates
-fn top_crates(crate_detail: &CrateDetail, number: usize) {
-    let max_width = source_name_max_width(crate_detail);
-    show_top_number_crates(crate_detail.bin(), "bin", max_width, number);
-    registry::top_crates_registry(crate_detail, max_width, number);
-    git::top_crates_git(crate_detail, max_width, number);
+fn top_crates(crate_list: &CrateList, sources: &Sources, number: usize) {
+    let max_width = source_name_max_width(sources);
+    show_top_number_crates(crate_list.bin(), "bin", max_width, number);
+    registry::top_crates_registry(crate_list, max_width, number);
+    git::top_crates_git(crate_list, max_width, number);
 }
 
 // query size of directory of cargo home folder provide some valuable size
 // information
-fn query_size(
-    dir_path: &DirPath,
-    crate_list: &CrateList,
-    crate_detail: &CrateDetail,
-    config_file: &ConfigFile,
-) -> Result<()> {
+fn query_size(dir_path: &DirPath, crate_list: &CrateList, config_file: &ConfigFile) -> Result<()> {
     let mut final_size = 0_u64;
     let bin_dir_size =
         get_inode_handled_size(dir_path.bin_dir(), &mut HashSet::new()).unwrap_or(0_u64);
@@ -597,136 +435,32 @@ fn query_size(
     query_print(
         &format!(
             "Total size of {} .cargo/bin binary:",
-            crate_list.installed_bin().len()
+            crate_list.bin().len()
         ),
         &convert_pretty(bin_dir_size),
     );
     print_dash(query_full_width());
-    final_size += registry::query_size_registry(dir_path, crate_list, crate_detail);
-    final_size += git::query_size_git(dir_path, crate_list, crate_detail);
+    final_size += registry::query_size_registry(dir_path, crate_list);
+    final_size += git::query_size_git(dir_path, crate_list);
     query_print("Total size", &convert_pretty(final_size));
     print_dash(query_full_width());
     query_size_target(config_file)?;
     Ok(())
 }
 
-// Clean old crates
-fn old_clean(
-    crate_list: &CrateList,
+// Clean registry and git crates and print total removed
+fn clean_crates(
+    label: &str,
     registry_crates_location: &mut RegistryDir,
-    crate_detail: &CrateDetail,
+    (registry_crates, git_crates): (&[CrateMetaData], &[CrateMetaData]),
     dry_run: bool,
 ) -> Result<()> {
-    let (registry_sized_cleaned, total_registry_crate_removed) = clean_registry(
-        registry_crates_location,
-        crate_list.old_registry(),
-        crate_detail,
-        dry_run,
-    )?;
-    let (git_sized_cleaned, total_git_crate_removed) =
-        clean_git(crate_list.old_git(), crate_detail, dry_run)?;
-    println!(
-        "{}",
-        format!(
-            "{} old crates removed which had occupied {}",
-            total_git_crate_removed + total_registry_crate_removed,
-            convert_pretty(git_sized_cleaned + registry_sized_cleaned)
-        )
-        .blue()
-    );
-    Ok(())
-}
-
-// Clean out crates which is both old and orphan
-fn old_orphan_clean(
-    crate_list: &CrateList,
-    registry_crates_location: &mut RegistryDir,
-    crate_detail: &CrateDetail,
-    directory_is_empty: bool,
-    dry_run: bool,
-) -> Result<()> {
-    if !confirm_orphan_clean(directory_is_empty, OLD_ORPHAN_CLEAN_WARNING, dry_run)? {
-        return Ok(());
-    }
-    let (registry_sized_cleaned, total_registry_crate_removed) = clean_registry(
-        registry_crates_location,
-        &crate_list.old_orphan_registry(),
-        crate_detail,
-        dry_run,
-    )?;
-    let (git_sized_cleaned, total_git_crate_removed) =
-        clean_git(&crate_list.old_orphan_git(), crate_detail, dry_run)?;
-
-    println!(
-        "{}",
-        format!(
-            "{} crates which are both old and orphan crate removed which had {}",
-            total_git_crate_removed + total_registry_crate_removed,
-            convert_pretty(git_sized_cleaned + registry_sized_cleaned)
-        )
-        .blue()
-    );
-    Ok(())
-}
-
-// Clean orphan crates
-fn orphan_clean(
-    crate_list: &CrateList,
-    registry_crates_location: &mut RegistryDir,
-    crate_detail: &CrateDetail,
-    directory_is_empty: bool,
-    dry_run: bool,
-) -> Result<()> {
-    if !confirm_orphan_clean(directory_is_empty, ORPHAN_CLEAN_WARNING, dry_run)? {
-        return Ok(());
-    }
-    let (registry_sized_cleaned, total_registry_crate_removed) = clean_registry(
-        registry_crates_location,
-        crate_list.orphan_registry(),
-        crate_detail,
-        dry_run,
-    )?;
-    let (git_sized_cleaned, total_git_crate_removed) =
-        clean_git(crate_list.orphan_git(), crate_detail, dry_run)?;
-
-    println!(
-        "{}",
-        format!(
-            "{} orphan crates removed which had occupied {}",
-            total_git_crate_removed + total_registry_crate_removed,
-            convert_pretty(git_sized_cleaned + registry_sized_cleaned)
-        )
-        .blue()
-    );
-    Ok(())
-}
-
-// remove all crates along with their index
-fn remove_all(
-    dir_path: &DirPath,
-    crate_list: &CrateList,
-    registry_crates_location: &mut RegistryDir,
-    crate_detail: &CrateDetail,
-    dry_run: bool,
-) -> Result<()> {
-    let (registry_sized_cleaned, total_registry_crate_removed) = clean_registry(
-        registry_crates_location,
-        crate_list.installed_registry(),
-        crate_detail,
-        dry_run,
-    )?;
-    clear_empty_index(dir_path, dry_run)?;
-    let (git_sized_cleaned, total_git_crate_removed) =
-        clean_git(crate_list.installed_git(), crate_detail, dry_run)?;
-
-    println!(
-        "{}",
-        format!(
-            "Total size of {} crates removed :- {}",
-            total_git_crate_removed + total_registry_crate_removed,
-            convert_pretty(git_sized_cleaned + registry_sized_cleaned)
-        )
-        .blue()
+    let (registry_size, registry_count) =
+        clean_registry(registry_crates_location, registry_crates, dry_run)?;
+    let (git_size, git_count) = clean_git(git_crates, dry_run);
+    print_removed(
+        label,
+        (registry_size + git_size, registry_count + git_count),
     );
     Ok(())
 }

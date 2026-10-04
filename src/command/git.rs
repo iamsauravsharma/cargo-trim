@@ -2,17 +2,16 @@ use std::path::Path;
 
 use anyhow::Result;
 use clap::Parser;
-use owo_colors::OwoColorize as _;
 
 use super::utils::{
-    OLD_ORPHAN_CLEAN_WARNING, ORPHAN_CLEAN_WARNING, confirm_orphan_clean, print_dash,
-    show_top_number_crates, source_name_max_width,
+    OLD_ORPHAN_CLEAN_WARNING, ORPHAN_CLEAN_WARNING, confirm_orphan_clean, count_in, print_dash,
+    print_removed, show_top_number_crates, source_name_max_width,
 };
 use super::{query_full_width, query_print};
-use crate::crate_detail::{CrateDetail, CrateMetaData};
 use crate::dir_path::DirPath;
-use crate::git_dir::GitDir;
-use crate::list_crate::CrateList;
+use crate::installed::{CrateMetaData, Sources};
+use crate::list_crate::{CrateList, Selection};
+use crate::remove::{delete_folder, remove_git_crates};
 use crate::utils::{convert_pretty, get_size};
 #[derive(Debug, Parser)]
 #[command(
@@ -66,7 +65,7 @@ impl Git {
         &self,
         dir_path: &DirPath,
         crate_list: &CrateList,
-        crate_detail: &CrateDetail,
+        sources: &Sources,
         directory_is_empty: bool,
         dry_run: bool,
     ) -> Result<()> {
@@ -78,69 +77,42 @@ impl Git {
         }
 
         if let Some(number) = self.top {
-            let max_width = source_name_max_width(crate_detail);
-            top_crates_git(crate_detail, max_width, number);
+            let max_width = source_name_max_width(sources);
+            top_crates_git(crate_list, max_width, number);
         }
 
         if self.query {
-            let final_size = query_size_git(dir_path, crate_list, crate_detail);
+            let final_size = query_size_git(dir_path, crate_list);
             query_print("Total size", &convert_pretty(final_size));
         }
 
         if self.old {
-            let (sized_cleaned, total_crate_removed) =
-                clean_git(crate_list.old_git(), crate_detail, dry_run)?;
-            println!(
-                "{}",
-                format!(
-                    "{total_crate_removed} old crates removed which had occupied {}",
-                    convert_pretty(sized_cleaned)
-                )
-                .blue()
+            print_removed(
+                "old git crates",
+                clean_git(&crate_list.git(Selection::Old), dry_run),
             );
         }
 
         if self.old_orphan
             && confirm_orphan_clean(directory_is_empty, OLD_ORPHAN_CLEAN_WARNING, dry_run)?
         {
-            let (sized_cleaned, total_crate_removed) =
-                clean_git(&crate_list.old_orphan_git(), crate_detail, dry_run)?;
-
-            println!(
-                "{}",
-                format!(
-                    "{total_crate_removed} crates which are both old and orphan crate removed \
-                     which had occupied {}",
-                    convert_pretty(sized_cleaned)
-                )
-                .blue()
+            print_removed(
+                "old orphan git crates",
+                clean_git(&crate_list.git(Selection::OldOrphan), dry_run),
             );
         }
 
         if self.orphan && confirm_orphan_clean(directory_is_empty, ORPHAN_CLEAN_WARNING, dry_run)? {
-            let (sized_cleaned, total_crate_removed) =
-                clean_git(crate_list.orphan_git(), crate_detail, dry_run)?;
-
-            println!(
-                "{}",
-                format!(
-                    "{total_crate_removed} orphan crates removed which had occupied {}",
-                    convert_pretty(sized_cleaned)
-                )
-                .blue()
+            print_removed(
+                "orphan git crates",
+                clean_git(&crate_list.git(Selection::Orphan), dry_run),
             );
         }
 
         if self.all {
-            let (sized_cleaned, total_crate_removed) =
-                clean_git(crate_list.installed_git(), crate_detail, dry_run)?;
-            println!(
-                "{}",
-                format!(
-                    "Total size of {total_crate_removed} crates removed :- {}",
-                    convert_pretty(sized_cleaned)
-                )
-                .blue()
+            print_removed(
+                "git crates",
+                clean_git(&crate_list.git(Selection::All), dry_run),
             );
         }
 
@@ -151,49 +123,32 @@ impl Git {
 // Perform light cleanup of git and return if light clean was success or not
 pub(super) fn light_cleanup_git(checkout_dir: &Path, dry_run: bool) -> bool {
     // delete checkout dir
-    crate::utils::delete_folder(checkout_dir, dry_run).is_ok()
+    delete_folder(checkout_dir, dry_run).is_ok()
 }
 
 // Show top git crates
-pub(super) fn top_crates_git(crate_detail: &CrateDetail, first_width: usize, number: usize) {
-    show_top_number_crates(
-        crate_detail.git_crates_archive(),
-        "git_archive",
-        first_width,
-        number,
-    );
-    show_top_number_crates(
-        crate_detail.git_crates_source(),
-        "git_source",
-        first_width,
-        number,
-    );
+pub(super) fn top_crates_git(crate_list: &CrateList, first_width: usize, number: usize) {
+    show_top_number_crates(&crate_list.git(Selection::All), "git", first_width, number);
 }
 
-pub(super) fn query_size_git(
-    dir_path: &DirPath,
-    crate_list: &CrateList,
-    crate_detail: &CrateDetail,
-) -> u64 {
+pub(super) fn query_size_git(dir_path: &DirPath, crate_list: &CrateList) -> u64 {
+    let installed = crate_list.git(Selection::All);
     let git_dir_size = get_size(dir_path.git_dir()).unwrap_or(0_u64);
     query_print(
-        &format!(
-            "Total size of {} .cargo/git crates:",
-            crate_list.installed_git().len()
-        ),
+        &format!("Total size of {} .cargo/git crates:", installed.len()),
         &convert_pretty(git_dir_size),
     );
     query_print(
         &format!(
-            "   \u{251c} Size of {} .cargo/git/checkout folder",
-            crate_detail.git_crates_archive().len()
+            "   \u{251c} Size of {} .cargo/git/checkouts folder",
+            count_in(&installed, dir_path.checkout_dir())
         ),
         &convert_pretty(get_size(dir_path.checkout_dir()).unwrap_or(0_u64)),
     );
     query_print(
         &format!(
             "   \u{2514} Size of {} .cargo/git/db folder",
-            crate_detail.git_crates_source().len()
+            count_in(&installed, dir_path.db_dir())
         ),
         &convert_pretty(get_size(dir_path.db_dir()).unwrap_or(0_u64)),
     );
@@ -202,10 +157,6 @@ pub(super) fn query_size_git(
 }
 
 // perform clean on git crates
-pub(super) fn clean_git(
-    crate_metadata_list: &[CrateMetaData],
-    crate_detail: &CrateDetail,
-    dry_run: bool,
-) -> Result<(u64, usize)> {
-    GitDir::remove_crate_list(crate_detail, crate_metadata_list, dry_run)
+pub(super) fn clean_git(crate_metadata_list: &[CrateMetaData], dry_run: bool) -> (u64, usize) {
+    remove_git_crates(crate_metadata_list, dry_run)
 }
