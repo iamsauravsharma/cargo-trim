@@ -11,12 +11,7 @@ use crate::config_file::ConfigFile;
     about = "Query about config file data used by CLI",
     arg_required_else_help = true
 )]
-#[expect(clippy::struct_excessive_bools)]
 pub(crate) struct Config {
-    #[arg(long = "directory", short = 'd', help = "Query about directory data")]
-    directory: bool,
-    #[arg(long = "ignore", short = 'i', help = "Query about ignore path data")]
-    ignore: bool,
     #[arg(long = "location", short = 'l', help = "Return config file location")]
     location: bool,
     #[arg(long = "print", short = 'p', help = "Display config file content")]
@@ -25,18 +20,6 @@ pub(crate) struct Config {
 
 impl Config {
     pub(super) fn run(&self, config_file: &ConfigFile, config_file_location: &Path) -> Result<()> {
-        if self.directory {
-            let read_directory = config_file.directory();
-            for (index, name) in read_directory.iter().enumerate() {
-                println!("{}: {name}", format!("Directory [{index}]").blue());
-            }
-        }
-        if self.ignore {
-            let read_ignore = config_file.ignore();
-            for (index, name) in read_ignore.iter().enumerate() {
-                println!("{}: {name}", format!("Ignore [{index}]").blue());
-            }
-        }
         if self.location {
             println!(
                 "{}: \"{}\"",

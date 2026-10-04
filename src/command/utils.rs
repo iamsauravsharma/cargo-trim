@@ -9,15 +9,14 @@ use crate::utils::convert_pretty;
 
 pub(super) const OLD_ORPHAN_CLEAN_WARNING: &str =
     "WARNING: You have not initialized any directory as rust project directory. This command will \
-     clean all old crates even if they are not orphan crates. Run command 'cargo trim init' to \
-     initialize current directory as rust project directory or pass cargo trim set -d <directory> \
-     for setting rust project directory";
+     clean all old crates even if they are not orphan crates. Run command 'cargo trim set -d \
+     <directory>' to set rust project directory, use 'cargo trim set -d .' for current directory";
 
 pub(super) const ORPHAN_CLEAN_WARNING: &str =
     "WARNING: You have not initialized any directory as rust project directory. This command will \
      clean all crates since all crates are classified as orphan crate. Run command 'cargo trim \
-     init' to initialize current directory as rust project directory or pass cargo trim set -d \
-     <directory> for setting rust project directory";
+     set -d <directory>' to set rust project directory, use 'cargo trim set -d .' for current \
+     directory";
 
 /// check if crates classified as orphan can be cleaned.
 pub(super) fn confirm_orphan_clean(
