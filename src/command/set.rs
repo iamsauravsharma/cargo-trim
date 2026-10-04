@@ -3,39 +3,62 @@ use clap::Parser;
 
 use crate::config_file::ConfigFile;
 #[derive(Debug, Parser)]
-#[command(about = "Set config file values", arg_required_else_help = true)]
+#[command(about = "Add or change config values", arg_required_else_help = true)]
 pub(crate) struct Set {
     #[arg(
         long = "directory",
         short = 'd',
-        help = "Set directory of Rust project"
+        help = "Add project directory",
+        long_help = "Add project directory. Add directory scanned for rust projects, a relative \
+                     path such as `.` is stored as absolute path",
+        value_name = "path"
     )]
     directory: Option<Vec<String>>,
     #[arg(
         long = "ignore",
         short = 'i',
-        help = "Add a relative or absolute path to ignore list in configuration file which is \
-                ignored while scanning Cargo.lock file. A relative path is matched against the \
-                trailing path components while an absolute path is matched against the full path",
+        help = "Add path ignored while scanning",
+        long_help = "Add path ignored while scanning. A relative path matches trailing path \
+                     components anywhere, an absolute path matches the full path and each \
+                     component may contain `*`. A folder holding `.cargo-trim-ignore` is always \
+                     skipped",
         value_name = "path"
     )]
     ignore: Option<Vec<String>>,
     #[arg(
+        long = "filter",
+        short = 'f',
+        help = "Add crate filter",
+        long_help = "Add crate filter. Package spec `[registry:]name[@version]`. Registry and \
+                     name may contain `*`, registry matches the source folder name with or \
+                     without its hash suffix and version is a semver requirement (exact for a \
+                     full version) or a git revision prefix. Without any plain entry every crate \
+                     may be cleaned, otherwise only matching crates are cleaned. An entry \
+                     starting with `!` is never cleaned and wins over other entries",
+        value_name = "spec"
+    )]
+    filter: Option<Vec<String>>,
+    #[arg(
         long = "scan-hidden-folder",
         short = 'H',
-        help = "Set whether hidden folder is scanned"
+        help = "Set whether hidden folders are scanned",
+        value_name = "bool"
     )]
     scan_hidden_folder: Option<bool>,
     #[arg(
         long = "scan-target-folder",
         short = 'T',
-        help = "Set whether target folder is scanned"
+        help = "Set whether target folders are scanned for Cargo.lock files",
+        value_name = "bool"
     )]
     scan_target_folder: Option<bool>,
     #[arg(
         long = "stale-days",
         short = 's',
-        help = "Set number of days without any change after which a project is considered stale",
+        help = "Set days without change after which a project is stale",
+        long_help = "Set days without change after which a project is stale. Projects without any \
+                     change for this many days are stale and their Cargo.lock files no longer \
+                     mark crates as used, 0 turns it off",
         value_name = "days"
     )]
     stale_days: Option<u32>,
@@ -54,6 +77,11 @@ impl Set {
                 let path_separator = std::path::MAIN_SEPARATOR;
                 let ignore = ignore.trim_end_matches(path_separator);
                 config_file.add_ignore(ignore, dry_run, true)?;
+            }
+        }
+        if let Some(filters) = &self.filter {
+            for filter in filters {
+                config_file.add_filter(filter, dry_run, true)?;
             }
         }
         if let Some(scan_hidden_folder) = self.scan_hidden_folder {

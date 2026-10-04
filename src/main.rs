@@ -2,6 +2,7 @@ mod cargo_config;
 mod command;
 mod config_file;
 mod dir_path;
+mod filter;
 mod installed;
 mod list_crate;
 mod lock_file;

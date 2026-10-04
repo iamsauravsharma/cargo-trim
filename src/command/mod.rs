@@ -6,15 +6,15 @@ use clap::{Parser, ValueEnum};
 use owo_colors::OwoColorize as _;
 
 use self::utils::{
-    OLD_ORPHAN_CLEAN_WARNING, ORPHAN_CLEAN_WARNING, confirm_orphan_clean, print_dash,
-    print_removed, query_full_width, query_print, show_top_number_crates, source_name_max_width,
+    confirm_orphan_clean, print_dash, print_removed, query_full_width, query_print,
+    show_top_number_crates, source_name_max_width,
 };
 use crate::command::git::clean_git;
 use crate::command::registry::{clean_registry, clear_empty_index};
 use crate::command::target::{clean_all_target, query_size_target};
 use crate::config_file::ConfigFile;
 use crate::dir_path::DirPath;
-use crate::installed::{CrateMetaData, Sources};
+use crate::installed::Sources;
 use crate::list_crate::{CrateList, Selection};
 use crate::remove::{RegistryDir, delete_folder, delete_index_cache};
 use crate::utils::{convert_pretty, get_inode_handled_size};
@@ -53,46 +53,80 @@ pub(crate) struct Command {
     #[arg(
         long = "all",
         short = 'a',
-        help = "Clean up all registry & git crates, their index and target folder of rust projects"
+        help = "Clean all crates, empty indexes and target folders",
+        long_help = "Clean all crates, empty indexes and target folders. Removes registry and git \
+                     crates allowed by filter, then registry indexes left without crates, then \
+                     target folders of all projects after confirmation"
     )]
     all: bool,
     #[arg(
         long = "directory",
         short = 'd',
-        help = "Extra list of directory of Rust projects for current command",
-        env = "TRIM_DIRECTORY"
+        help = "Add project directory for this run",
+        env = "TRIM_DIRECTORY",
+        value_name = "path"
     )]
     directory: Option<Vec<String>>,
     #[arg(
         long = "dry-run",
         short = 'n',
-        help = "Run command in dry run mode to see what would be done",
+        help = "Show what would be done without changing anything",
         global = true
     )]
     dry_run: bool,
     #[arg(
         long = "gc",
         short = 'g',
+        help = "Git compress cache repositories (needs git)",
+        long_help = "Git compress cache repositories (needs git). Run git repack, pack-refs, \
+                     prune-packed and reflog expire, aggressive kinds also run `git gc \
+                     --aggressive`",
         value_enum,
-        help = "Git compress to reduce size of .cargo (git command required)"
+        value_name = "kind"
     )]
     git_compress: Option<Vec<gc::GitCompress>>,
     #[arg(
         long = "ignore",
         short = 'i',
-        help = "Extra list of relative or absolute path which should be ignored for current \
-                command",
-        env = "TRIM_IGNORE"
+        help = "Ignore path while scanning for this run",
+        long_help = "Ignore path while scanning for this run. A relative path matches trailing \
+                     path components anywhere, an absolute path matches the full path and each \
+                     component may contain `*`. A folder holding `.cargo-trim-ignore` is always \
+                     skipped",
+        env = "TRIM_IGNORE",
+        value_name = "path"
     )]
     ignore: Option<Vec<String>>,
     #[arg(
+        long = "filter",
+        short = 'f',
+        help = "Add crate filter for this run",
+        long_help = "Add crate filter for this run. Package spec `[registry:]name[@version]`. \
+                     Registry and name may contain `*`, registry matches the source folder name \
+                     with or without its hash suffix and version is a semver requirement (exact \
+                     for a full version) or a git revision prefix. Without any plain entry every \
+                     crate may be cleaned, otherwise only matching crates are cleaned. An entry \
+                     starting with `!` is never cleaned and wins over other entries",
+        env = "TRIM_FILTER",
+        value_name = "spec"
+    )]
+    filter: Option<Vec<String>>,
+    #[arg(
         long = "light",
         short = 'l',
-        help = "Light cleanup without removing files required for future compilation without \
-                internet"
+        help = "Remove sources but keep archives for offline builds",
+        long_help = "Remove sources but keep archives for offline builds. Removes registry \
+                     sources, index caches and git checkouts while registry archives and git db \
+                     stay so projects still build without internet"
     )]
     light_cleanup: bool,
-    #[arg(long = "old", short = 'o', help = "Clean old cache crates")]
+    #[arg(
+        long = "old",
+        short = 'o',
+        help = "Clean old crates",
+        long_help = "Clean old crates. Older versions of registry crates which also have a newer \
+                     version, and git checkouts of revisions which are not the latest fetched one"
+    )]
     old: bool,
     #[arg(
         long = "old-orphan",
@@ -103,35 +137,40 @@ pub(crate) struct Command {
     #[arg(
         long = "orphan",
         short = 'x',
-        help = "Clean orphan cache crates i.e all crates which are not present in lock file \
-                generated till now"
+        help = "Clean orphan crates",
+        long_help = "Clean orphan crates. Crates not used by any Cargo.lock file in project \
+                     directories. Without any project directory every crate is orphan"
     )]
     orphan: bool,
     #[arg(
         long = "query",
         short = 'q',
-        help = "Return size of different .cargo/cache folders"
+        help = "Show size of cache and target folders"
     )]
     query: bool,
     #[arg(
         long = "scan-hidden-folder",
         short = 'H',
-        help = "Override whether hidden folder is scanned for current command",
-        env = "TRIM_SCAN_HIDDEN_FOLDER"
+        help = "Scan hidden folders for this run",
+        env = "TRIM_SCAN_HIDDEN_FOLDER",
+        value_name = "bool"
     )]
     scan_hidden_folder: Option<bool>,
     #[arg(
         long = "scan-target-folder",
         short = 'T',
-        help = "Override whether target folder is scanned for current command",
-        env = "TRIM_SCAN_TARGET_FOLDER"
+        help = "Scan target folders for Cargo.lock files for this run",
+        env = "TRIM_SCAN_TARGET_FOLDER",
+        value_name = "bool"
     )]
     scan_target_folder: Option<bool>,
     #[arg(
         long = "stale-days",
         short = 's',
-        help = "Consider projects without any change for this many days as stale so their \
-                Cargo.lock files are excluded from used crate detection",
+        help = "Days without change after which a project is stale for this run",
+        long_help = "Days without change after which a project is stale for this run. Projects \
+                     without any change for this many days are stale and their Cargo.lock files \
+                     no longer mark crates as used, 0 turns it off",
         env = "TRIM_STALE_DAYS",
         value_name = "days"
     )]
@@ -139,16 +178,23 @@ pub(crate) struct Command {
     #[arg(
         long = "top",
         short = 't',
-        help = "Show certain number of top crates which have highest size"
+        help = "Show given number of largest crates",
+        value_name = "number"
     )]
     top: Option<usize>,
     #[arg(
         long = "update",
         short = 'u',
-        help = "Update Cargo.lock file present inside config directory folder path"
+        help = "Run `cargo update` in every detected project"
     )]
     update: bool,
-    #[arg(long = "wipe", short = 'w', help = "Wipe folder", value_enum)]
+    #[arg(
+        long = "wipe",
+        short = 'w',
+        help = "Delete whole cache folder",
+        value_enum,
+        value_name = "folder"
+    )]
     wipe: Option<Vec<Wipe>>,
     #[command(subcommand)]
     sub: Option<SubCommand>,
@@ -188,6 +234,11 @@ impl Command {
             for ignore in ignores {
                 let ignore = ignore.trim_end_matches(std::path::MAIN_SEPARATOR);
                 config_file.add_ignore(ignore, dry_run, false)?;
+            }
+        }
+        if let Some(filters) = &self.filter {
+            for filter in filters {
+                config_file.add_filter(filter, dry_run, false)?;
             }
         }
         if let Some(scan_hidden_folder) = self.scan_hidden_folder {
@@ -245,8 +296,10 @@ impl Command {
             query_size(&dir_path, &crate_list, &config_file)?;
         }
 
-        let mut registry_crates_location =
-            RegistryDir::new(dir_path.index_dir(), &crate_list.registry(Selection::All))?;
+        let mut registry_crates_location = RegistryDir::new(
+            dir_path.index_dir(),
+            &crate_list.registry(Selection::Installed),
+        )?;
 
         let directory_is_empty = config_file.directory().is_empty();
 
@@ -254,36 +307,28 @@ impl Command {
             clean_crates(
                 "old crates",
                 &mut registry_crates_location,
-                (
-                    &crate_list.registry(Selection::Old),
-                    &crate_list.git(Selection::Old),
-                ),
+                &crate_list,
+                Selection::Old,
                 dry_run,
             )?;
         }
 
-        if self.old_orphan
-            && confirm_orphan_clean(directory_is_empty, OLD_ORPHAN_CLEAN_WARNING, dry_run)?
-        {
+        if self.old_orphan && confirm_orphan_clean(directory_is_empty, dry_run)? {
             clean_crates(
                 "old orphan crates",
                 &mut registry_crates_location,
-                (
-                    &crate_list.registry(Selection::OldOrphan),
-                    &crate_list.git(Selection::OldOrphan),
-                ),
+                &crate_list,
+                Selection::OldOrphan,
                 dry_run,
             )?;
         }
 
-        if self.orphan && confirm_orphan_clean(directory_is_empty, ORPHAN_CLEAN_WARNING, dry_run)? {
+        if self.orphan && confirm_orphan_clean(directory_is_empty, dry_run)? {
             clean_crates(
                 "orphan crates",
                 &mut registry_crates_location,
-                (
-                    &crate_list.registry(Selection::Orphan),
-                    &crate_list.git(Selection::Orphan),
-                ),
+                &crate_list,
+                Selection::Orphan,
                 dry_run,
             )?;
         }
@@ -292,13 +337,11 @@ impl Command {
             clean_crates(
                 "crates",
                 &mut registry_crates_location,
-                (
-                    &crate_list.registry(Selection::All),
-                    &crate_list.git(Selection::All),
-                ),
+                &crate_list,
+                Selection::All,
                 dry_run,
             )?;
-            clear_empty_index(&dir_path, dry_run)?;
+            clear_empty_index(&dir_path, &crate_list, dry_run)?;
             clean_all_target(&config_file, dry_run)?;
         }
 
@@ -448,19 +491,24 @@ fn query_size(dir_path: &DirPath, crate_list: &CrateList, config_file: &ConfigFi
     Ok(())
 }
 
-// Clean registry and git crates and print total removed
+// Clean registry and git crates of selection and print total removed
 fn clean_crates(
     label: &str,
     registry_crates_location: &mut RegistryDir,
-    (registry_crates, git_crates): (&[CrateMetaData], &[CrateMetaData]),
+    crate_list: &CrateList,
+    selection: Selection,
     dry_run: bool,
 ) -> Result<()> {
-    let (registry_size, registry_count) =
-        clean_registry(registry_crates_location, registry_crates, dry_run)?;
-    let (git_size, git_count) = clean_git(git_crates, dry_run);
+    let (registry_size, registry_count) = clean_registry(
+        registry_crates_location,
+        &crate_list.registry(selection),
+        dry_run,
+    )?;
+    let (git_size, git_count) = clean_git(&crate_list.git(selection), dry_run);
     print_removed(
         label,
         (registry_size + git_size, registry_count + git_count),
+        crate_list.registry_kept(selection) + crate_list.git_kept(selection),
     );
     Ok(())
 }

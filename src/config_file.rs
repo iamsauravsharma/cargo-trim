@@ -10,8 +10,9 @@ use owo_colors::OwoColorize as _;
 use serde::{Deserialize, Serialize};
 
 use crate::cargo_config;
+use crate::filter::CrateFilter;
 use crate::lock_file::CargoLockFiles;
-use crate::utils::modified_since;
+use crate::utils::{modified_since, wildcard_match};
 
 /// Stores config file information
 #[derive(Serialize, Deserialize, Default)]
@@ -20,6 +21,10 @@ pub(crate) struct ConfigFile {
     directory: Vec<String>,
     #[serde(default)]
     ignore: Vec<String>,
+    /// package spec of crates to clean, an entry starting with `!` is a crate
+    /// which is never cleaned instead
+    #[serde(default)]
+    filter: CrateFilter,
     #[serde(default)]
     scan_hidden_folder: bool,
     #[serde(default)]
@@ -54,6 +59,11 @@ impl ConfigFile {
     /// return vector of directory value in config file
     pub(crate) fn directory(&self) -> &Vec<String> {
         &self.directory
+    }
+
+    /// filter deciding which crates can be cleaned
+    pub(crate) fn filter(&self) -> &CrateFilter {
+        &self.filter
     }
 
     /// scan hidden folder
@@ -215,6 +225,46 @@ impl ConfigFile {
         Ok(())
     }
 
+    /// add package spec of crate to clean, or of crate never cleaned when it
+    /// starts with `!`
+    pub(crate) fn add_filter(&mut self, entry: &str, dry_run: bool, save: bool) -> Result<()> {
+        // validate even when the value is not applied so an invalid spec is
+        // reported under dry run too
+        CrateFilter::default().add(entry)?;
+        if !dry_run || !save {
+            self.filter.add(entry)?;
+        }
+        if dry_run {
+            println!("{} Added filter {entry:?}", "Dry run:".yellow());
+        } else {
+            if save {
+                self.save()?;
+            }
+            println!("{} filter {entry:?}", "Added".red());
+        }
+        Ok(())
+    }
+
+    /// remove filter entry
+    pub(crate) fn remove_filter(&mut self, entry: &str, dry_run: bool, save: bool) -> Result<()> {
+        if !dry_run || !save {
+            self.filter.remove(entry);
+        }
+        if dry_run {
+            println!(
+                "{} {} filter {entry:?}",
+                "Dry run:".yellow(),
+                "Removed".red()
+            );
+        } else {
+            if save {
+                self.save()?;
+            }
+            println!("{} filter {entry:?}", "Removed".red());
+        }
+        Ok(())
+    }
+
     /// List Cargo.lock file present directories by recursively analyze all
     /// folder present in directory
     pub(crate) fn list_cargo_locks(&self, path: &Path) -> Result<CargoLockFiles> {
@@ -228,7 +278,7 @@ impl ConfigFile {
             return Ok(cargo_lock_files);
         }
         if !self.need_to_be_ignored(path) {
-            if sym_meta.is_dir() {
+            if sym_meta.is_dir() && !has_ignore_marker(path) {
                 let skip_target = (!self.scan_target_folder() && path.join("Cargo.toml").is_file())
                     .then(|| self.resolved_target_dir(path))
                     .filter(|target| is_cargo_target_dir(target));
@@ -272,7 +322,11 @@ impl ConfigFile {
         let Ok(sym_meta) = path.symlink_metadata() else {
             return Ok(());
         };
-        if sym_meta.is_symlink() || !sym_meta.is_dir() || self.need_to_be_ignored(path) {
+        if sym_meta.is_symlink()
+            || !sym_meta.is_dir()
+            || self.need_to_be_ignored(path)
+            || has_ignore_marker(path)
+        {
             return Ok(());
         }
         // a directory holding a manifest is a project, so ask cargo config
@@ -307,7 +361,7 @@ impl ConfigFile {
         if self
             .ignore
             .iter()
-            .any(|ignore| path == Path::new(ignore) || path.ends_with(ignore))
+            .any(|ignore| ignore_matches(path, Path::new(ignore)))
         {
             return true;
         }
@@ -350,6 +404,38 @@ fn absolute_directory(path: &str) -> Result<String> {
         .to_str()
         .map(ToString::to_string)
         .with_context(|| format!("directory {path:?} is not valid UTF-8"))
+}
+
+/// file or folder which excludes the folder holding it from scanning
+const IGNORE_MARKER: &str = ".cargo-trim-ignore";
+
+/// check if folder holds the ignore marker, checked only for folders so files
+/// do not cost an extra lookup
+fn has_ignore_marker(dir: &Path) -> bool {
+    dir.join(IGNORE_MARKER).symlink_metadata().is_ok()
+}
+
+/// check if path matches ignore entry. A relative entry matches the trailing
+/// components of path while an absolute entry matches the whole path, and each
+/// component of entry may contain `*` wildcard
+fn ignore_matches(path: &Path, ignore: &Path) -> bool {
+    let ignore_len = ignore.components().count();
+    let path_len = path.components().count();
+    if ignore_len == 0 || path_len < ignore_len || (ignore.is_absolute() && path_len != ignore_len)
+    {
+        return false;
+    }
+    path.components()
+        .skip(path_len - ignore_len)
+        .zip(ignore.components())
+        .all(|pair| {
+            match pair {
+                (Component::Normal(path_part), Component::Normal(ignore_part)) => {
+                    wildcard_match(&ignore_part.to_string_lossy(), &path_part.to_string_lossy())
+                }
+                (path_part, ignore_part) => path_part == ignore_part,
+            }
+        })
 }
 
 /// cargo tags its build output, so a directory which merely shares the name or
@@ -488,5 +574,47 @@ mod tests {
         );
         let root = current.ancestors().last().unwrap().to_str().unwrap();
         assert_eq!(super::absolute_directory(root).unwrap(), root);
+    }
+
+    #[test]
+    fn ignore_wildcard_test() {
+        let cfg = config_with_ignore(&["*_old", "crates/*-demo", "/home/*/scratch"]);
+        assert!(cfg.need_to_be_ignored(Path::new("/a/proj_old")));
+        assert!(!cfg.need_to_be_ignored(Path::new("/a/proj_old/src")));
+        assert!(cfg.need_to_be_ignored(Path::new("/x/crates/web-demo")));
+        assert!(!cfg.need_to_be_ignored(Path::new("/x/other/web-demo")));
+        assert!(cfg.need_to_be_ignored(Path::new("/home/a/scratch")));
+        assert!(!cfg.need_to_be_ignored(Path::new("/home/a/b/scratch")));
+        assert!(!cfg.need_to_be_ignored(Path::new("/srv/home/a/scratch")));
+    }
+
+    #[test]
+    fn ignore_marker_skips_folder_test() {
+        let root = std::env::temp_dir().join(format!("cargo_trim_marker_{}", std::process::id()));
+        for project in ["keep", "marker_file", "marker_folder"] {
+            std::fs::create_dir_all(root.join(project)).unwrap();
+            std::fs::write(root.join(project).join("Cargo.lock"), "").unwrap();
+        }
+        std::fs::write(root.join("marker_file").join(super::IGNORE_MARKER), "").unwrap();
+        std::fs::create_dir(root.join("marker_folder").join(super::IGNORE_MARKER)).unwrap();
+        let lock_files = ConfigFile::default().list_cargo_locks(&root).unwrap();
+        std::fs::remove_dir_all(&root).unwrap();
+        assert_eq!(lock_files.paths(), &[root.join("keep").join("Cargo.lock")]);
+    }
+
+    #[test]
+    fn filter_round_trip_test() {
+        let cfg: ConfigFile = toml::from_str("filter = [\"!serde\", \"tokio@^1\"]").unwrap();
+        assert_eq!(
+            Vec::<String>::from(cfg.filter().clone()),
+            ["!serde", "tokio@^1"]
+        );
+        let serialized = toml::to_string_pretty(&cfg).unwrap();
+        assert!(serialized.contains("tokio@^1"));
+    }
+
+    #[test]
+    fn invalid_filter_in_config_is_error_test() {
+        assert!(toml::from_str::<ConfigFile>("filter = [\"!serde@>>1\"]").is_err());
     }
 }

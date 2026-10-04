@@ -7,6 +7,7 @@ use semver::Version;
 
 use crate::config_file::ConfigFile;
 use crate::dir_path::DirPath;
+use crate::filter::CrateFilter;
 use crate::installed::{self, CrateMetaData, Sources};
 use crate::lock_file::{self, CargoLockFiles};
 
@@ -18,19 +19,25 @@ pub(crate) enum CrateState {
     Old,
     /// crate not used by any Cargo.lock file of rust projects
     Orphan,
+    /// crate protected from cleaning by filter
+    Kept,
 }
 
 /// crates to select out of crate list
 #[derive(Clone, Copy)]
 pub(crate) enum Selection {
-    /// every installed crate
+    /// every installed crate, including kept ones
+    Installed,
+    /// every crate which can be cleaned
     All,
-    /// old crates
+    /// old crates which can be cleaned
     Old,
-    /// orphan crates
+    /// orphan crates which can be cleaned
     Orphan,
-    /// crates which are both old and orphan
+    /// crates which are both old and orphan and can be cleaned
     OldOrphan,
+    /// crates protected from cleaning by filter
+    Kept,
 }
 
 /// installed crate along with every state it is in
@@ -40,11 +47,15 @@ struct ListedCrate {
 }
 
 impl ListedCrate {
-    fn new(metadata: CrateMetaData, old: bool, orphan: bool) -> Self {
-        let states = [(old, CrateState::Old), (orphan, CrateState::Orphan)]
-            .into_iter()
-            .filter_map(|(present, state)| present.then_some(state))
-            .collect();
+    fn new(metadata: CrateMetaData, old: bool, orphan: bool, filter: &CrateFilter) -> Self {
+        let states = [
+            (old, CrateState::Old),
+            (orphan, CrateState::Orphan),
+            (!filter.allows(&metadata), CrateState::Kept),
+        ]
+        .into_iter()
+        .filter_map(|(present, state)| present.then_some(state))
+        .collect();
         Self { metadata, states }
     }
 
@@ -52,12 +63,21 @@ impl ListedCrate {
         self.states.contains(&state)
     }
 
-    fn is_selected(&self, selection: Selection) -> bool {
+    /// check if crate is in states asked by selection, ignoring filter
+    fn has_states_of(&self, selection: Selection) -> bool {
         match selection {
-            Selection::All => true,
+            Selection::Installed | Selection::All | Selection::Kept => true,
             Selection::Old => self.is(CrateState::Old),
             Selection::Orphan => self.is(CrateState::Orphan),
             Selection::OldOrphan => self.is(CrateState::Old) && self.is(CrateState::Orphan),
+        }
+    }
+
+    fn is_selected(&self, selection: Selection) -> bool {
+        match selection {
+            Selection::Installed => true,
+            Selection::Kept => self.is(CrateState::Kept),
+            _ => !self.is(CrateState::Kept) && self.has_states_of(selection),
         }
     }
 }
@@ -84,11 +104,13 @@ impl CrateList {
             registry: list_registry(
                 installed::installed_registry(dir_path.src_dir(), dir_path.cache_dir())?,
                 &used_registry,
+                config_file.filter(),
             ),
             git: list_git(
                 installed::installed_git(dir_path.checkout_dir(), dir_path.db_dir())?,
                 &used_git,
                 &latest_revs(dir_path.db_dir())?,
+                config_file.filter(),
             ),
             cargo_lock_files,
         })
@@ -109,10 +131,30 @@ impl CrateList {
         select(&self.git, selection)
     }
 
+    /// number of registry crates in states asked by selection which filter
+    /// keeps from cleaning
+    pub(crate) fn registry_kept(&self, selection: Selection) -> usize {
+        kept_count(&self.registry, selection)
+    }
+
+    /// number of git crates in states asked by selection which filter keeps
+    /// from cleaning
+    pub(crate) fn git_kept(&self, selection: Selection) -> usize {
+        kept_count(&self.git, selection)
+    }
+
     /// List Cargo.lock file
     pub(crate) fn cargo_lock_files(&self) -> &CargoLockFiles {
         &self.cargo_lock_files
     }
+}
+
+/// count crates in states asked by selection which are kept by filter
+fn kept_count(crates: &[ListedCrate], selection: Selection) -> usize {
+    crates
+        .iter()
+        .filter(|listed| listed.is(CrateState::Kept) && listed.has_states_of(selection))
+        .count()
 }
 
 /// clone metadata of crates matching selection
@@ -126,7 +168,11 @@ fn select(crates: &[ListedCrate], selection: Selection) -> Vec<CrateMetaData> {
 
 /// registry crates with state. A crate is old when the same registry holds a
 /// newer version of it and orphan when no Cargo.lock file uses it
-fn list_registry(installed: Vec<CrateMetaData>, used: &[CrateMetaData]) -> Vec<ListedCrate> {
+fn list_registry(
+    installed: Vec<CrateMetaData>,
+    used: &[CrateMetaData],
+    filter: &CrateFilter,
+) -> Vec<ListedCrate> {
     let mut newest: HashMap<(String, Option<String>), Version> = HashMap::new();
     for crate_metadata in &installed {
         if let Some(version) = crate_metadata.version() {
@@ -151,7 +197,7 @@ fn list_registry(installed: Vec<CrateMetaData>, used: &[CrateMetaData]) -> Vec<L
                 .is_some_and(|version| newest.get(&key).is_some_and(|newest| version < newest));
             // used list is sorted so binary search can be used
             let orphan = used.binary_search(&crate_metadata).is_err();
-            ListedCrate::new(crate_metadata, old, orphan)
+            ListedCrate::new(crate_metadata, old, orphan, filter)
         })
         .collect()
 }
@@ -164,6 +210,7 @@ fn list_git(
     installed: Vec<CrateMetaData>,
     used: &[CrateMetaData],
     latest_revs: &HashMap<String, String>,
+    filter: &CrateFilter,
 ) -> Vec<ListedCrate> {
     installed
         .into_iter()
@@ -191,7 +238,7 @@ fn list_git(
                 // used list is sorted so binary search can be used
                 used.binary_search(&crate_metadata).is_err()
             };
-            ListedCrate::new(crate_metadata, old, orphan)
+            ListedCrate::new(crate_metadata, old, orphan, filter)
         })
         .collect()
 }
@@ -239,7 +286,8 @@ mod tests {
 
     use semver::Version;
 
-    use super::{CrateState, ListedCrate, list_git, list_registry};
+    use super::{CrateState, ListedCrate, Selection, list_git, list_registry};
+    use crate::filter::CrateFilter;
     use crate::installed::CrateMetaData;
 
     fn registry(name: &str, version: &str, source: &str) -> CrateMetaData {
@@ -274,7 +322,7 @@ mod tests {
         installed.sort();
         let used = vec![registry("serde", "2.0.0", "a")];
         assert_eq!(
-            states(&list_registry(installed, &used)),
+            states(&list_registry(installed, &used, &CrateFilter::default())),
             [(true, true), (false, true), (false, false), (false, true)]
         );
     }
@@ -287,7 +335,7 @@ mod tests {
             registry("syn", "2.0.0", "a"),
         ];
         assert_eq!(
-            states(&list_registry(installed, &[])),
+            states(&list_registry(installed, &[], &CrateFilter::default())),
             [(true, true), (true, true), (false, true)]
         );
     }
@@ -311,7 +359,12 @@ mod tests {
         // is not old whatever length its abbreviation has and a checkout of
         // unknown latest revision is not old either
         assert_eq!(
-            states(&list_git(installed, &used, &latest_revs)),
+            states(&list_git(
+                installed,
+                &used,
+                &latest_revs,
+                &CrateFilter::default()
+            )),
             [
                 (false, false),
                 (false, false),
@@ -321,5 +374,33 @@ mod tests {
                 (false, true),
             ]
         );
+    }
+
+    #[test]
+    fn kept_crate_is_never_selected_for_cleaning_test() {
+        let installed = vec![
+            registry("serde", "1.0.0", "a"),
+            registry("serde", "2.0.0", "a"),
+        ];
+        let filter = CrateFilter::try_from(vec!["!serde@1".to_string()]).unwrap();
+        let listed = list_registry(installed, &[], &filter);
+        let selected = |selection| {
+            listed
+                .iter()
+                .filter(|listed| listed.is_selected(selection))
+                .count()
+        };
+        assert_eq!(selected(Selection::Installed), 2);
+        assert_eq!(selected(Selection::All), 1);
+        assert_eq!(selected(Selection::Kept), 1);
+        // serde 1.0.0 is old and orphan but kept
+        assert_eq!(selected(Selection::Old), 0);
+        assert_eq!(selected(Selection::OldOrphan), 0);
+        assert_eq!(selected(Selection::Orphan), 1);
+        let kept = |selection| super::kept_count(&listed, selection);
+        assert_eq!(kept(Selection::All), 1);
+        assert_eq!(kept(Selection::Old), 1);
+        assert_eq!(kept(Selection::OldOrphan), 1);
+        assert_eq!(kept(Selection::Orphan), 1);
     }
 }

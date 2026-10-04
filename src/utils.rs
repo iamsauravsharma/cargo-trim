@@ -30,6 +30,29 @@ pub(crate) fn split_name_version(full_name: &str) -> Result<(String, Version)> {
     Ok((clear_name, version))
 }
 
+/// check if text matches pattern where `*` in pattern matches any sequence of
+/// characters, including an empty one
+pub(crate) fn wildcard_match(pattern: &str, text: &str) -> bool {
+    let mut parts = pattern.split('*');
+    // split always yields at least one part
+    let first = parts.next().unwrap_or_default();
+    let Some(mut rest) = text.strip_prefix(first) else {
+        return false;
+    };
+    let mut parts = parts.collect::<Vec<_>>();
+    let Some(last) = parts.pop() else {
+        // pattern has no `*` so text must be equal to it
+        return rest.is_empty();
+    };
+    for part in parts {
+        match rest.find(part) {
+            Some(position) => rest = &rest[position + part.len()..],
+            None => return false,
+        }
+    }
+    rest.ends_with(last)
+}
+
 /// check if `path` or anything inside it was modified after `cutoff`, stopping
 /// as soon as one recent entry is found
 pub(crate) fn modified_since(path: &Path, cutoff: SystemTime) -> bool {
@@ -119,7 +142,7 @@ pub(crate) fn convert_pretty(num: u64) -> String {
 mod tests {
     use semver::Version;
 
-    use super::{convert_pretty, split_name_version};
+    use super::{convert_pretty, split_name_version, wildcard_match};
 
     #[test]
     fn split_name_version_test() {
@@ -195,5 +218,20 @@ mod tests {
             " 93.454 PB".to_string()
         );
         assert_eq!(convert_pretty(u64::MAX), " 18.447 EB".to_string());
+    }
+
+    #[test]
+    fn wildcard_match_test() {
+        assert!(wildcard_match("abc", "abc"));
+        assert!(!wildcard_match("abc", "abcd"));
+        assert!(wildcard_match("a*", "abc"));
+        assert!(wildcard_match("*c", "abc"));
+        assert!(wildcard_match("a*c", "abc"));
+        assert!(wildcard_match("a*c", "ac"));
+        assert!(wildcard_match("*b*", "abc"));
+        assert!(wildcard_match("a*b*c", "a_b_c"));
+        assert!(!wildcard_match("a*b*c", "a_c_b"));
+        assert!(!wildcard_match("ab*ba", "aba"));
+        assert!(wildcard_match("*", ""));
     }
 }

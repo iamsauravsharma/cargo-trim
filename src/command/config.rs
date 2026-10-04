@@ -8,13 +8,13 @@ use crate::config_file::ConfigFile;
 
 #[derive(Debug, Parser)]
 #[command(
-    about = "Query about config file data used by CLI",
+    about = "Show config file location or content",
     arg_required_else_help = true
 )]
 pub(crate) struct Config {
-    #[arg(long = "location", short = 'l', help = "Return config file location")]
+    #[arg(long = "location", short = 'l', help = "Print config file location")]
     location: bool,
-    #[arg(long = "print", short = 'p', help = "Display config file content")]
+    #[arg(long = "print", short = 'p', help = "Print config file content")]
     print: bool,
 }
 

@@ -3,21 +3,29 @@ use clap::Parser;
 
 use crate::config_file::ConfigFile;
 #[derive(Debug, Parser)]
-#[command(about = "Unset values from config file", arg_required_else_help = true)]
+#[command(about = "Remove config values", arg_required_else_help = true)]
 pub(crate) struct Unset {
     #[arg(
         long = "directory",
         short = 'd',
-        help = "Directory to be removed from config file"
+        help = "Remove project directory",
+        value_name = "path"
     )]
     directory: Option<Vec<String>>,
     #[arg(
         long = "ignore",
         short = 'i',
-        help = "Relative or absolute path to be removed from ignore list in config file",
+        help = "Remove ignored path",
         value_name = "path"
     )]
     ignore: Option<Vec<String>>,
+    #[arg(
+        long = "filter",
+        short = 'f',
+        help = "Remove crate filter",
+        value_name = "spec"
+    )]
+    filter: Option<Vec<String>>,
 }
 
 impl Unset {
@@ -32,6 +40,11 @@ impl Unset {
                 let path_separator = std::path::MAIN_SEPARATOR;
                 let ignore = ignore.trim_end_matches(path_separator);
                 config_file.remove_ignore(ignore, dry_run, true)?;
+            }
+        }
+        if let Some(filters) = &self.filter {
+            for filter in filters {
+                config_file.remove_filter(filter, dry_run, true)?;
             }
         }
 
