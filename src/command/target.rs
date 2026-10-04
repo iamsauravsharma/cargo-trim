@@ -7,7 +7,8 @@ use owo_colors::OwoColorize as _;
 
 use super::utils::{confirm_continue, print_dash, query_full_width, query_print};
 use crate::config_file::ConfigFile;
-use crate::utils::{convert_pretty, delete_folder, get_size, modified_since};
+use crate::remove::delete_folder;
+use crate::utils::{convert_pretty, get_size, modified_since};
 
 #[derive(Debug, Parser)]
 #[command(

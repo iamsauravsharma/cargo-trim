@@ -1,451 +1,220 @@
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
-use std::str::FromStr as _;
+use std::path::Path;
 use std::{fs, io};
 
 use anyhow::{Context as _, Result};
 use semver::Version;
-use serde::Deserialize;
-use url::Url;
 
 use crate::config_file::ConfigFile;
-use crate::crate_detail::{CrateDetail, CrateMetaData};
 use crate::dir_path::DirPath;
+use crate::installed::{self, CrateMetaData, Sources};
+use crate::lock_file::{self, CargoLockFiles};
 
-/// struct to store Cargo.lock location
-pub(crate) struct CargoLockFiles {
-    path: Vec<PathBuf>,
+/// state of an installed crate, a crate without any state is only installed
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum CrateState {
+    /// older version of a crate which also has a newer version, or git
+    /// checkout of a revision which is not the latest fetched one
+    Old,
+    /// crate not used by any Cargo.lock file of rust projects
+    Orphan,
 }
 
-impl CargoLockFiles {
-    pub(crate) fn new() -> Self {
-        Self { path: Vec::new() }
+/// crates to select out of crate list
+#[derive(Clone, Copy)]
+pub(crate) enum Selection {
+    /// every installed crate
+    All,
+    /// old crates
+    Old,
+    /// orphan crates
+    Orphan,
+    /// crates which are both old and orphan
+    OldOrphan,
+}
+
+/// installed crate along with every state it is in
+struct ListedCrate {
+    metadata: CrateMetaData,
+    states: Vec<CrateState>,
+}
+
+impl ListedCrate {
+    fn new(metadata: CrateMetaData, old: bool, orphan: bool) -> Self {
+        let states = [(old, CrateState::Old), (orphan, CrateState::Orphan)]
+            .into_iter()
+            .filter_map(|(present, state)| present.then_some(state))
+            .collect();
+        Self { metadata, states }
     }
 
-    pub(crate) fn add_path(&mut self, path: PathBuf) {
-        self.path.push(path);
+    fn is(&self, state: CrateState) -> bool {
+        self.states.contains(&state)
     }
 
-    pub(crate) fn append(&mut self, mut lock_location: Self) {
-        self.path.append(&mut lock_location.path);
-    }
-
-    pub(crate) fn paths(&self) -> &Vec<PathBuf> {
-        &self.path
+    fn is_selected(&self, selection: Selection) -> bool {
+        match selection {
+            Selection::All => true,
+            Selection::Old => self.is(CrateState::Old),
+            Selection::Orphan => self.is(CrateState::Orphan),
+            Selection::OldOrphan => self.is(CrateState::Old) && self.is(CrateState::Orphan),
+        }
     }
 }
 
-#[derive(Clone, Deserialize)]
-struct LockData {
-    package: Option<Vec<Package>>,
-}
-
-impl LockData {
-    fn package(&self) -> Option<&Vec<Package>> {
-        self.package.as_ref()
-    }
-}
-
-#[derive(Clone, Deserialize)]
-struct Package {
-    name: String,
-    version: String,
-    source: Option<String>,
-}
-
-impl Package {
-    fn name(&self) -> &str {
-        &self.name
-    }
-
-    fn version(&self) -> &str {
-        &self.version
-    }
-
-    fn source(&self) -> Option<&String> {
-        self.source.as_ref()
-    }
-}
-
-/// struct to store all crate list detail with its type
+/// struct to store all installed crates with their state
 pub(crate) struct CrateList {
-    installed_bin: Vec<CrateMetaData>,
-    installed_crate_registry: Vec<CrateMetaData>,
-    installed_crate_git: Vec<CrateMetaData>,
-    old_crate_registry: Vec<CrateMetaData>,
-    old_crate_git: Vec<CrateMetaData>,
-    orphan_crate_registry: Vec<CrateMetaData>,
-    orphan_crate_git: Vec<CrateMetaData>,
+    bin: Vec<CrateMetaData>,
+    registry: Vec<ListedCrate>,
+    git: Vec<ListedCrate>,
     cargo_lock_files: CargoLockFiles,
 }
 
 impl CrateList {
-    /// create list of all types of crate present in directory
+    /// create list of all installed crates along with their state
     pub(crate) fn create_list(
         dir_path: &DirPath,
         config_file: &ConfigFile,
-        crate_detail: &mut CrateDetail,
+        sources: &Sources,
     ) -> Result<Self> {
-        let bin_dir = dir_path.bin_dir();
-        let cache_dir = dir_path.cache_dir();
-        let src_dir = dir_path.src_dir();
-        let checkout_dir = dir_path.checkout_dir();
-        let db_dir = dir_path.db_dir();
-
-        // list installed crates
-        let installed_bin = crate_detail.list_installed_bin(bin_dir)?;
-        let installed_crate_registry =
-            crate_detail.list_installed_crate_registry(src_dir, cache_dir)?;
-        let installed_crate_git = crate_detail.list_installed_crate_git(checkout_dir, db_dir)?;
-
-        // list old registry crate
-        let (old_crate_registry, old_crate_git) =
-            list_old_crates(db_dir, &installed_crate_registry, &installed_crate_git)?;
-
-        // list all used crates in rust program
-        let (cargo_lock_files, used_crate_registry, used_crate_git) =
-            list_used_crates(config_file, crate_detail)?;
-
-        // list orphan crates. If crate is not used then it is orphan
-        let (orphan_crate_registry, orphan_crate_git) = list_orphan_crates(
-            &installed_crate_registry,
-            &installed_crate_git,
-            &used_crate_registry,
-            &used_crate_git,
-        );
-
+        let (cargo_lock_files, used_registry, used_git) =
+            lock_file::used_crates(config_file, sources)?;
         Ok(Self {
-            installed_bin,
-            installed_crate_registry,
-            installed_crate_git,
-            old_crate_registry,
-            old_crate_git,
-            orphan_crate_registry,
-            orphan_crate_git,
+            bin: installed::installed_bin(dir_path.bin_dir())?,
+            registry: list_registry(
+                installed::installed_registry(dir_path.src_dir(), dir_path.cache_dir())?,
+                &used_registry,
+            ),
+            git: list_git(
+                installed::installed_git(dir_path.checkout_dir(), dir_path.db_dir())?,
+                &used_git,
+                &latest_revs(dir_path.db_dir())?,
+            ),
             cargo_lock_files,
         })
     }
 
     /// provide list of installed bin
-    pub(crate) fn installed_bin(&self) -> &Vec<CrateMetaData> {
-        &self.installed_bin
+    pub(crate) fn bin(&self) -> &[CrateMetaData] {
+        &self.bin
     }
 
-    /// provide list of installed registry
-    pub(crate) fn installed_registry(&self) -> &Vec<CrateMetaData> {
-        &self.installed_crate_registry
+    /// provide registry crates matching selection
+    pub(crate) fn registry(&self, selection: Selection) -> Vec<CrateMetaData> {
+        select(&self.registry, selection)
     }
 
-    /// provide list of old registry
-    pub(crate) fn old_registry(&self) -> &Vec<CrateMetaData> {
-        &self.old_crate_registry
-    }
-
-    /// provide list o orphan registry
-    pub(crate) fn orphan_registry(&self) -> &Vec<CrateMetaData> {
-        &self.orphan_crate_registry
-    }
-
-    /// provide list of installed git
-    pub(crate) fn installed_git(&self) -> &Vec<CrateMetaData> {
-        &self.installed_crate_git
-    }
-
-    /// provide list of old git
-    pub(crate) fn old_git(&self) -> &Vec<CrateMetaData> {
-        &self.old_crate_git
-    }
-
-    /// provide list of orphan git
-    pub(crate) fn orphan_git(&self) -> &Vec<CrateMetaData> {
-        &self.orphan_crate_git
+    /// provide git crates matching selection
+    pub(crate) fn git(&self, selection: Selection) -> Vec<CrateMetaData> {
+        select(&self.git, selection)
     }
 
     /// List Cargo.lock file
     pub(crate) fn cargo_lock_files(&self) -> &CargoLockFiles {
         &self.cargo_lock_files
     }
-
-    /// list crates which is both old and orphan
-    pub(crate) fn old_orphan_registry(&self) -> Vec<CrateMetaData> {
-        let mut old_orphan_registry = Vec::new();
-        let orphan_list = self.orphan_registry();
-        for crates in self.old_registry() {
-            if orphan_list.binary_search(crates).is_ok() {
-                old_orphan_registry.push(crates.clone());
-            }
-        }
-        old_orphan_registry
-    }
-
-    /// List git crates which is both old and orphan
-    pub(crate) fn old_orphan_git(&self) -> Vec<CrateMetaData> {
-        let mut old_orphan_git = Vec::new();
-        let orphan_list = self.orphan_git();
-        for crates in self.old_git() {
-            if orphan_list.binary_search(crates).is_ok() {
-                old_orphan_git.push(crates.clone());
-            }
-        }
-        old_orphan_git
-    }
 }
 
-/// Parse a `git+…` source string from Cargo.lock and return `(repo_url,
-/// short_sha)`.
-fn parse_git_source(source: &str) -> Result<(Url, String)> {
-    let base_and_query_optional = source
-        .split_once("?rev=")
-        .or_else(|| source.split_once("?branch="))
-        .or_else(|| source.split_once("?tag="));
-    let (url_with_kind, sha_part) = if let Some((base, query_and_hash)) = base_and_query_optional {
-        let sha_part = query_and_hash
-            .split_once('#')
-            .context("failed to find # in git source query param")?
-            .1;
-        (base, sha_part)
-    } else {
-        source
-            .split_once('#')
-            .context("failed to find # in git source")?
-    };
-    let rev_short_form = sha_part
-        .get(..7)
-        .context("git SHA in Cargo.lock is shorter than 7 characters")?
-        .to_string();
-    let url = Url::from_str(url_with_kind.strip_prefix("git+").unwrap_or(url_with_kind))
-        .context("failed git source url kind with query params conversion")?;
-    Ok((url, rev_short_form))
+/// clone metadata of crates matching selection
+fn select(crates: &[ListedCrate], selection: Selection) -> Vec<CrateMetaData> {
+    crates
+        .iter()
+        .filter(|listed| listed.is_selected(selection))
+        .map(|listed| listed.metadata.clone())
+        .collect()
 }
 
-/// Read out content of Cargo.lock file to List crates present so can be
-/// used for orphan clean
-fn read_content(
-    cargo_lock_paths: &[PathBuf],
-    crate_detail: &CrateDetail,
-) -> Result<(Vec<CrateMetaData>, Vec<CrateMetaData>)> {
-    let mut present_crate_registry = Vec::new();
-    let mut present_crate_git = Vec::new();
-    let crates_io_git_url = Url::from_str("https://github.com/rust-lang/crates.io-index")?;
-    let index_crates_url = Url::from_str("https://index.crates.io")?;
-    let sparse_crates_io_present = crate_detail
-        .source_infos()
-        .values()
-        .any(|source_url| source_url == &index_crates_url);
-    for cargo_lock_file in cargo_lock_paths {
-        if cargo_lock_file.exists() {
-            let file_content = fs::read_to_string(cargo_lock_file)
-                .context("failed to read cargo lock content to string")?;
-            let cargo_lock_data: LockData =
-                toml::from_str(&file_content).context("failed to convert to toml format")?;
-            if let Some(packages) = cargo_lock_data.package() {
-                for package in packages {
-                    if let Some(source) = package.source() {
-                        let name = package.name();
-                        let version = package.version();
-                        if let Some(registry_url) = source.strip_prefix("registry+") {
-                            let mut url = Url::from_str(registry_url)
-                                .context("failed registry source url kind conversion")?;
-                            // Only add sparse registry if sparse registry is
-                            // present in place of
-                            // git based registry for crates.io
-                            if url == crates_io_git_url && sparse_crates_io_present {
-                                url = index_crates_url.clone();
-                            }
-                            for index_name in crate_detail.index_names_from_url(&url) {
-                                present_crate_registry.push(CrateMetaData::new(
-                                    name.to_string(),
-                                    Some(
-                                        Version::parse(version)
-                                            .context("failed Cargo.lock semver version parse")?,
-                                    ),
-                                    Some(index_name),
-                                ));
-                            }
-                        } else if source.starts_with("git+") {
-                            let (url, rev_short_form) = parse_git_source(source)?;
-                            let last_path_segment = url
-                                .path_segments()
-                                .context("url doesn't have segment")?
-                                .next_back()
-                                .context("cannot get last segments of path")?;
-                            let full_name = format!("{last_path_segment}-{rev_short_form}");
-                            for index_name in crate_detail.index_names_from_url(&url) {
-                                present_crate_git.push(CrateMetaData::new(
-                                    full_name.clone(),
-                                    None,
-                                    Some(index_name),
-                                ));
-                            }
-                        } else if let Some(sparse_url) = source.strip_prefix("sparse+") {
-                            let url = Url::from_str(sparse_url)
-                                .context("failed sparse source url kind conversion")?;
-                            for index_name in crate_detail.index_names_from_url(&url) {
-                                present_crate_registry.push(CrateMetaData::new(
-                                    name.to_string(),
-                                    Some(
-                                        Version::parse(version)
-                                            .context("failed Cargo.lock semver version parse")?,
-                                    ),
-                                    Some(index_name),
-                                ));
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    Ok((present_crate_registry, present_crate_git))
-}
-
-/// List old crates
-fn list_old_crates(
-    db_dir: &Path,
-    installed_crate_registry: &[CrateMetaData],
-    installed_crate_git: &[CrateMetaData],
-) -> Result<(Vec<CrateMetaData>, Vec<CrateMetaData>)> {
-    // latest fetched revision of every git db, keyed by db folder name which is
-    // also the source of its checkouts
-    let mut latest_revs = HashMap::new();
-    if db_dir.exists() && db_dir.is_dir() {
-        for crates in fs::read_dir(db_dir).context("failed to read db dir")? {
-            let entry = crates?.path();
-            if !entry.is_dir() {
-                continue;
-            }
-            let file_name = entry
-                .file_name()
-                .context("failed to get sold crate db dir file name")?
-                .to_str()
-                .context("failed to convert db dir entry file name to str")?;
-            if let Some(rev_value) = latest_rev_value(&entry)? {
-                latest_revs.insert(file_name.to_string(), rev_value);
-            }
-        }
-    }
-    Ok((
-        old_registry_crates(installed_crate_registry),
-        old_git_crates(installed_crate_git, &latest_revs),
-    ))
-}
-
-/// registry crates for which the same registry holds a newer version
-fn old_registry_crates(installed_crate_registry: &[CrateMetaData]) -> Vec<CrateMetaData> {
-    let mut newest: HashMap<(&String, Option<&String>), &Version> = HashMap::new();
-    for crate_metadata in installed_crate_registry {
+/// registry crates with state. A crate is old when the same registry holds a
+/// newer version of it and orphan when no Cargo.lock file uses it
+fn list_registry(installed: Vec<CrateMetaData>, used: &[CrateMetaData]) -> Vec<ListedCrate> {
+    let mut newest: HashMap<(String, Option<String>), Version> = HashMap::new();
+    for crate_metadata in &installed {
         if let Some(version) = crate_metadata.version() {
-            let key = (crate_metadata.name(), crate_metadata.source());
-            if newest.get(&key).is_none_or(|newest| version > *newest) {
-                newest.insert(key, version);
+            let key = (
+                crate_metadata.name().clone(),
+                crate_metadata.source().cloned(),
+            );
+            if newest.get(&key).is_none_or(|newest| version > newest) {
+                newest.insert(key, version.clone());
             }
         }
     }
-    let mut old_crate_registry = installed_crate_registry
-        .iter()
-        .filter(|crate_metadata| {
-            let key = (crate_metadata.name(), crate_metadata.source());
-            crate_metadata
+    installed
+        .into_iter()
+        .map(|crate_metadata| {
+            let key = (
+                crate_metadata.name().clone(),
+                crate_metadata.source().cloned(),
+            );
+            let old = crate_metadata
                 .version()
-                .is_some_and(|version| newest.get(&key).is_some_and(|newest| version < *newest))
+                .is_some_and(|version| newest.get(&key).is_some_and(|newest| version < newest));
+            // used list is sorted so binary search can be used
+            let orphan = used.binary_search(&crate_metadata).is_err();
+            ListedCrate::new(crate_metadata, old, orphan)
         })
-        .cloned()
-        .collect::<Vec<_>>();
-    old_crate_registry.sort();
-    old_crate_registry.dedup();
-    old_crate_registry
+        .collect()
 }
 
-/// git checkouts whose revision is not the latest fetched revision of their
-/// repository. A checkout of a repository whose latest revision is unknown is
-/// not old so it is never removed by mistake
-fn old_git_crates(
-    installed_crate_git: &[CrateMetaData],
+/// git crates with state. A checkout is old when its revision is not the latest
+/// fetched one of its repository while a git db is never old. A checkout is
+/// orphan when no Cargo.lock file uses its revision and a git db when no
+/// Cargo.lock file uses its repository
+fn list_git(
+    installed: Vec<CrateMetaData>,
+    used: &[CrateMetaData],
     latest_revs: &HashMap<String, String>,
-) -> Vec<CrateMetaData> {
-    let mut old_crate_git = installed_crate_git
-        .iter()
-        .filter(|crate_metadata| {
+) -> Vec<ListedCrate> {
+    installed
+        .into_iter()
+        .map(|crate_metadata| {
             // checkout is named repo-rev while git db is named repo-HEAD
-            let Some((_, rev)) = crate_metadata.name().rsplit_once('-') else {
-                return false;
-            };
+            let rev = crate_metadata
+                .name()
+                .rsplit_once('-')
+                .map_or("", |(_, rev)| rev);
+            let is_db = rev == "HEAD";
             // checkout folder is an abbreviation of the full latest hash when
-            // it is the latest revision
-            rev != "HEAD"
+            // it is the latest revision. A checkout of a repository whose
+            // latest revision is unknown is not old so it is never
+            // removed by mistake
+            let old = !is_db
                 && crate_metadata
                     .source()
                     .and_then(|source| latest_revs.get(source))
-                    .is_some_and(|latest| !latest.starts_with(rev))
+                    .is_some_and(|latest| !latest.starts_with(rev));
+            let orphan = if is_db {
+                !used
+                    .iter()
+                    .any(|used| used.source() == crate_metadata.source())
+            } else {
+                // used list is sorted so binary search can be used
+                used.binary_search(&crate_metadata).is_err()
+            };
+            ListedCrate::new(crate_metadata, old, orphan)
         })
-        .cloned()
-        .collect::<Vec<_>>();
-    old_crate_git.sort();
-    old_crate_git.dedup();
-    old_crate_git
+        .collect()
 }
 
-/// list used crates
-fn list_used_crates(
-    config_file: &ConfigFile,
-    crate_detail: &CrateDetail,
-) -> Result<(CargoLockFiles, Vec<CrateMetaData>, Vec<CrateMetaData>)> {
-    let mut used_crate_registry = Vec::new();
-    let mut used_crate_git = Vec::new();
-    let mut cargo_lock_files = CargoLockFiles::new();
-    let config_directory = config_file.directory().clone();
-    // read a Cargo.lock file and determine out a used registry and git crate
-    for path in &config_directory {
-        let list_cargo_locks = config_file.list_cargo_locks(Path::new(path))?;
-        let (mut registry_crate, mut git_crate) =
-            read_content(list_cargo_locks.paths(), crate_detail)?;
-        cargo_lock_files.append(list_cargo_locks);
-        used_crate_registry.append(&mut registry_crate);
-        used_crate_git.append(&mut git_crate);
+/// full hash of latest fetched commit of every git db, keyed by db folder name
+/// which is also the source of its checkouts
+fn latest_revs(db_dir: &Path) -> Result<HashMap<String, String>> {
+    let mut revs = HashMap::new();
+    if !db_dir.is_dir() {
+        return Ok(revs);
     }
-    used_crate_registry.sort();
-    used_crate_registry.dedup();
-    used_crate_git.sort();
-    used_crate_git.dedup();
-    Ok((cargo_lock_files, used_crate_registry, used_crate_git))
-}
-
-/// list orphan crates
-fn list_orphan_crates(
-    installed_crate_registry: &[CrateMetaData],
-    installed_crate_git: &[CrateMetaData],
-    used_crate_registry: &[CrateMetaData],
-    used_crate_git: &[CrateMetaData],
-) -> (Vec<CrateMetaData>, Vec<CrateMetaData>) {
-    let mut orphan_crate_registry = Vec::new();
-    let mut orphan_crate_git = Vec::new();
-    // `used_crate_registry` is sorted, so binary search beats linear `contains`
-    for crates in installed_crate_registry {
-        if used_crate_registry.binary_search(crates).is_err() {
-            orphan_crate_registry.push(crates.clone());
-        }
-    }
-    for installed_crate_metadata in installed_crate_git {
-        let crate_name = installed_crate_metadata.name();
-        if crate_name.contains("-HEAD") {
-            if !used_crate_git
-                .iter()
-                .any(|used| used.source() == installed_crate_metadata.source())
-            {
-                orphan_crate_git.push(installed_crate_metadata.clone());
-            }
-        } else if used_crate_git
-            .binary_search(installed_crate_metadata)
-            .is_err()
+    for entry in fs::read_dir(db_dir).context("failed to read db dir")? {
+        let path = entry?.path();
+        let Some(name) = path.file_name().and_then(|name| name.to_str()) else {
+            continue;
+        };
+        if path.is_dir()
+            && let Some(rev) = latest_rev_value(&path)?
         {
-            orphan_crate_git.push(installed_crate_metadata.clone());
+            revs.insert(name.to_string(), rev);
         }
     }
-    orphan_crate_registry.sort();
-    orphan_crate_registry.dedup();
-    orphan_crate_git.sort();
-    orphan_crate_git.dedup();
-    (orphan_crate_registry, orphan_crate_git)
+    Ok(revs)
 }
 
 /// get full hash of latest fetched commit from git repository, `None` if the
@@ -469,10 +238,9 @@ mod tests {
     use std::collections::HashMap;
 
     use semver::Version;
-    use url::Url;
 
-    use super::{old_git_crates, old_registry_crates, parse_git_source};
-    use crate::crate_detail::CrateMetaData;
+    use super::{CrateState, ListedCrate, list_git, list_registry};
+    use crate::installed::CrateMetaData;
 
     fn registry(name: &str, version: &str, source: &str) -> CrateMetaData {
         CrateMetaData::new(
@@ -486,6 +254,13 @@ mod tests {
         CrateMetaData::new(name.to_string(), None, Some(source.to_string()))
     }
 
+    fn states(listed: &[ListedCrate]) -> Vec<(bool, bool)> {
+        listed
+            .iter()
+            .map(|listed| (listed.is(CrateState::Old), listed.is(CrateState::Orphan)))
+            .collect()
+    }
+
     #[test]
     fn old_registry_crate_is_per_registry_test() {
         // sorted order puts serde 1.0.0 of registry b between the two versions
@@ -497,9 +272,10 @@ mod tests {
             registry("tokio", "1.0.0", "a"),
         ];
         installed.sort();
+        let used = vec![registry("serde", "2.0.0", "a")];
         assert_eq!(
-            old_registry_crates(&installed),
-            [registry("serde", "1.0.0", "a")]
+            states(&list_registry(installed, &used)),
+            [(true, true), (false, true), (false, false), (false, true)]
         );
     }
 
@@ -511,8 +287,8 @@ mod tests {
             registry("syn", "2.0.0", "a"),
         ];
         assert_eq!(
-            old_registry_crates(&installed),
-            [registry("syn", "1.0.0", "a"), registry("syn", "1.0.1", "a")]
+            states(&list_registry(installed, &[])),
+            [(true, true), (true, true), (false, true)]
         );
     }
 
@@ -530,63 +306,20 @@ mod tests {
             "repo-1a2b3c".to_string(),
             "abcdef1234567890abcdef1234567890abcdef12".to_string(),
         )]);
-        // git db is never old, latest checkout is not old whatever length its
-        // abbreviation has and a checkout of unknown latest revision is not old
-        // either
+        let used = vec![git("repo-abcdef1", "repo-1a2b3c")];
+        // git db is never old and is used through its checkout, latest checkout
+        // is not old whatever length its abbreviation has and a checkout of
+        // unknown latest revision is not old either
         assert_eq!(
-            old_git_crates(&installed, &latest_revs),
+            states(&list_git(installed, &used, &latest_revs)),
             [
-                git("repo-1234567", "repo-1a2b3c"),
-                git("repo-abcdef9", "repo-1a2b3c"),
+                (false, false),
+                (false, false),
+                (true, true),
+                (false, true),
+                (true, true),
+                (false, true),
             ]
         );
-    }
-
-    #[test]
-    fn parse_git_source_plain_hash_test() {
-        let (url, sha) =
-            parse_git_source("git+https://github.com/foo/bar#0123456789abcdef0123456789ab")
-                .unwrap();
-        assert_eq!(url, Url::parse("https://github.com/foo/bar").unwrap());
-        assert_eq!(sha, "0123456");
-    }
-
-    #[test]
-    fn parse_git_source_rev_query_test() {
-        let (url, sha) =
-            parse_git_source("git+https://github.com/foo/bar?rev=v1.2.3#abcdef1234567890").unwrap();
-        assert_eq!(url, Url::parse("https://github.com/foo/bar").unwrap());
-        assert_eq!(sha, "abcdef1");
-    }
-
-    #[test]
-    fn parse_git_source_branch_query_test() {
-        let (url, sha) =
-            parse_git_source("git+https://github.com/foo/bar?branch=main#deadbeefcafe0").unwrap();
-        assert_eq!(url, Url::parse("https://github.com/foo/bar").unwrap());
-        assert_eq!(sha, "deadbee");
-    }
-
-    #[test]
-    fn parse_git_source_tag_query_test() {
-        let (url, sha) =
-            parse_git_source("git+https://github.com/foo/bar?tag=v0.1.0#0f1e2d3c4b5a").unwrap();
-        assert_eq!(url, Url::parse("https://github.com/foo/bar").unwrap());
-        assert_eq!(sha, "0f1e2d3");
-    }
-
-    #[test]
-    fn parse_git_source_missing_hash_is_error_test() {
-        assert!(parse_git_source("git+https://github.com/foo/bar").is_err());
-    }
-
-    #[test]
-    fn parse_git_source_short_sha_is_error_test() {
-        assert!(parse_git_source("git+https://github.com/foo/bar#abc").is_err());
-    }
-
-    #[test]
-    fn parse_git_source_rev_without_hash_is_error_test() {
-        assert!(parse_git_source("git+https://github.com/foo/bar?rev=v1").is_err());
     }
 }

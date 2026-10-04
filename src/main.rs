@@ -1,11 +1,11 @@
 mod cargo_config;
 mod command;
 mod config_file;
-mod crate_detail;
 mod dir_path;
-mod git_dir;
+mod installed;
 mod list_crate;
-mod registry_dir;
+mod lock_file;
+mod remove;
 mod utils;
 
 use std::env;

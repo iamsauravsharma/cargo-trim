@@ -6,14 +6,14 @@ use clap::Parser;
 use owo_colors::OwoColorize as _;
 
 use super::utils::{
-    OLD_ORPHAN_CLEAN_WARNING, ORPHAN_CLEAN_WARNING, confirm_orphan_clean, print_dash,
-    query_full_width, query_print, show_top_number_crates, source_name_max_width,
+    OLD_ORPHAN_CLEAN_WARNING, ORPHAN_CLEAN_WARNING, confirm_orphan_clean, count_in, print_dash,
+    print_removed, query_full_width, query_print, show_top_number_crates, source_name_max_width,
 };
-use crate::crate_detail::{CrateDetail, CrateMetaData};
 use crate::dir_path::DirPath;
-use crate::list_crate::CrateList;
-use crate::registry_dir::RegistryDir;
-use crate::utils::{convert_pretty, delete_folder, get_size};
+use crate::installed::{CrateMetaData, Sources};
+use crate::list_crate::{CrateList, Selection};
+use crate::remove::{RegistryDir, delete_folder, delete_index_cache};
+use crate::utils::{convert_pretty, get_size};
 
 #[derive(Debug, Parser)]
 #[command(
@@ -71,7 +71,7 @@ impl Registry {
         &self,
         dir_path: &DirPath,
         crate_list: &CrateList,
-        crate_detail: &CrateDetail,
+        sources: &Sources,
         registry_crates_location: &mut RegistryDir,
         directory_is_empty: bool,
         dry_run: bool,
@@ -84,84 +84,57 @@ impl Registry {
             }
         }
         if let Some(number) = self.top {
-            let max_width = source_name_max_width(crate_detail);
-            top_crates_registry(crate_detail, max_width, number);
+            let max_width = source_name_max_width(sources);
+            top_crates_registry(crate_list, max_width, number);
         }
         if self.query {
-            let final_size = query_size_registry(dir_path, crate_list, crate_detail);
+            let final_size = query_size_registry(dir_path, crate_list);
             query_print("Total size", &convert_pretty(final_size));
         }
 
         if self.old {
-            let (sized_cleaned, total_crate_removed) = clean_registry(
-                registry_crates_location,
-                crate_list.old_registry(),
-                crate_detail,
-                dry_run,
-            )?;
-            println!(
-                "{}",
-                format!(
-                    "{total_crate_removed} old crates removed which had occupied {}",
-                    convert_pretty(sized_cleaned)
-                )
-                .blue()
+            print_removed(
+                "old registry crates",
+                clean_registry(
+                    registry_crates_location,
+                    &crate_list.registry(Selection::Old),
+                    dry_run,
+                )?,
             );
         }
 
         if self.old_orphan
             && confirm_orphan_clean(directory_is_empty, OLD_ORPHAN_CLEAN_WARNING, dry_run)?
         {
-            let (sized_cleaned, total_crate_removed) = clean_registry(
-                registry_crates_location,
-                &crate_list.old_orphan_registry(),
-                crate_detail,
-                dry_run,
-            )?;
-
-            println!(
-                "{}",
-                format!(
-                    "{total_crate_removed} crates which are both old and orphan crate removed \
-                     which had occupied {}",
-                    convert_pretty(sized_cleaned)
-                )
-                .blue()
+            print_removed(
+                "old orphan registry crates",
+                clean_registry(
+                    registry_crates_location,
+                    &crate_list.registry(Selection::OldOrphan),
+                    dry_run,
+                )?,
             );
         }
 
         if self.orphan && confirm_orphan_clean(directory_is_empty, ORPHAN_CLEAN_WARNING, dry_run)? {
-            let (sized_cleaned, total_crate_removed) = clean_registry(
-                registry_crates_location,
-                crate_list.orphan_registry(),
-                crate_detail,
-                dry_run,
-            )?;
-
-            println!(
-                "{}",
-                format!(
-                    "{total_crate_removed} orphan crates removed which had occupied {}",
-                    convert_pretty(sized_cleaned)
-                )
-                .blue()
+            print_removed(
+                "orphan registry crates",
+                clean_registry(
+                    registry_crates_location,
+                    &crate_list.registry(Selection::Orphan),
+                    dry_run,
+                )?,
             );
         }
 
         if self.all {
-            let (sized_cleaned, total_crate_removed) = clean_registry(
-                registry_crates_location,
-                crate_list.installed_registry(),
-                crate_detail,
-                dry_run,
-            )?;
-            println!(
-                "{}",
-                format!(
-                    "Total size of {total_crate_removed} crates removed :- {}",
-                    convert_pretty(sized_cleaned)
-                )
-                .blue()
+            print_removed(
+                "registry crates",
+                clean_registry(
+                    registry_crates_location,
+                    &crate_list.registry(Selection::All),
+                    dry_run,
+                )?,
             );
             clear_empty_index(dir_path, dry_run)?;
         }
@@ -177,8 +150,7 @@ pub(super) fn light_cleanup_registry(src_dir: &Path, index_dir: &Path, dry_run: 
     // delete src dir
     light_cleanup_success = delete_folder(src_dir, dry_run).is_ok() && light_cleanup_success;
     // Delete out .cache folder also
-    light_cleanup_success =
-        crate::utils::delete_index_cache(index_dir, dry_run).is_ok() && light_cleanup_success;
+    light_cleanup_success = delete_index_cache(index_dir, dry_run).is_ok() && light_cleanup_success;
     light_cleanup_success
 }
 
@@ -215,39 +187,27 @@ pub(super) fn clear_empty_index(dir_path: &DirPath, dry_run: bool) -> Result<()>
 }
 
 // Show top registry crates
-pub(super) fn top_crates_registry(crate_detail: &CrateDetail, first_width: usize, number: usize) {
+pub(super) fn top_crates_registry(crate_list: &CrateList, first_width: usize, number: usize) {
     show_top_number_crates(
-        crate_detail.registry_crates_archive(),
-        "registry_archive",
-        first_width,
-        number,
-    );
-    show_top_number_crates(
-        crate_detail.registry_crates_source(),
-        "registry_source",
+        &crate_list.registry(Selection::All),
+        "registry",
         first_width,
         number,
     );
 }
 
 // Query size of registry
-pub(super) fn query_size_registry(
-    dir_path: &DirPath,
-    crate_list: &CrateList,
-    crate_detail: &CrateDetail,
-) -> u64 {
+pub(super) fn query_size_registry(dir_path: &DirPath, crate_list: &CrateList) -> u64 {
+    let installed = crate_list.registry(Selection::All);
     let registry_dir_size = get_size(dir_path.registry_dir()).unwrap_or(0);
     query_print(
-        &format!(
-            "Total size of {} .cargo/registry crates:",
-            crate_list.installed_registry().len()
-        ),
+        &format!("Total size of {} .cargo/registry crates:", installed.len()),
         &convert_pretty(registry_dir_size),
     );
     query_print(
         &format!(
             "   \u{251c} Size of {} .cargo/registry/cache folder",
-            crate_detail.registry_crates_archive().len()
+            count_in(&installed, dir_path.cache_dir())
         ),
         &convert_pretty(get_size(dir_path.cache_dir()).unwrap_or(0_u64)),
     );
@@ -258,7 +218,7 @@ pub(super) fn query_size_registry(
     query_print(
         &format!(
             "   \u{2514} Size of {} .cargo/registry/src folder",
-            crate_detail.registry_crates_source().len()
+            count_in(&installed, dir_path.src_dir())
         ),
         &convert_pretty(get_size(dir_path.src_dir()).unwrap_or(0_u64)),
     );
@@ -266,12 +226,11 @@ pub(super) fn query_size_registry(
     registry_dir_size
 }
 
-// perform clean on git crates
+// perform clean on registry crates
 pub(super) fn clean_registry(
     registry_crates_location: &mut RegistryDir,
     crate_metadata_list: &[CrateMetaData],
-    crate_detail: &CrateDetail,
     dry_run: bool,
 ) -> Result<(u64, usize)> {
-    registry_crates_location.remove_crate_list(crate_detail, crate_metadata_list, dry_run)
+    registry_crates_location.remove_crate_list(crate_metadata_list, dry_run)
 }
