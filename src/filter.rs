@@ -1,9 +1,9 @@
 use anyhow::{Context as _, Result, bail};
 use semver::{Version, VersionReq};
 use serde::{Deserialize, Serialize};
+use wildmatch::WildMatch;
 
 use crate::installed::CrateMetaData;
-use crate::utils::wildcard_match;
 
 /// version part of a package spec, a semver requirement for registry crate or
 /// a revision prefix for git crate
@@ -46,13 +46,13 @@ impl VersionPattern {
 }
 
 /// cargo style package spec `[registry:]name[@version]`. Registry and name may
-/// contain `*` wildcard, registry is matched against the source folder name
-/// with or without its hash suffix and version is a semver requirement for
+/// contain `*` and `?` wildcard, registry is matched against the source folder
+/// name with or without its hash suffix and version is a semver requirement for
 /// registry crate or a revision prefix for git crate
 #[derive(Clone)]
 pub(crate) struct PackageSpec {
-    registry: Option<String>,
-    name: String,
+    registry: Option<WildMatch>,
+    name: WildMatch,
     version: Option<VersionPattern>,
 }
 
@@ -61,7 +61,7 @@ impl PackageSpec {
         // crate name never contains `:` so first `:` separates the registry
         let (registry, rest) = match spec.split_once(':') {
             Some(("", _)) => bail!("registry is empty in {spec:?}"),
-            Some((registry, rest)) => (Some(registry.to_string()), rest),
+            Some((registry, rest)) => (Some(WildMatch::new(registry)), rest),
             None => (None, spec),
         };
         let (name, version) = match rest.split_once('@') {
@@ -73,7 +73,7 @@ impl PackageSpec {
         }
         Ok(Self {
             registry,
-            name: name.to_string(),
+            name: WildMatch::new(name),
             version,
         })
     }
@@ -88,7 +88,7 @@ impl PackageSpec {
         }
         let name = crate_metadata.name();
         if let Some(version) = crate_metadata.version() {
-            return wildcard_match(&self.name, name)
+            return self.name.matches(name)
                 && self
                     .version
                     .as_ref()
@@ -99,7 +99,7 @@ impl PackageSpec {
         let (base_name, rev) = name
             .rsplit_once('-')
             .map_or((name.as_str(), None), |(base, rev)| (base, Some(rev)));
-        wildcard_match(&self.name, base_name)
+        self.name.matches(base_name)
             && self
                 .version
                 .as_ref()
@@ -110,11 +110,11 @@ impl PackageSpec {
 /// check if registry pattern matches source folder name such as
 /// `index.crates.io-1949cf8c6b5b557f`, either in full or without its hash
 /// suffix so `index.crates.io` matches it too
-fn registry_matches(pattern: &str, source: &str) -> bool {
-    wildcard_match(pattern, source)
+fn registry_matches(pattern: &WildMatch, source: &str) -> bool {
+    pattern.matches(source)
         || source
             .rsplit_once('-')
-            .is_some_and(|(without_hash, _)| wildcard_match(pattern, without_hash))
+            .is_some_and(|(without_hash, _)| pattern.matches(without_hash))
 }
 
 /// decide which crates can be cleaned from a list of package spec stored as
@@ -265,6 +265,9 @@ mod tests {
         assert!(matches("ser*de", &registry("serde", "1.0.0")));
         assert!(matches("ser*de", &registry("ser_fast_de", "1.0.0")));
         assert!(!matches("ser*de", &registry("serde_json", "1.0.0")));
+        // `?` matches exactly one character
+        assert!(matches("tokio-?til", &registry("tokio-util", "0.7.0")));
+        assert!(!matches("tokio?", &registry("tokio", "1.0.0")));
     }
 
     #[test]

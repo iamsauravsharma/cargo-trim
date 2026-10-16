@@ -8,11 +8,12 @@ use std::time::{Duration, SystemTime};
 use anyhow::{Context as _, Result};
 use owo_colors::OwoColorize as _;
 use serde::{Deserialize, Serialize};
+use wildmatch::WildMatch;
 
 use crate::cargo_config;
 use crate::filter::CrateFilter;
 use crate::lock_file::CargoLockFiles;
-use crate::utils::{modified_since, wildcard_match};
+use crate::utils::modified_since;
 
 /// Stores config file information
 #[derive(Serialize, Deserialize, Default)]
@@ -20,7 +21,7 @@ pub(crate) struct ConfigFile {
     #[serde(default)]
     directory: Vec<String>,
     #[serde(default)]
-    ignore: Vec<String>,
+    ignore: Vec<IgnoreEntry>,
     /// package spec of crates to clean, an entry starting with `!` is a crate
     /// which is never cleaned instead
     #[serde(default)]
@@ -175,7 +176,7 @@ impl ConfigFile {
         // a value given for this run only still applies under dry run so the
         // preview reflects the requested value instead of the stored one
         if !dry_run || !save {
-            self.ignore.push(ignore.to_string());
+            self.ignore.push(IgnoreEntry::from(ignore.to_string()));
         }
         if dry_run {
             println!("{} Added {ignore:?}", "Dry run:".yellow());
@@ -212,7 +213,7 @@ impl ConfigFile {
         // a value given for this run only still applies under dry run so the
         // preview reflects the requested value instead of the stored one
         if !dry_run || !save {
-            self.ignore.retain(|data| data != ignore);
+            self.ignore.retain(|entry| entry.path != Path::new(ignore));
         }
         if dry_run {
             println!("{} {} {ignore:?}", "Dry run:".yellow(), "Removed".red());
@@ -358,11 +359,7 @@ impl ConfigFile {
     /// output folder is recognised by resolution instead of by name
     fn need_to_be_ignored(&self, path: &Path) -> bool {
         // match ignore entries as relative or absolute paths
-        if self
-            .ignore
-            .iter()
-            .any(|ignore| ignore_matches(path, Path::new(ignore)))
-        {
+        if self.ignore.iter().any(|entry| entry.matches(path)) {
             return true;
         }
         // a path without a final component cannot match the name based rules
@@ -415,27 +412,66 @@ fn has_ignore_marker(dir: &Path) -> bool {
     dir.join(IGNORE_MARKER).symlink_metadata().is_ok()
 }
 
-/// check if path matches ignore entry. A relative entry matches the trailing
-/// components of path while an absolute entry matches the whole path, and each
-/// component of entry may contain `*` wildcard
-fn ignore_matches(path: &Path, ignore: &Path) -> bool {
-    let ignore_len = ignore.components().count();
-    let path_len = path.components().count();
-    if ignore_len == 0 || path_len < ignore_len || (ignore.is_absolute() && path_len != ignore_len)
-    {
-        return false;
-    }
-    path.components()
-        .skip(path_len - ignore_len)
-        .zip(ignore.components())
-        .all(|pair| {
-            match pair {
-                (Component::Normal(path_part), Component::Normal(ignore_part)) => {
-                    wildcard_match(&ignore_part.to_string_lossy(), &path_part.to_string_lossy())
+/// ignore entry which is a relative or absolute path, stored as plain string in
+/// config file while its normal components are compiled as wildcard pattern
+/// once
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(from = "String", into = "String")]
+struct IgnoreEntry {
+    path: PathBuf,
+    /// wildcard pattern of every normal component, `None` for other components
+    /// such as root which are compared as they are
+    patterns: Vec<Option<WildMatch>>,
+}
+
+impl From<String> for IgnoreEntry {
+    fn from(entry: String) -> Self {
+        let path = PathBuf::from(entry);
+        let patterns = path
+            .components()
+            .map(|component| {
+                match component {
+                    Component::Normal(part) => Some(WildMatch::new(&part.to_string_lossy())),
+                    _ => None,
                 }
-                (path_part, ignore_part) => path_part == ignore_part,
-            }
-        })
+            })
+            .collect();
+        Self { path, patterns }
+    }
+}
+
+impl From<IgnoreEntry> for String {
+    fn from(entry: IgnoreEntry) -> Self {
+        // path was built from a string so it converts back without loss
+        entry.path.to_string_lossy().into_owned()
+    }
+}
+
+impl IgnoreEntry {
+    /// check if path matches entry. A relative entry matches the trailing
+    /// components of path while an absolute entry matches the whole path, and
+    /// each component of entry may contain `*` and `?` wildcard
+    fn matches(&self, path: &Path) -> bool {
+        let entry_len = self.patterns.len();
+        let path_len = path.components().count();
+        if entry_len == 0
+            || path_len < entry_len
+            || (self.path.is_absolute() && path_len != entry_len)
+        {
+            return false;
+        }
+        path.components()
+            .skip(path_len - entry_len)
+            .zip(self.path.components().zip(&self.patterns))
+            .all(|(path_part, (entry_part, pattern))| {
+                match (path_part, pattern) {
+                    (Component::Normal(name), Some(pattern)) => {
+                        pattern.matches(&name.to_string_lossy())
+                    }
+                    _ => path_part == entry_part,
+                }
+            })
+    }
 }
 
 /// cargo tags its build output, so a directory which merely shares the name or
@@ -466,11 +502,14 @@ fn is_os_hidden(path: &Path) -> bool {
 mod tests {
     use std::path::Path;
 
-    use super::ConfigFile;
+    use super::{ConfigFile, IgnoreEntry};
 
     fn config_with_ignore(ignore: &[&str]) -> ConfigFile {
         ConfigFile {
-            ignore: ignore.iter().map(|s| (*s).to_string()).collect(),
+            ignore: ignore
+                .iter()
+                .map(|s| IgnoreEntry::from((*s).to_string()))
+                .collect(),
             ..ConfigFile::default()
         }
     }
@@ -529,7 +568,7 @@ mod tests {
         // a hidden folder listed in ignore is skipped even when hidden scanning
         // is on
         let cfg = ConfigFile {
-            ignore: vec![".cache".to_string()],
+            ignore: vec![IgnoreEntry::from(".cache".to_string())],
             scan_hidden_folder: true,
             ..ConfigFile::default()
         };
@@ -586,6 +625,10 @@ mod tests {
         assert!(cfg.need_to_be_ignored(Path::new("/home/a/scratch")));
         assert!(!cfg.need_to_be_ignored(Path::new("/home/a/b/scratch")));
         assert!(!cfg.need_to_be_ignored(Path::new("/srv/home/a/scratch")));
+        // `?` matches exactly one character of a component
+        let cfg = config_with_ignore(&["v?"]);
+        assert!(cfg.need_to_be_ignored(Path::new("/x/v1")));
+        assert!(!cfg.need_to_be_ignored(Path::new("/x/v10")));
     }
 
     #[test]
@@ -616,5 +659,20 @@ mod tests {
     #[test]
     fn invalid_filter_in_config_is_error_test() {
         assert!(toml::from_str::<ConfigFile>("filter = [\"!serde@>>1\"]").is_err());
+    }
+
+    #[test]
+    fn ignore_round_trip_test() {
+        let cfg: ConfigFile = toml::from_str("ignore = [\"node_modules\", \"*_old\"]").unwrap();
+        assert!(cfg.need_to_be_ignored(Path::new("/a/proj_old")));
+        let entries = cfg
+            .ignore
+            .iter()
+            .cloned()
+            .map(String::from)
+            .collect::<Vec<_>>();
+        assert_eq!(entries, ["node_modules", "*_old"]);
+        let serialized = toml::to_string_pretty(&cfg).unwrap();
+        assert!(serialized.contains("ignore = [\n    \"node_modules\",\n    \"*_old\",\n]"));
     }
 }
