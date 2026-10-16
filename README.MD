@@ -114,7 +114,8 @@ Target folders are located like cargo does, through `CARGO_TARGET_DIR`, `CARGO_B
 
 - a **relative path** such as `node_modules` or `crates/demo` matches the end of a path anywhere.
 - an **absolute path** such as `/home/user/projects/demo` matches only that path.
-- each path component may contain `*`: `*_old`, `crates/*-demo`, `/home/*/scratch`.
+- each path component may contain `*` (any characters) and `?` (one character): `*_old`,
+  `crates/*-demo`, `/home/*/scratch`, `v?`.
 - a folder holding a file or folder named `.cargo-trim-ignore` is always skipped, no config needed.
 
 Ignored folders count for neither used crates nor target cleaning.
@@ -144,8 +145,9 @@ Spec parts:
 
 - **registry** is optional and matches the registry folder name with or without its hash suffix,
   so `index.crates.io:serde` matches `serde` from `index.crates.io-1949cf8c6b5b557f`. It may contain
-  `*`: `!my-company.com:*` never cleans anything from that registry.
-- **name** may contain `*`: `windows-*`, `*-sys`. For git crates the repository name is matched.
+  `*` and `?`: `!my-company.com:*` never cleans anything from that registry.
+- **name** may contain `*` (any characters) and `?` (one character): `windows-*`, `*-sys`,
+  `tokio-?til`. For git crates the repository name is matched.
 - **version** is a semver requirement such as `tokio@^1` or `syn@<2`, a full version such as
   `syn@1.0.109` matches exactly and for git crates it is a revision prefix such as `repo@abc1234`.
 

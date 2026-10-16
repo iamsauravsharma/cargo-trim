@@ -20,8 +20,8 @@ pub(crate) struct Set {
         help = "Add path ignored while scanning",
         long_help = "Add path ignored while scanning. A relative path matches trailing path \
                      components anywhere, an absolute path matches the full path and each \
-                     component may contain `*`. A folder holding `.cargo-trim-ignore` is always \
-                     skipped",
+                     component may contain `*` (any characters) and `?` (one character). A folder \
+                     holding `.cargo-trim-ignore` is always skipped",
         value_name = "path"
     )]
     ignore: Option<Vec<String>>,
@@ -30,11 +30,12 @@ pub(crate) struct Set {
         short = 'f',
         help = "Add crate filter",
         long_help = "Add crate filter. Package spec `[registry:]name[@version]`. Registry and \
-                     name may contain `*`, registry matches the source folder name with or \
-                     without its hash suffix and version is a semver requirement (exact for a \
-                     full version) or a git revision prefix. Without any plain entry every crate \
-                     may be cleaned, otherwise only matching crates are cleaned. An entry \
-                     starting with `!` is never cleaned and wins over other entries",
+                     name may contain `*` (any characters) and `?` (one character), registry \
+                     matches the source folder name with or without its hash suffix and version \
+                     is a semver requirement (exact for a full version) or a git revision prefix. \
+                     Without any plain entry every crate may be cleaned, otherwise only matching \
+                     crates are cleaned. An entry starting with `!` is never cleaned and wins \
+                     over other entries",
         value_name = "spec"
     )]
     filter: Option<Vec<String>>,

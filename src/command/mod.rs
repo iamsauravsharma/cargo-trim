@@ -91,8 +91,8 @@ pub(crate) struct Command {
         help = "Ignore path while scanning for this run",
         long_help = "Ignore path while scanning for this run. A relative path matches trailing \
                      path components anywhere, an absolute path matches the full path and each \
-                     component may contain `*`. A folder holding `.cargo-trim-ignore` is always \
-                     skipped",
+                     component may contain `*` (any characters) and `?` (one character). A folder \
+                     holding `.cargo-trim-ignore` is always skipped",
         env = "TRIM_IGNORE",
         value_name = "path"
     )]
@@ -102,11 +102,12 @@ pub(crate) struct Command {
         short = 'f',
         help = "Add crate filter for this run",
         long_help = "Add crate filter for this run. Package spec `[registry:]name[@version]`. \
-                     Registry and name may contain `*`, registry matches the source folder name \
-                     with or without its hash suffix and version is a semver requirement (exact \
-                     for a full version) or a git revision prefix. Without any plain entry every \
-                     crate may be cleaned, otherwise only matching crates are cleaned. An entry \
-                     starting with `!` is never cleaned and wins over other entries",
+                     Registry and name may contain `*` (any characters) and `?` (one character), \
+                     registry matches the source folder name with or without its hash suffix and \
+                     version is a semver requirement (exact for a full version) or a git revision \
+                     prefix. Without any plain entry every crate may be cleaned, otherwise only \
+                     matching crates are cleaned. An entry starting with `!` is never cleaned and \
+                     wins over other entries",
         env = "TRIM_FILTER",
         value_name = "spec"
     )]
