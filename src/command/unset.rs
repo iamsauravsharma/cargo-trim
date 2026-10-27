@@ -2,29 +2,18 @@ use anyhow::Result;
 use clap::Parser;
 
 use crate::config_file::ConfigFile;
+/// Remove config values
 #[derive(Debug, Parser)]
-#[command(about = "Remove config values", arg_required_else_help = true)]
+#[command(arg_required_else_help = true)]
 pub(crate) struct Unset {
-    #[arg(
-        long = "directory",
-        short = 'd',
-        help = "Remove project directory",
-        value_name = "path"
-    )]
+    /// Remove project directory
+    #[arg(long, short, value_name = "path")]
     directory: Option<Vec<String>>,
-    #[arg(
-        long = "ignore",
-        short = 'i',
-        help = "Remove ignored path",
-        value_name = "path"
-    )]
+    /// Remove ignored path
+    #[arg(long, short, value_name = "path")]
     ignore: Option<Vec<String>>,
-    #[arg(
-        long = "filter",
-        short = 'f',
-        help = "Remove crate filter",
-        value_name = "spec"
-    )]
+    /// Remove crate filter
+    #[arg(long, short, value_name = "spec")]
     filter: Option<Vec<String>>,
 }
 

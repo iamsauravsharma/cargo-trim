@@ -3,7 +3,8 @@ use std::path::Path;
 
 use anyhow::{Context as _, Result};
 use clap::ValueEnum;
-use owo_colors::OwoColorize as _;
+
+use crate::color::Paint as _;
 
 #[derive(Clone, ValueEnum, Debug)]
 pub(super) enum GitCompress {
@@ -124,15 +125,16 @@ fn run_git_compress_commands(repo_path: &Path, dry_run: bool, is_aggressive: boo
         let mut commands = vec![
             // Pack unpacked objects in a repository
             (vec!["repack", "-a", "-d"], "Repack unpacked objects"),
-            // pack refs of branches/tags etc into one file know as pack-refs file for
-            // effective repo access
+            // pack refs of branches/tags etc into one file know as pack-refs
+            // file for effective repo access
             (
                 vec!["pack-refs", "--all", "--prune"],
                 "Packed refs and tags successfully",
             ),
             // Remove extra objects that are already in pack files
             (vec!["prune-packed"], "Prune packed objects"),
-            // Remove history of all checkout which will help in remove dangling commits
+            // Remove history of all checkout which will help in remove dangling
+            // commits
             (
                 vec![
                     "reflog",

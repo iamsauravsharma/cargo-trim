@@ -2,19 +2,19 @@ use std::path::Path;
 
 use anyhow::{Context as _, Result};
 use clap::Parser;
-use owo_colors::OwoColorize as _;
 
+use crate::color::Paint as _;
 use crate::config_file::ConfigFile;
 
+/// Show config file location or content
 #[derive(Debug, Parser)]
-#[command(
-    about = "Show config file location or content",
-    arg_required_else_help = true
-)]
+#[command(arg_required_else_help = true)]
 pub(crate) struct Config {
-    #[arg(long = "location", short = 'l', help = "Print config file location")]
+    /// Print config file location
+    #[arg(long, short)]
     location: bool,
-    #[arg(long = "print", short = 'p', help = "Print config file content")]
+    /// Print config file content
+    #[arg(long, short)]
     print: bool,
 }
 

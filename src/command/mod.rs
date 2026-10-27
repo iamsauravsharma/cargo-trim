@@ -3,12 +3,12 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context as _, Result};
 use clap::{Parser, ValueEnum};
-use owo_colors::OwoColorize as _;
 
 use self::utils::{
     confirm_orphan_clean, print_dash, print_removed, query_full_width, query_print,
     show_top_number_crates, source_name_max_width,
 };
+use crate::color::{ColorChoice, Paint as _};
 use crate::command::git::clean_git;
 use crate::command::registry::{clean_registry, clear_empty_index};
 use crate::command::target::{clean_all_target, query_size_target};
@@ -50,152 +50,101 @@ enum SubCommand {
 )]
 #[expect(clippy::struct_excessive_bools)]
 pub(crate) struct Command {
-    #[arg(
-        long = "all",
-        short = 'a',
-        help = "Clean all crates, empty indexes and target folders",
-        long_help = "Clean all crates, empty indexes and target folders. Removes registry and git \
-                     crates allowed by filter, then registry indexes left without crates, then \
-                     target folders of all projects after confirmation"
-    )]
+    /// Clean all crates, empty indexes and target folders
+    ///
+    /// Removes registry and git crates allowed by filter, then registry indexes
+    /// left without crates, then target folders of all projects after
+    /// confirmation
+    #[arg(long, short)]
     all: bool,
-    #[arg(
-        long = "directory",
-        short = 'd',
-        help = "Add project directory for this run",
-        env = "TRIM_DIRECTORY",
-        value_name = "path"
-    )]
+    /// When to color the output
+    #[arg(long, env = "TRIM_COLOR", value_enum, default_value_t = ColorChoice::Auto, global = true)]
+    color: ColorChoice,
+    /// Add project directory for this run
+    #[arg(long, short, env = "TRIM_DIRECTORY", value_name = "path")]
     directory: Option<Vec<String>>,
-    #[arg(
-        long = "dry-run",
-        short = 'n',
-        help = "Show what would be done without changing anything",
-        global = true
-    )]
+    /// Show what would be done without changing anything
+    #[arg(long, short = 'n', global = true)]
     dry_run: bool,
-    #[arg(
-        long = "gc",
-        short = 'g',
-        help = "Git compress cache repositories (needs git)",
-        long_help = "Git compress cache repositories (needs git). Run git repack, pack-refs, \
-                     prune-packed and reflog expire, aggressive kinds also run `git gc \
-                     --aggressive`",
-        value_enum,
-        value_name = "kind"
-    )]
+    /// Git compress cache repositories (needs git)
+    ///
+    /// Run git repack, pack-refs, prune-packed and reflog expire, aggressive
+    /// kinds also run `git gc --aggressive`
+    #[arg(long = "gc", short, value_enum, value_name = "kind")]
     git_compress: Option<Vec<gc::GitCompress>>,
-    #[arg(
-        long = "ignore",
-        short = 'i',
-        help = "Ignore path while scanning for this run",
-        long_help = "Ignore path while scanning for this run. A relative path matches trailing \
-                     path components anywhere, an absolute path matches the full path and each \
-                     component may contain `*` (any characters) and `?` (one character). A folder \
-                     holding `.cargo-trim-ignore` is always skipped",
-        env = "TRIM_IGNORE",
-        value_name = "path"
-    )]
+    /// Ignore path while scanning for this run
+    ///
+    /// A relative path matches trailing path components anywhere, an absolute
+    /// path matches the full path and each component may contain `*` (any
+    /// characters) and `?` (one character). A folder holding
+    /// `.cargo-trim-ignore` is always skipped
+    #[arg(long, short, env = "TRIM_IGNORE", value_name = "path")]
     ignore: Option<Vec<String>>,
-    #[arg(
-        long = "filter",
-        short = 'f',
-        help = "Add crate filter for this run",
-        long_help = "Add crate filter for this run. Package spec `[registry:]name[@version]`. \
-                     Registry and name may contain `*` (any characters) and `?` (one character), \
-                     registry matches the source folder name with or without its hash suffix and \
-                     version is a semver requirement (exact for a full version) or a git revision \
-                     prefix. Without any plain entry every crate may be cleaned, otherwise only \
-                     matching crates are cleaned. An entry starting with `!` is never cleaned and \
-                     wins over other entries",
-        env = "TRIM_FILTER",
-        value_name = "spec"
-    )]
+    /// Add crate filter for this run
+    ///
+    /// Package spec `[registry:]name[@version]`. Registry and name may contain
+    /// `*` (any characters) and `?` (one character), registry matches the
+    /// source folder name with or without its hash suffix and version is a
+    /// semver requirement (exact for a full version) or a git revision prefix.
+    /// Without any plain entry every crate may be cleaned, otherwise
+    /// only matching crates are cleaned. An entry starting with `!` is never
+    /// cleaned and wins over other entries
+    #[arg(long, short, env = "TRIM_FILTER", value_name = "spec")]
     filter: Option<Vec<String>>,
-    #[arg(
-        long = "light",
-        short = 'l',
-        help = "Remove sources but keep archives for offline builds",
-        long_help = "Remove sources but keep archives for offline builds. Removes registry \
-                     sources, index caches and git checkouts while registry archives and git db \
-                     stay so projects still build without internet"
-    )]
+    /// Remove sources but keep archives for offline builds
+    ///
+    /// Removes registry sources, index caches and git checkouts while registry
+    /// archives and git db stay so projects still build without internet
+    #[arg(long = "light", short)]
     light_cleanup: bool,
-    #[arg(
-        long = "old",
-        short = 'o',
-        help = "Clean old crates",
-        long_help = "Clean old crates. Older versions of registry crates which also have a newer \
-                     version, and git checkouts of revisions which are not the latest fetched one"
-    )]
+    /// Clean old crates
+    ///
+    /// Older versions of registry crates which also have a newer version, and
+    /// git checkouts of revisions which are not the latest fetched one
+    #[arg(long, short)]
     old: bool,
-    #[arg(
-        long = "old-orphan",
-        short = 'O',
-        help = "Clean crates which are both old and orphan"
-    )]
+    /// Clean crates which are both old and orphan
+    #[arg(long, short = 'O')]
     old_orphan: bool,
-    #[arg(
-        long = "orphan",
-        short = 'x',
-        help = "Clean orphan crates",
-        long_help = "Clean orphan crates. Crates not used by any Cargo.lock file in project \
-                     directories. Without any project directory every crate is orphan"
-    )]
+    /// Clean orphan crates
+    ///
+    /// Crates not used by any Cargo.lock file in project directories. Without
+    /// any project directory every crate is orphan
+    #[arg(long, short = 'x')]
     orphan: bool,
-    #[arg(
-        long = "query",
-        short = 'q',
-        help = "Show size of cache and target folders"
-    )]
+    /// Show size of cache and target folders
+    #[arg(long, short)]
     query: bool,
+    /// Scan hidden folders for this run
     #[arg(
-        long = "scan-hidden-folder",
+        long,
         short = 'H',
-        help = "Scan hidden folders for this run",
         env = "TRIM_SCAN_HIDDEN_FOLDER",
         value_name = "bool"
     )]
     scan_hidden_folder: Option<bool>,
+    /// Scan target folders for Cargo.lock files for this run
     #[arg(
-        long = "scan-target-folder",
+        long,
         short = 'T',
-        help = "Scan target folders for Cargo.lock files for this run",
         env = "TRIM_SCAN_TARGET_FOLDER",
         value_name = "bool"
     )]
     scan_target_folder: Option<bool>,
-    #[arg(
-        long = "stale-days",
-        short = 's',
-        help = "Days without change after which a project is stale for this run",
-        long_help = "Days without change after which a project is stale for this run. Projects \
-                     without any change for this many days are stale and their Cargo.lock files \
-                     no longer mark crates as used, 0 turns it off",
-        env = "TRIM_STALE_DAYS",
-        value_name = "days"
-    )]
+    /// Days without change after which a project is stale for this run
+    ///
+    /// Projects without any change for this many days are stale and their
+    /// Cargo.lock files no longer mark crates as used, 0 turns it off
+    #[arg(long, short, env = "TRIM_STALE_DAYS", value_name = "days")]
     stale_days: Option<u32>,
-    #[arg(
-        long = "top",
-        short = 't',
-        help = "Show given number of largest crates",
-        value_name = "number"
-    )]
+    /// Show given number of largest crates
+    #[arg(long, short, value_name = "number")]
     top: Option<usize>,
-    #[arg(
-        long = "update",
-        short = 'u',
-        help = "Run `cargo update` in every detected project"
-    )]
+    /// Run `cargo update` in every detected project
+    #[arg(long, short)]
     update: bool,
-    #[arg(
-        long = "wipe",
-        short = 'w',
-        help = "Delete whole cache folder",
-        value_enum,
-        value_name = "folder"
-    )]
+    /// Delete whole cache folder
+    #[arg(long, short, value_enum, value_name = "folder")]
     wipe: Option<Vec<Wipe>>,
     #[command(subcommand)]
     sub: Option<SubCommand>,
@@ -216,6 +165,7 @@ enum Wipe {
 impl Command {
     #[expect(clippy::too_many_lines)]
     pub(crate) fn run(&self) -> Result<()> {
+        self.color.apply();
         let dry_run = self.dry_run;
 
         // List all required path

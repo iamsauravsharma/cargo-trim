@@ -6,11 +6,11 @@ use std::path::{Component, Path, PathBuf};
 use std::time::{Duration, SystemTime};
 
 use anyhow::{Context as _, Result};
-use owo_colors::OwoColorize as _;
 use serde::{Deserialize, Serialize};
 use wildmatch::WildMatch;
 
 use crate::cargo_config;
+use crate::color::Paint as _;
 use crate::filter::CrateFilter;
 use crate::lock_file::CargoLockFiles;
 use crate::utils::modified_since;

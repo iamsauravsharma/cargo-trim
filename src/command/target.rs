@@ -3,44 +3,34 @@ use std::time::SystemTime;
 
 use anyhow::Result;
 use clap::Parser;
-use owo_colors::OwoColorize as _;
 
 use super::utils::{confirm_continue, print_dash, query_full_width, query_print};
+use crate::color::Paint as _;
 use crate::config_file::ConfigFile;
 use crate::remove::delete_folder;
 use crate::utils::{convert_pretty, get_size, modified_since};
 
+/// Operate only on target folders of projects
 #[derive(Debug, Parser)]
-#[command(
-    about = "Operate only on target folders of projects",
-    arg_required_else_help = true
-)]
+#[command(arg_required_else_help = true)]
 #[expect(clippy::struct_excessive_bools)]
 pub(crate) struct Target {
-    #[arg(
-        long = "all",
-        short = 'a',
-        help = "Clean target folders of all projects"
-    )]
+    /// Clean target folders of all projects
+    #[arg(long, short)]
     all: bool,
-    #[arg(long = "list", short = 'l', help = "List target folders with size")]
+    /// List target folders with size
+    #[arg(long, short)]
     list: bool,
-    #[arg(long = "query", short = 'q', help = "Show size of target folders")]
+    /// Show size of target folders
+    #[arg(long, short)]
     query: bool,
-    #[arg(
-        long = "stale",
-        short = 's',
-        help = "Clean target folders of stale projects",
-        long_help = "Clean target folders of stale projects. Projects without any change for \
-                     `stale_days` days"
-    )]
+    /// Clean target folders of stale projects
+    ///
+    /// Projects without any change for `stale_days` days
+    #[arg(long, short)]
     stale: bool,
-    #[arg(
-        long = "top",
-        short = 't',
-        help = "Show given number of largest target folders",
-        value_name = "number"
-    )]
+    /// Show given number of largest target folders
+    #[arg(long, short, value_name = "number")]
     top: Option<usize>,
 }
 

@@ -72,6 +72,7 @@ Commands:
 
 Options:
   -a, --all                        Clean all crates, empty indexes and target folders
+      --color <COLOR>              When to color the output [env: TRIM_COLOR=] [default: auto] [possible values: auto, always, never]
   -d, --directory <path>           Add project directory for this run [env: TRIM_DIRECTORY=]
   -n, --dry-run                    Show what would be done without changing anything
   -g, --gc <kind>                  Git compress cache repositories (needs git) [possible values: aggressive-checkout, aggressive-db, aggressive-index, checkout, db, index]

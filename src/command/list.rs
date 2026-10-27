@@ -1,51 +1,42 @@
 use clap::Parser;
-use owo_colors::OwoColorize as _;
 
 use super::utils::{NO_DIRECTORY_WARNING, crate_list_type, crate_name_max_width};
+use crate::color::Paint as _;
 use crate::list_crate::{CrateList, Selection};
 
+/// List crates and projects
 #[derive(Debug, Parser)]
-#[command(about = "List crates and projects", arg_required_else_help = true)]
+#[command(arg_required_else_help = true)]
 #[expect(clippy::struct_excessive_bools)]
 pub(crate) struct List {
-    #[arg(long = "all", short = 'a', help = "List all installed crates")]
+    /// List all installed crates
+    #[arg(long, short)]
     all: bool,
-    #[arg(
-        long = "kept",
-        short = 'k',
-        help = "List crates kept by filter",
-        long_help = "List crates kept by filter. Crates which no clean command removes because of \
-                     an entry starting with `!` or because they match no plain entry of filter"
-    )]
+    /// List crates kept by filter
+    ///
+    /// Crates which no clean command removes because of an entry starting with
+    /// `!` or because they match no plain entry of filter
+    #[arg(long, short)]
     kept: bool,
-    #[arg(
-        long = "old",
-        short = 'o',
-        help = "List old crates",
-        long_help = "List old crates. Older versions of registry crates which also have a newer \
-                     version, and git checkouts of revisions which are not the latest fetched one"
-    )]
+    /// List old crates
+    ///
+    /// Older versions of registry crates which also have a newer version, and
+    /// git checkouts of revisions which are not the latest fetched one
+    #[arg(long, short)]
     old: bool,
-    #[arg(
-        long = "old-orphan",
-        short = 'O',
-        help = "List crates which are both old and orphan"
-    )]
+    /// List crates which are both old and orphan
+    #[arg(long, short = 'O')]
     old_orphan: bool,
-    #[arg(
-        long = "orphan",
-        short = 'x',
-        help = "List orphan crates",
-        long_help = "List orphan crates. Crates not used by any Cargo.lock file in project \
-                     directories. Without any project directory every crate is orphan"
-    )]
+    /// List orphan crates
+    ///
+    /// Crates not used by any Cargo.lock file in project directories. Without
+    /// any project directory every crate is orphan
+    #[arg(long, short = 'x')]
     orphan: bool,
-    #[arg(
-        long = "project",
-        short = 'p',
-        help = "List detected projects",
-        long_help = "List detected projects. List directories holding a scanned Cargo.lock file"
-    )]
+    /// List detected projects
+    ///
+    /// List directories holding a scanned Cargo.lock file
+    #[arg(long, short)]
     project: bool,
 }
 

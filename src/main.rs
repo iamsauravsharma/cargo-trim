@@ -1,4 +1,5 @@
 mod cargo_config;
+mod color;
 mod command;
 mod config_file;
 mod dir_path;

@@ -2,8 +2,8 @@ use std::path::{Path, PathBuf};
 use std::{fs, io};
 
 use anyhow::{Context as _, Result};
-use owo_colors::OwoColorize as _;
 
+use crate::color::Paint as _;
 use crate::installed::CrateMetaData;
 
 /// delete file or folder, printing it under dry run

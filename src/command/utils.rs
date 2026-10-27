@@ -2,8 +2,8 @@ use std::io::Write as _;
 use std::path::Path;
 
 use anyhow::{Context as _, Result};
-use owo_colors::OwoColorize as _;
 
+use crate::color::Paint as _;
 use crate::installed::{CrateMetaData, Sources};
 use crate::utils::convert_pretty;
 

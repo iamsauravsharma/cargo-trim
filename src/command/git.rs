@@ -13,48 +13,36 @@ use crate::installed::{CrateMetaData, Sources};
 use crate::list_crate::{CrateList, Selection};
 use crate::remove::{delete_folder, remove_git_crates};
 use crate::utils::{convert_pretty, get_size};
+/// Operate only on git cache
 #[derive(Debug, Parser)]
-#[command(about = "Operate only on git cache", arg_required_else_help = true)]
+#[command(arg_required_else_help = true)]
 #[expect(clippy::struct_excessive_bools)]
 pub(crate) struct Git {
-    #[arg(long = "all", short = 'a', help = "Clean all git crates")]
+    /// Clean all git crates
+    #[arg(long, short)]
     all: bool,
-    #[arg(
-        long = "light",
-        short = 'l',
-        help = "Remove git checkouts but keep git db"
-    )]
+    /// Remove git checkouts but keep git db
+    #[arg(long = "light", short)]
     light_cleanup: bool,
-    #[arg(
-        long = "old",
-        short = 'o',
-        help = "Clean old git crates",
-        long_help = "Clean old git crates. Git checkouts of revisions which are not the latest \
-                     fetched one"
-    )]
+    /// Clean old git crates
+    ///
+    /// Git checkouts of revisions which are not the latest fetched one
+    #[arg(long, short)]
     old: bool,
-    #[arg(
-        long = "old-orphan",
-        short = 'O',
-        help = "Clean git crates which are both old and orphan"
-    )]
+    /// Clean git crates which are both old and orphan
+    #[arg(long, short = 'O')]
     old_orphan: bool,
-    #[arg(
-        long = "orphan",
-        short = 'x',
-        help = "Clean orphan git crates",
-        long_help = "Clean orphan git crates. Crates not used by any Cargo.lock file in project \
-                     directories. Without any project directory every crate is orphan"
-    )]
+    /// Clean orphan git crates
+    ///
+    /// Crates not used by any Cargo.lock file in project directories. Without
+    /// any project directory every crate is orphan
+    #[arg(long, short = 'x')]
     orphan: bool,
-    #[arg(long = "query", short = 'q', help = "Show size of git cache")]
+    /// Show size of git cache
+    #[arg(long, short)]
     query: bool,
-    #[arg(
-        long = "top",
-        short = 't',
-        help = "Show given number of largest git crates",
-        value_name = "number"
-    )]
+    /// Show given number of largest git crates
+    #[arg(long, short, value_name = "number")]
     top: Option<usize>,
 }
 
