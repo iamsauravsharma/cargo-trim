@@ -1,32 +1,30 @@
-use std::collections::HashSet;
-use std::path::{Path, PathBuf};
+use anyhow::Result;
+use clap::{Args, Parser, ValueEnum};
 
-use anyhow::{Context as _, Result};
-use clap::{Parser, ValueEnum};
-
-use self::utils::{
-    confirm_orphan_clean, print_dash, print_removed, query_full_width, query_print,
-    show_top_number_crates, source_name_max_width,
-};
+use self::clean::{Cache, CrateSelection, clean_crates, light_cleanup};
+use self::utils::{query_full_width, query_print, source_name_max_width};
 use crate::color::{ColorChoice, Paint as _};
-use crate::command::git::clean_git;
-use crate::command::registry::{clean_registry, clear_empty_index};
-use crate::command::target::{clean_all_target, query_size_target};
+use crate::command::registry::clear_empty_index;
+use crate::command::target::clean_all_target;
 use crate::config_file::ConfigFile;
 use crate::dir_path::DirPath;
 use crate::installed::Sources;
 use crate::list_crate::{CrateList, Selection};
-use crate::remove::{RegistryDir, delete_folder, delete_index_cache};
-use crate::utils::{convert_pretty, get_inode_handled_size};
+use crate::output::{self, outcome, verbose};
+use crate::remove::{RegistryDir, delete_index_cache, remove_path};
 
+mod clean;
 mod config;
 mod gc;
 mod git;
 mod list;
+mod query;
 mod registry;
 mod set;
 mod target;
+mod top;
 mod unset;
+mod update;
 mod utils;
 
 #[derive(Debug, Parser)]
@@ -35,9 +33,90 @@ enum SubCommand {
     Set(set::Set),
     Unset(unset::Unset),
     List(list::List),
+    Query(query::Query),
+    Top(top::Top),
+    Gc(gc::Gc),
+    Update(update::Update),
     Git(git::Git),
     Registry(registry::Registry),
     Target(target::Target),
+}
+
+/// Output flags shared by every command
+#[derive(Debug, Args)]
+struct OutputArgs {
+    /// Hide progress lines, only results, warnings and errors are printed
+    #[arg(
+        long,
+        short,
+        env = "TRIM_QUIET",
+        global = true,
+        conflicts_with = "verbose"
+    )]
+    quiet: bool,
+    /// Print details to standard error
+    ///
+    /// Prints used settings, found Cargo.lock files, skipped folders, every
+    /// removed path and executed commands
+    #[arg(long, short, env = "TRIM_VERBOSE", global = true)]
+    verbose: bool,
+}
+
+/// Dry run flag of every command which changes something
+#[derive(Debug, Args)]
+pub(super) struct DryRun {
+    /// Show what would be done without changing anything
+    #[arg(long = "dry-run", short = 'n')]
+    pub(super) enabled: bool,
+}
+
+impl SubCommand {
+    fn run(
+        &self,
+        dir_path: &DirPath,
+        config_file: &mut ConfigFile,
+        sources: &Sources,
+        crate_list: &CrateList,
+        registry_dir: &mut RegistryDir,
+    ) -> Result<()> {
+        let directory_is_empty = config_file.directory().is_empty();
+        match self {
+            Self::Config(config) => config.run(config_file, dir_path.config_file())?,
+            Self::List(list) => {
+                let max_width = source_name_max_width(sources);
+                list.run(crate_list, max_width, directory_is_empty);
+            }
+            Self::Query(query) => query.run(dir_path, crate_list, config_file)?,
+            Self::Top(top) => top.run(crate_list, sources, config_file)?,
+            Self::Gc(gc) => gc.run(dir_path)?,
+            Self::Update(update) => update.run(crate_list.cargo_lock_files().paths())?,
+            Self::Set(set) => set.run(config_file)?,
+            Self::Unset(unset) => unset.run(config_file)?,
+            Self::Git(git) => {
+                git.run(dir_path, crate_list, registry_dir, directory_is_empty)?;
+            }
+            Self::Registry(registry) => {
+                registry.run(dir_path, crate_list, registry_dir, directory_is_empty)?;
+            }
+            Self::Target(target) => target.run(config_file)?,
+        }
+        Ok(())
+    }
+
+    /// whether subcommand is asked for dry run, only subcommands which change
+    /// something accept it
+    fn dry_run(&self) -> bool {
+        match self {
+            Self::Config(_) | Self::List(_) | Self::Query(_) | Self::Top(_) => false,
+            Self::Set(set) => set.dry_run.enabled,
+            Self::Unset(unset) => unset.dry_run.enabled,
+            Self::Git(git) => git.dry_run.enabled,
+            Self::Registry(registry) => registry.dry_run.enabled,
+            Self::Target(target) => target.dry_run.enabled,
+            Self::Gc(gc) => gc.dry_run.enabled,
+            Self::Update(update) => update.dry_run.enabled,
+        }
+    }
 }
 
 #[derive(Debug, Parser)]
@@ -48,7 +127,6 @@ enum SubCommand {
     author=clap::crate_authors!(),
     about=clap::crate_description!()
 )]
-#[expect(clippy::struct_excessive_bools)]
 pub(crate) struct Command {
     /// Clean all crates, empty indexes and target folders
     ///
@@ -58,20 +136,20 @@ pub(crate) struct Command {
     #[arg(long, short)]
     all: bool,
     /// When to color the output
-    #[arg(long, env = "TRIM_COLOR", value_enum, default_value_t = ColorChoice::Auto, global = true)]
+    #[arg(
+        long,
+        short,
+        env = "TRIM_COLOR",
+        value_enum,
+        default_value_t = ColorChoice::Auto,
+        global = true
+    )]
     color: ColorChoice,
     /// Add project directory for this run
     #[arg(long, short, env = "TRIM_DIRECTORY", value_name = "path")]
     directory: Option<Vec<String>>,
-    /// Show what would be done without changing anything
-    #[arg(long, short = 'n', global = true)]
-    dry_run: bool,
-    /// Git compress cache repositories (needs git)
-    ///
-    /// Run git repack, pack-refs, prune-packed and reflog expire, aggressive
-    /// kinds also run `git gc --aggressive`
-    #[arg(long = "gc", short, value_enum, value_name = "kind")]
-    git_compress: Option<Vec<gc::GitCompress>>,
+    #[command(flatten)]
+    dry_run: DryRun,
     /// Ignore path while scanning for this run
     ///
     /// A relative path matches trailing path components anywhere, an absolute
@@ -97,24 +175,10 @@ pub(crate) struct Command {
     /// archives and git db stay so projects still build without internet
     #[arg(long = "light", short)]
     light_cleanup: bool,
-    /// Clean old crates
-    ///
-    /// Older versions of registry crates which also have a newer version, and
-    /// git checkouts of revisions which are not the latest fetched one
-    #[arg(long, short)]
-    old: bool,
-    /// Clean crates which are both old and orphan
-    #[arg(long, short = 'O')]
-    old_orphan: bool,
-    /// Clean orphan crates
-    ///
-    /// Crates not used by any Cargo.lock file in project directories. Without
-    /// any project directory every crate is orphan
-    #[arg(long, short = 'x')]
-    orphan: bool,
-    /// Show size of cache and target folders
-    #[arg(long, short)]
-    query: bool,
+    #[command(flatten)]
+    selection: CrateSelection,
+    #[command(flatten)]
+    output: OutputArgs,
     /// Scan hidden folders for this run
     #[arg(
         long,
@@ -137,12 +201,6 @@ pub(crate) struct Command {
     /// Cargo.lock files no longer mark crates as used, 0 turns it off
     #[arg(long, short, env = "TRIM_STALE_DAYS", value_name = "days")]
     stale_days: Option<u32>,
-    /// Show given number of largest crates
-    #[arg(long, short, value_name = "number")]
-    top: Option<usize>,
-    /// Run `cargo update` in every detected project
-    #[arg(long, short)]
-    update: bool,
     /// Delete whole cache folder
     #[arg(long, short, value_enum, value_name = "folder")]
     wipe: Option<Vec<Wipe>>,
@@ -163,303 +221,129 @@ enum Wipe {
 }
 
 impl Command {
-    #[expect(clippy::too_many_lines)]
     pub(crate) fn run(&self) -> Result<()> {
         self.color.apply();
-        let dry_run = self.dry_run;
+        // dry run of main command also covers its subcommand, set once here and
+        // read everywhere through `output::is_dry_run`
+        output::set(
+            self.dry_run.enabled || self.sub.as_ref().is_some_and(SubCommand::dry_run),
+            self.output.quiet,
+            self.output.verbose,
+        );
 
-        // List all required path
         let dir_path = DirPath::new()?;
-
-        // Read config file data
+        verbose!("Using config file {}", dir_path.config_file().display());
         let mut config_file = ConfigFile::init(dir_path.config_file())?;
-
-        // Apply CLI overrides to config before building crate lists so that
-        // the current invocation uses the updated settings.
-        if let Some(directories) = &self.directory {
-            for directory in directories {
-                config_file.add_directory(directory, dry_run, false)?;
-            }
-        }
-        if let Some(ignores) = &self.ignore {
-            for ignore in ignores {
-                let ignore = ignore.trim_end_matches(std::path::MAIN_SEPARATOR);
-                config_file.add_ignore(ignore, dry_run, false)?;
-            }
-        }
-        if let Some(filters) = &self.filter {
-            for filter in filters {
-                config_file.add_filter(filter, dry_run, false)?;
-            }
-        }
-        if let Some(scan_hidden_folder) = self.scan_hidden_folder {
-            config_file.set_scan_hidden_folder(scan_hidden_folder, dry_run, false)?;
-        }
-        if let Some(scan_target_folder) = self.scan_target_folder {
-            config_file.set_scan_target_folder(scan_target_folder, dry_run, false)?;
-        }
-        if let Some(stale_days) = self.stale_days {
-            config_file.set_stale_days(stale_days, dry_run, false)?;
-        }
+        // apply before building crate list so this run uses the overrides
+        self.apply_overrides(&mut config_file)?;
+        verbose!("Project directories: {:?}", config_file.directory());
 
         let sources = Sources::new(dir_path.index_dir(), dir_path.db_dir())?;
-
-        // List crates (uses the already-mutated config)
         let crate_list = CrateList::create_list(&dir_path, &config_file, &sources)?;
+        verbose!(
+            "Found {} Cargo.lock file(s), {} registry and {} git crate(s) installed",
+            crate_list.cargo_lock_files().paths().len(),
+            crate_list.registry(Selection::Installed).len(),
+            crate_list.git(Selection::Installed).len(),
+        );
 
-        if let Some(values) = &self.git_compress {
-            for value in values {
-                gc::git_compress(
-                    value,
-                    dir_path.index_dir(),
-                    dir_path.checkout_dir(),
-                    dir_path.db_dir(),
-                    dry_run,
-                )?;
-            }
-        }
+        self.run_maintenance(&dir_path);
 
-        if self.light_cleanup {
-            light_cleanup(
-                dir_path.checkout_dir(),
-                dir_path.src_dir(),
-                dir_path.index_dir(),
-                dry_run,
-            );
-        }
-
-        if let Some(wipes) = &self.wipe {
-            for wipe in wipes {
-                wipe_directory(wipe, &dir_path, dry_run);
-            }
-        }
-
-        if let Some(number) = self.top {
-            top_crates(&crate_list, &sources, number);
-        }
-
-        if self.update {
-            let cargo_lock_files = crate_list.cargo_lock_files().paths();
-            run_cargo_update_command(cargo_lock_files, dry_run)?;
-        }
-
-        if self.query {
-            query_size(&dir_path, &crate_list, &config_file)?;
-        }
-
-        let mut registry_crates_location = RegistryDir::new(
+        // read registry index caches only after maintenance which may remove
+        // them
+        let mut registry_dir = RegistryDir::new(
             dir_path.index_dir(),
             &crate_list.registry(Selection::Installed),
         )?;
-
-        let directory_is_empty = config_file.directory().is_empty();
-
-        if self.old {
-            clean_crates(
-                "old crates",
-                &mut registry_crates_location,
-                &crate_list,
-                Selection::Old,
-                dry_run,
-            )?;
-        }
-
-        if self.old_orphan && confirm_orphan_clean(directory_is_empty, dry_run)? {
-            clean_crates(
-                "old orphan crates",
-                &mut registry_crates_location,
-                &crate_list,
-                Selection::OldOrphan,
-                dry_run,
-            )?;
-        }
-
-        if self.orphan && confirm_orphan_clean(directory_is_empty, dry_run)? {
-            clean_crates(
-                "orphan crates",
-                &mut registry_crates_location,
-                &crate_list,
-                Selection::Orphan,
-                dry_run,
-            )?;
-        }
-
-        if self.all {
-            clean_crates(
-                "crates",
-                &mut registry_crates_location,
-                &crate_list,
-                Selection::All,
-                dry_run,
-            )?;
-            clear_empty_index(&dir_path, &crate_list, dry_run)?;
-            clean_all_target(&config_file, dry_run)?;
-        }
+        self.run_clean(&dir_path, &config_file, &crate_list, &mut registry_dir)?;
 
         if let Some(sub_command) = &self.sub {
-            match &sub_command {
-                SubCommand::Config(config) => config.run(&config_file, dir_path.config_file())?,
-                SubCommand::List(list) => {
-                    let max_width = source_name_max_width(&sources);
-                    list.run(&crate_list, max_width, directory_is_empty);
-                }
-                SubCommand::Set(set) => set.run(&mut config_file, dry_run)?,
-                SubCommand::Unset(unset) => unset.run(&mut config_file, dry_run)?,
-                SubCommand::Git(git) => {
-                    git.run(
-                        &dir_path,
-                        &crate_list,
-                        &sources,
-                        directory_is_empty,
-                        dry_run,
-                    )?;
-                }
-                SubCommand::Target(target) => target.run(&config_file, dry_run)?,
-                SubCommand::Registry(registry) => {
-                    registry.run(
-                        &dir_path,
-                        &crate_list,
-                        &sources,
-                        &mut registry_crates_location,
-                        directory_is_empty,
-                        dry_run,
-                    )?;
-                }
-            }
+            sub_command.run(
+                &dir_path,
+                &mut config_file,
+                &sources,
+                &crate_list,
+                &mut registry_dir,
+            )?;
         }
+        Ok(())
+    }
 
+    /// apply config values given for this run only
+    fn apply_overrides(&self, config_file: &mut ConfigFile) -> Result<()> {
+        for directory in self.directory.iter().flatten() {
+            config_file.add_directory(directory, false)?;
+        }
+        for ignore in self.ignore.iter().flatten() {
+            config_file.add_ignore(ignore.trim_end_matches(std::path::MAIN_SEPARATOR), false)?;
+        }
+        for filter in self.filter.iter().flatten() {
+            config_file.add_filter(filter, false)?;
+        }
+        if let Some(scan_hidden_folder) = self.scan_hidden_folder {
+            config_file.set_scan_hidden_folder(scan_hidden_folder, false)?;
+        }
+        if let Some(scan_target_folder) = self.scan_target_folder {
+            config_file.set_scan_target_folder(scan_target_folder, false)?;
+        }
+        if let Some(stale_days) = self.stale_days {
+            config_file.set_stale_days(stale_days, false)?;
+        }
+        Ok(())
+    }
+
+    /// light cleanup and wipe
+    fn run_maintenance(&self, dir_path: &DirPath) {
+        if self.light_cleanup {
+            light_cleanup(Cache::Every, dir_path);
+        }
+        for wipe in self.wipe.iter().flatten() {
+            wipe_directory(wipe, dir_path);
+        }
+    }
+
+    /// clean chosen crates, and with `--all` also empty indexes and target
+    /// folders
+    fn run_clean(
+        &self,
+        dir_path: &DirPath,
+        config_file: &ConfigFile,
+        crate_list: &CrateList,
+        registry_dir: &mut RegistryDir,
+    ) -> Result<()> {
+        let directory_is_empty = config_file.directory().is_empty();
+        self.selection
+            .clean(Cache::Every, registry_dir, crate_list, directory_is_empty)?;
+        if self.all {
+            clean_crates(Cache::Every, "", registry_dir, crate_list, Selection::All)?;
+            clear_empty_index(dir_path, crate_list)?;
+            clean_all_target(config_file)?;
+        }
         Ok(())
     }
 }
 
-// light cleanup registry directory
-fn light_cleanup(checkout_dir: &Path, src_dir: &Path, index_dir: &Path, dry_run: bool) {
-    let mut light_cleanup_success = true;
-    // light cleanup registry
-    light_cleanup_success =
-        registry::light_cleanup_registry(src_dir, index_dir, dry_run) && light_cleanup_success;
-    // light cleanup git
-    light_cleanup_success = git::light_cleanup_git(checkout_dir, dry_run) && light_cleanup_success;
-    if !light_cleanup_success {
-        println!("failed to delete some folder during light cleanup");
-    }
-}
-
 // wipe certain directory
-fn wipe_directory(wipe: &Wipe, dir_path: &DirPath, dry_run: bool) {
-    let has_failed = match wipe {
-        Wipe::Git => delete_folder(dir_path.git_dir(), dry_run),
-        Wipe::Checkouts => delete_folder(dir_path.checkout_dir(), dry_run),
-        Wipe::Db => delete_folder(dir_path.db_dir(), dry_run),
-        Wipe::Registry => delete_folder(dir_path.registry_dir(), dry_run),
-        Wipe::Cache => delete_folder(dir_path.cache_dir(), dry_run),
-        Wipe::Index => delete_folder(dir_path.index_dir(), dry_run),
-        Wipe::IndexCache => delete_index_cache(dir_path.index_dir(), dry_run),
-        Wipe::Src => delete_folder(dir_path.src_dir(), dry_run),
-    }
-    .is_err();
+fn wipe_directory(wipe: &Wipe, dir_path: &DirPath) {
+    // a wiped folder is printed once below, its path only with verbose output
+    let path = match wipe {
+        Wipe::Git => Some(dir_path.git_dir()),
+        Wipe::Checkouts => Some(dir_path.checkout_dir()),
+        Wipe::Db => Some(dir_path.db_dir()),
+        Wipe::Registry => Some(dir_path.registry_dir()),
+        Wipe::Cache => Some(dir_path.cache_dir()),
+        Wipe::Index => Some(dir_path.index_dir()),
+        Wipe::Src => Some(dir_path.src_dir()),
+        // index caches are spread over every registry
+        Wipe::IndexCache => None,
+    };
+    let has_failed = match path {
+        Some(path) => remove_path(path).is_err(),
+        None => delete_index_cache(dir_path.index_dir()).is_err(),
+    };
     if has_failed {
         println!("Failed to remove {wipe:?} directory");
     } else {
-        println!("{} {wipe:?} directory", "Removed".red());
+        outcome!("{} {wipe:?} directory", "Removed".red());
     }
-}
-
-fn run_cargo_update_command(cargo_lock_files: &[PathBuf], dry_run: bool) -> Result<()> {
-    for lock_file in cargo_lock_files {
-        let Some(location) = lock_file.parent() else {
-            anyhow::bail!(
-                "cannot get parent directory of Cargo.lock file {}",
-                lock_file.display()
-            );
-        };
-        let location_str = location.display();
-        if dry_run {
-            println!(
-                "{} Updating project at \"{}\"",
-                "Dry run:".yellow(),
-                location_str
-            );
-            // in dry run mode we will not actually update the cargo lock file
-            // but we will run cargo update command in dry run mode
-            if !std::process::Command::new("cargo")
-                .arg("update")
-                .current_dir(location)
-                .arg("--dry-run")
-                .status()
-                .context("failed to run cargo update command in dry run mode")?
-                .success()
-            {
-                return Err(anyhow::anyhow!(
-                    "Failed to update {location_str} in dry run mode"
-                ));
-            }
-        } else {
-            println!("Updating project at {}", location_str.blue());
-            if !std::process::Command::new("cargo")
-                .arg("update")
-                .current_dir(location)
-                .status()
-                .context("failed to run cargo update command")?
-                .success()
-            {
-                return Err(anyhow::anyhow!("Failed to update {location_str}"));
-            }
-        }
-    }
-    println!("{}", "Successfully updated all dependencies".blue());
-    Ok(())
-}
-
-// show top n crates
-fn top_crates(crate_list: &CrateList, sources: &Sources, number: usize) {
-    let max_width = source_name_max_width(sources);
-    show_top_number_crates(crate_list.bin(), "bin", max_width, number);
-    registry::top_crates_registry(crate_list, max_width, number);
-    git::top_crates_git(crate_list, max_width, number);
-}
-
-// query size of directory of cargo home folder provide some valuable size
-// information
-fn query_size(dir_path: &DirPath, crate_list: &CrateList, config_file: &ConfigFile) -> Result<()> {
-    let mut final_size = 0_u64;
-    let bin_dir_size =
-        get_inode_handled_size(dir_path.bin_dir(), &mut HashSet::new()).unwrap_or(0_u64);
-    final_size += bin_dir_size;
-    query_print(
-        &format!(
-            "Total size of {} .cargo/bin binary:",
-            crate_list.bin().len()
-        ),
-        &convert_pretty(bin_dir_size),
-    );
-    print_dash(query_full_width());
-    final_size += registry::query_size_registry(dir_path, crate_list);
-    final_size += git::query_size_git(dir_path, crate_list);
-    query_print("Total size", &convert_pretty(final_size));
-    print_dash(query_full_width());
-    query_size_target(config_file)?;
-    Ok(())
-}
-
-// Clean registry and git crates of selection and print total removed
-fn clean_crates(
-    label: &str,
-    registry_crates_location: &mut RegistryDir,
-    crate_list: &CrateList,
-    selection: Selection,
-    dry_run: bool,
-) -> Result<()> {
-    let (registry_size, registry_count) = clean_registry(
-        registry_crates_location,
-        &crate_list.registry(selection),
-        dry_run,
-    )?;
-    let (git_size, git_count) = clean_git(&crate_list.git(selection), dry_run);
-    print_removed(
-        label,
-        (registry_size + git_size, registry_count + git_count),
-        crate_list.registry_kept(selection) + crate_list.git_kept(selection),
-    );
-    Ok(())
 }

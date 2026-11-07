@@ -42,3 +42,12 @@ pub(crate) trait Paint: Display + Sized {
 }
 
 impl<T: Display> Paint for T {}
+
+/// Colors text for standard error, following the chosen [`ColorChoice`]
+pub(crate) trait PaintErr: Display + Sized {
+    fn dimmed(&self) -> impl Display + '_ {
+        self.if_supports_color(Stream::Stderr, |text| OwoColorize::dimmed(text))
+    }
+}
+
+impl<T: Display> PaintErr for T {}
