@@ -4,55 +4,41 @@ use std::time::SystemTime;
 use anyhow::Result;
 use clap::Parser;
 
-use super::utils::{confirm_continue, print_dash, query_full_width, query_print};
+use super::DryRun;
+use super::utils::{confirm_continue, query_print};
 use crate::color::Paint as _;
 use crate::config_file::ConfigFile;
+use crate::output::{is_dry_run, outcome};
 use crate::remove::delete_folder;
 use crate::utils::{convert_pretty, get_size, modified_since};
 
 /// Operate only on target folders of projects
 #[derive(Debug, Parser)]
 #[command(arg_required_else_help = true)]
-#[expect(clippy::struct_excessive_bools)]
 pub(crate) struct Target {
     /// Clean target folders of all projects
     #[arg(long, short)]
     all: bool,
+    #[command(flatten)]
+    pub(super) dry_run: DryRun,
     /// List target folders with size
     #[arg(long, short)]
     list: bool,
-    /// Show size of target folders
-    #[arg(long, short)]
-    query: bool,
     /// Clean target folders of stale projects
     ///
     /// Projects without any change for `stale_days` days
     #[arg(long, short)]
     stale: bool,
-    /// Show given number of largest target folders
-    #[arg(long, short, value_name = "number")]
-    top: Option<usize>,
 }
 
 impl Target {
-    pub(super) fn run(&self, config_file: &ConfigFile, dry_run: bool) -> Result<()> {
+    pub(super) fn run(&self, config_file: &ConfigFile) -> Result<()> {
         if self.list {
             print_target(&sized_target(config_file)?, "Total target folder");
         }
 
-        if let Some(number) = self.top {
-            let mut sized = sized_target(config_file)?;
-            sized.truncate(number);
-            print_target(&sized, &format!("Top {number} target folder"));
-        }
-
-        if self.query {
-            query_size_target(config_file)?;
-            print_dash(query_full_width());
-        }
-
         if self.all {
-            clean_all_target(config_file, dry_run)?;
+            clean_all_target(config_file)?;
         }
 
         if self.stale {
@@ -64,17 +50,25 @@ impl Target {
                 return Ok(());
             };
             let target_dirs = collect(config_file, Some(cutoff))?;
-            clean_target(&target_dirs, "stale target folder", dry_run)?;
+            clean_target(&target_dirs, "stale target folder")?;
         }
 
         Ok(())
     }
 }
 
+/// show given number of largest target folders
+pub(super) fn top_target(config_file: &ConfigFile, number: usize) -> Result<()> {
+    let mut sized = sized_target(config_file)?;
+    sized.truncate(number);
+    print_target(&sized, &format!("Top {number} target folder"));
+    Ok(())
+}
+
 /// clean target folder of all rust project
-pub(super) fn clean_all_target(config_file: &ConfigFile, dry_run: bool) -> Result<()> {
+pub(super) fn clean_all_target(config_file: &ConfigFile) -> Result<()> {
     let target_dirs = collect(config_file, None)?;
-    clean_target(&target_dirs, "target folder", dry_run)
+    clean_target(&target_dirs, "target folder")
 }
 
 fn collect(config_file: &ConfigFile, only_stale_since: Option<SystemTime>) -> Result<Vec<PathBuf>> {
@@ -152,12 +146,12 @@ pub(super) fn query_size_target(config_file: &ConfigFile) -> Result<u64> {
     Ok(total)
 }
 
-fn clean_target(target_dirs: &[PathBuf], label: &str, dry_run: bool) -> Result<()> {
+fn clean_target(target_dirs: &[PathBuf], label: &str) -> Result<()> {
     if target_dirs.is_empty() {
         println!("No {label} found");
         return Ok(());
     }
-    if !dry_run {
+    if !is_dry_run() {
         let warning_text = format!(
             "WARNING: {} {label}(s) will be deleted. Those projects will be compiled from scratch \
              the next time they are built",
@@ -171,14 +165,14 @@ fn clean_target(target_dirs: &[PathBuf], label: &str, dry_run: bool) -> Result<(
     let mut removed = 0;
     for target_dir in target_dirs {
         let size = get_size(target_dir).unwrap_or(0);
-        if delete_folder(target_dir, dry_run).is_ok() {
+        if delete_folder(target_dir).is_ok() {
             sized_cleaned += size;
             removed += 1;
         } else {
             println!("Failed to remove {}", target_dir.display());
         }
     }
-    println!(
+    outcome!(
         "{}",
         format!(
             "{removed} {label}(s) removed which had occupied {}",

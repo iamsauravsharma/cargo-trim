@@ -1,52 +1,33 @@
 use std::ffi::OsStr;
 use std::fs;
-use std::path::Path;
 
 use anyhow::{Context as _, Result};
 use clap::Parser;
 
-use super::utils::{
-    confirm_orphan_clean, count_in, print_dash, print_removed, query_full_width, query_print,
-    show_top_number_crates, source_name_max_width,
-};
+use super::DryRun;
+use super::clean::{Cache, CrateSelection, clean_crates, light_cleanup};
+use super::utils::{count_in, print_dash, query_full_width, query_print};
 use crate::color::Paint as _;
 use crate::dir_path::DirPath;
-use crate::installed::{CrateMetaData, Sources};
 use crate::list_crate::{CrateList, Selection};
-use crate::remove::{RegistryDir, delete_folder, delete_index_cache};
+use crate::output::info;
+use crate::remove::{RegistryDir, remove_path};
 use crate::utils::{convert_pretty, get_size};
 
 /// Operate only on registry cache
 #[derive(Debug, Parser)]
 #[command(arg_required_else_help = true)]
-#[expect(clippy::struct_excessive_bools)]
 pub(crate) struct Registry {
     /// Clean all registry crates and empty indexes
     #[arg(long, short)]
     all: bool,
+    #[command(flatten)]
+    pub(super) dry_run: DryRun,
     /// Remove registry sources and index caches but keep archives
     #[arg(long = "light", short)]
     light_cleanup: bool,
-    /// Clean old registry crates
-    ///
-    /// Older versions of crates which also have a newer version
-    #[arg(long, short)]
-    old: bool,
-    /// Clean registry crates which are both old and orphan
-    #[arg(long, short = 'O')]
-    old_orphan: bool,
-    /// Clean orphan registry crates
-    ///
-    /// Crates not used by any Cargo.lock file in project directories. Without
-    /// any project directory every crate is orphan
-    #[arg(long, short = 'x')]
-    orphan: bool,
-    /// Show size of registry cache
-    #[arg(long, short)]
-    query: bool,
-    /// Show given number of largest registry crates
-    #[arg(long, short, value_name = "number")]
-    top: Option<usize>,
+    #[command(flatten)]
+    selection: CrateSelection,
 }
 
 impl Registry {
@@ -54,98 +35,35 @@ impl Registry {
         &self,
         dir_path: &DirPath,
         crate_list: &CrateList,
-        sources: &Sources,
-        registry_crates_location: &mut RegistryDir,
+        registry_dir: &mut RegistryDir,
         directory_is_empty: bool,
-        dry_run: bool,
     ) -> Result<()> {
         if self.light_cleanup {
-            let light_cleanup_success =
-                light_cleanup_registry(dir_path.src_dir(), dir_path.index_dir(), dry_run);
-            if !light_cleanup_success {
-                println!("Failed to delete some folder during light cleanup");
-            }
+            light_cleanup(Cache::Registry, dir_path);
         }
-        if let Some(number) = self.top {
-            let max_width = source_name_max_width(sources);
-            top_crates_registry(crate_list, max_width, number);
-        }
-        if self.query {
-            let final_size = query_size_registry(dir_path, crate_list);
-            query_print("Total size", &convert_pretty(final_size));
-        }
-
-        if self.old {
-            print_removed(
-                "old registry crates",
-                clean_registry(
-                    registry_crates_location,
-                    &crate_list.registry(Selection::Old),
-                    dry_run,
-                )?,
-                crate_list.registry_kept(Selection::Old),
-            );
-        }
-
-        if self.old_orphan && confirm_orphan_clean(directory_is_empty, dry_run)? {
-            print_removed(
-                "old orphan registry crates",
-                clean_registry(
-                    registry_crates_location,
-                    &crate_list.registry(Selection::OldOrphan),
-                    dry_run,
-                )?,
-                crate_list.registry_kept(Selection::OldOrphan),
-            );
-        }
-
-        if self.orphan && confirm_orphan_clean(directory_is_empty, dry_run)? {
-            print_removed(
-                "orphan registry crates",
-                clean_registry(
-                    registry_crates_location,
-                    &crate_list.registry(Selection::Orphan),
-                    dry_run,
-                )?,
-                crate_list.registry_kept(Selection::Orphan),
-            );
-        }
-
+        self.selection.clean(
+            Cache::Registry,
+            registry_dir,
+            crate_list,
+            directory_is_empty,
+        )?;
         if self.all {
-            print_removed(
-                "registry crates",
-                clean_registry(
-                    registry_crates_location,
-                    &crate_list.registry(Selection::All),
-                    dry_run,
-                )?,
-                crate_list.registry_kept(Selection::All),
-            );
-            clear_empty_index(dir_path, crate_list, dry_run)?;
+            clean_crates(
+                Cache::Registry,
+                "",
+                registry_dir,
+                crate_list,
+                Selection::All,
+            )?;
+            clear_empty_index(dir_path, crate_list)?;
         }
-
         Ok(())
     }
 }
 
-// Perform light cleanup of registry and return if light clean was success or
-// not
-pub(super) fn light_cleanup_registry(src_dir: &Path, index_dir: &Path, dry_run: bool) -> bool {
-    let mut light_cleanup_success = true;
-    // delete src dir
-    light_cleanup_success = delete_folder(src_dir, dry_run).is_ok() && light_cleanup_success;
-    // Delete out .cache folder also
-    light_cleanup_success = delete_index_cache(index_dir, dry_run).is_ok() && light_cleanup_success;
-    light_cleanup_success
-}
-
 // Remove index, src and cache folder of every registry left without any crate
 // once all cleanable crates are cleaned
-pub(super) fn clear_empty_index(
-    dir_path: &DirPath,
-    crate_list: &CrateList,
-    dry_run: bool,
-) -> Result<()> {
+pub(super) fn clear_empty_index(dir_path: &DirPath, crate_list: &CrateList) -> Result<()> {
     let index_dir = dir_path.index_dir();
     if !index_dir.is_dir() {
         return Ok(());
@@ -166,10 +84,10 @@ pub(super) fn clear_empty_index(
         }
         let mut index_removed = true;
         for dir in [dir_path.src_dir(), dir_path.cache_dir(), index_dir] {
-            index_removed = delete_folder(&dir.join(index_name), dry_run).is_ok() && index_removed;
+            index_removed = remove_path(&dir.join(index_name)).is_ok() && index_removed;
         }
-        if !dry_run && index_removed {
-            println!(
+        if index_removed {
+            info!(
                 "{} empty index {}",
                 "Removed".red(),
                 index_name.to_string_lossy()
@@ -181,16 +99,6 @@ pub(super) fn clear_empty_index(
         println!("Failed to remove some empty index");
     }
     Ok(())
-}
-
-// Show top registry crates
-pub(super) fn top_crates_registry(crate_list: &CrateList, first_width: usize, number: usize) {
-    show_top_number_crates(
-        &crate_list.registry(Selection::Installed),
-        "registry",
-        first_width,
-        number,
-    );
 }
 
 // Query size of registry
@@ -221,13 +129,4 @@ pub(super) fn query_size_registry(dir_path: &DirPath, crate_list: &CrateList) ->
     );
     print_dash(query_full_width());
     registry_dir_size
-}
-
-// perform clean on registry crates
-pub(super) fn clean_registry(
-    registry_crates_location: &mut RegistryDir,
-    crate_metadata_list: &[CrateMetaData],
-    dry_run: bool,
-) -> Result<(u64, usize)> {
-    registry_crates_location.remove_crate_list(crate_metadata_list, dry_run)
 }

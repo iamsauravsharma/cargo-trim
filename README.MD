@@ -25,7 +25,10 @@ cargo trim -n -x               # preview removal of crates no project uses
 cargo trim -x                  # remove them
 ```
 
-Add `-n` (`--dry-run`) to any command to see what would happen without changing anything.
+Add `-n` (`--dry-run`) to any command which changes something (cleaning, `git`, `registry`,
+`target`, `gc`, `update`, `set` and `unset`) to see what would happen without changing anything.
+Add `-v` (`--verbose`) to print details to standard error, or `-q` (`--quiet`) to print only
+results, warnings and errors.
 
 ### Terms
 
@@ -40,12 +43,16 @@ Add `-n` (`--dry-run`) to any command to see what would happen without changing 
 
 | Command | Effect |
 | --- | --- |
-| `cargo trim -q` | Show size of cache and target folders |
+| `cargo trim query` | Show size of cache and target folders |
 | `cargo trim -x` | Clean orphan crates |
 | `cargo trim -o` | Clean old crates |
 | `cargo trim -O` | Clean crates which are both old and orphan |
 | `cargo trim -a` | Clean all crates, empty indexes and target folders |
 | `cargo trim -l` | Remove sources but keep archives for offline builds |
+| `cargo trim query -r` | Show size of registry cache only (`-b` bin, `-g` git, `-t` target) |
+| `cargo trim top 5` | Show 5 largest crates and target folders, same part options as `query` |
+| `cargo trim gc` | Git compress cache repositories (`index`, `checkout`, `db`, `-a` aggressive) |
+| `cargo trim update -- -p serde` | Run `cargo update` in every detected project, arguments after `--` go to `cargo update` |
 | `cargo trim list -x` | List orphan crates |
 | `cargo trim list -k` | List crates kept by filter |
 | `cargo trim list -p` | List detected projects |
@@ -65,6 +72,10 @@ Commands:
   set       Add or change config values
   unset     Remove config values
   list      List crates and projects
+  query     Show size of cache and target folders
+  top       Show largest crates and target folders
+  gc        Git compress cache repositories (needs git)
+  update    Run `cargo update` in every detected project
   git       Operate only on git cache
   registry  Operate only on registry cache
   target    Operate only on target folders of projects
@@ -72,22 +83,20 @@ Commands:
 
 Options:
   -a, --all                        Clean all crates, empty indexes and target folders
-      --color <COLOR>              When to color the output [env: TRIM_COLOR=] [default: auto] [possible values: auto, always, never]
+  -c, --color <COLOR>              When to color the output [env: TRIM_COLOR=] [default: auto] [possible values: auto, always, never]
   -d, --directory <path>           Add project directory for this run [env: TRIM_DIRECTORY=]
   -n, --dry-run                    Show what would be done without changing anything
-  -g, --gc <kind>                  Git compress cache repositories (needs git) [possible values: aggressive-checkout, aggressive-db, aggressive-index, checkout, db, index]
   -i, --ignore <path>              Ignore path while scanning for this run [env: TRIM_IGNORE=]
   -f, --filter <spec>              Add crate filter for this run [env: TRIM_FILTER=]
   -l, --light                      Remove sources but keep archives for offline builds
   -o, --old                        Clean old crates
   -O, --old-orphan                 Clean crates which are both old and orphan
   -x, --orphan                     Clean orphan crates
-  -q, --query                      Show size of cache and target folders
+  -q, --quiet                      Hide progress lines, only results, warnings and errors are printed [env: TRIM_QUIET=]
+  -v, --verbose                    Print details to standard error [env: TRIM_VERBOSE=]
   -H, --scan-hidden-folder <bool>  Scan hidden folders for this run [env: TRIM_SCAN_HIDDEN_FOLDER=] [possible values: true, false]
   -T, --scan-target-folder <bool>  Scan target folders for Cargo.lock files for this run [env: TRIM_SCAN_TARGET_FOLDER=] [possible values: true, false]
   -s, --stale-days <days>          Days without change after which a project is stale for this run [env: TRIM_STALE_DAYS=]
-  -t, --top <number>               Show given number of largest crates
-  -u, --update                     Run `cargo update` in every detected project
   -w, --wipe <folder>              Delete whole cache folder [possible values: git, checkouts, db, registry, cache, index, index-cache, src]
   -h, --help                       Print help (see more with '--help')
   -V, --version                    Print version

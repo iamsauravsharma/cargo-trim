@@ -13,6 +13,7 @@ use crate::cargo_config;
 use crate::color::Paint as _;
 use crate::filter::CrateFilter;
 use crate::lock_file::CargoLockFiles;
+use crate::output::{info, is_dry_run, outcome, verbose};
 use crate::utils::modified_since;
 
 /// Stores config file information
@@ -89,179 +90,120 @@ impl ConfigFile {
     }
 
     /// Set stale days to value, 0 turns staleness off
-    pub(crate) fn set_stale_days(&mut self, value: u32, dry_run: bool, save: bool) -> Result<()> {
-        if !dry_run || !save {
-            self.stale_days = value;
-        }
-        if dry_run {
-            println!("{} Set stale_days to {value}", "Dry run:".yellow());
-        } else {
-            if save {
-                self.save()?;
-            }
-            println!("Set stale_days to {value}");
-        }
-        Ok(())
+    pub(crate) fn set_stale_days(&mut self, value: u32, save: bool) -> Result<()> {
+        self.apply(save, &format!("Set stale_days to {value}"), |config| {
+            config.stale_days = value;
+            Ok(())
+        })
     }
 
     /// Set scan hidden folder to value
-    pub(crate) fn set_scan_hidden_folder(
-        &mut self,
-        value: bool,
-        dry_run: bool,
-        save: bool,
-    ) -> Result<()> {
-        if !dry_run || !save {
-            self.scan_hidden_folder = value;
-        }
-        if dry_run {
-            println!(
-                "{} Set scan_hidden_folder to {value:?}",
-                "Dry run:".yellow(),
-            );
-        } else {
-            if save {
-                self.save()?;
-            }
-            println!("Set scan_hidden_folder to {value:?}");
-        }
-        Ok(())
+    pub(crate) fn set_scan_hidden_folder(&mut self, value: bool, save: bool) -> Result<()> {
+        self.apply(
+            save,
+            &format!("Set scan_hidden_folder to {value}"),
+            |config| {
+                config.scan_hidden_folder = value;
+                Ok(())
+            },
+        )
     }
 
     /// Set scan target folder to value
-    pub(crate) fn set_scan_target_folder(
-        &mut self,
-        value: bool,
-        dry_run: bool,
-        save: bool,
-    ) -> Result<()> {
-        if !dry_run || !save {
-            self.scan_target_folder = value;
-        }
-        if dry_run {
-            println!(
-                "{} Set scan_target_folder to {value:?}",
-                "Dry run:".yellow(),
-            );
-        } else {
-            if save {
-                self.save()?;
-            }
-            println!("Set scan_target_folder to {value:?}");
-        }
-        Ok(())
+    pub(crate) fn set_scan_target_folder(&mut self, value: bool, save: bool) -> Result<()> {
+        self.apply(
+            save,
+            &format!("Set scan_target_folder to {value}"),
+            |config| {
+                config.scan_target_folder = value;
+                Ok(())
+            },
+        )
     }
 
     /// add directory
-    pub(crate) fn add_directory(&mut self, path: &str, dry_run: bool, save: bool) -> Result<()> {
-        let path = &absolute_directory(path)?;
-        // a value given for this run only still applies under dry run so the
-        // preview reflects the requested value instead of the stored one
-        if !dry_run || !save {
-            self.directory.push(path.clone());
-        }
-        if dry_run {
-            println!("{} Added {path:?}", "Dry run:".yellow());
-        } else {
-            if save {
-                self.save()?;
-            }
-            println!("{} {path:?}", "Added".red());
-        }
-        Ok(())
+    pub(crate) fn add_directory(&mut self, path: &str, save: bool) -> Result<()> {
+        let path = absolute_directory(path)?;
+        let message = format!("{} {path:?}", "Added".red());
+        self.apply(save, &message, |config| {
+            config.directory.push(path);
+            Ok(())
+        })
     }
 
     /// add ignore entry which is a relative or absolute path
-    pub(crate) fn add_ignore(&mut self, ignore: &str, dry_run: bool, save: bool) -> Result<()> {
-        // a value given for this run only still applies under dry run so the
-        // preview reflects the requested value instead of the stored one
-        if !dry_run || !save {
-            self.ignore.push(IgnoreEntry::from(ignore.to_string()));
-        }
-        if dry_run {
-            println!("{} Added {ignore:?}", "Dry run:".yellow());
-        } else {
-            if save {
-                self.save()?;
-            }
-            println!("{} {ignore:?}", "Added".red());
-        }
-        Ok(())
+    pub(crate) fn add_ignore(&mut self, ignore: &str, save: bool) -> Result<()> {
+        self.apply(save, &format!("{} {ignore:?}", "Added".red()), |config| {
+            config.ignore.push(IgnoreEntry::from(ignore.to_string()));
+            Ok(())
+        })
     }
 
     /// remove directory
-    pub(crate) fn remove_directory(&mut self, path: &str, dry_run: bool, save: bool) -> Result<()> {
-        let path = &absolute_directory(path)?;
-        // a value given for this run only still applies under dry run so the
-        // preview reflects the requested value instead of the stored one
-        if !dry_run || !save {
-            self.directory.retain(|data| data != path);
-        }
-        if dry_run {
-            println!("{} {} {path:?}", "Dry run:".yellow(), "Removed".red());
-        } else {
-            if save {
-                self.save()?;
-            }
-            println!("{} {path:?}", "Removed".red());
-        }
-        Ok(())
+    pub(crate) fn remove_directory(&mut self, path: &str, save: bool) -> Result<()> {
+        let path = absolute_directory(path)?;
+        let message = format!("{} {path:?}", "Removed".red());
+        self.apply(save, &message, |config| {
+            config.directory.retain(|data| *data != path);
+            Ok(())
+        })
     }
 
     /// remove ignore entry
-    pub(crate) fn remove_ignore(&mut self, ignore: &str, dry_run: bool, save: bool) -> Result<()> {
-        // a value given for this run only still applies under dry run so the
-        // preview reflects the requested value instead of the stored one
-        if !dry_run || !save {
-            self.ignore.retain(|entry| entry.path != Path::new(ignore));
-        }
-        if dry_run {
-            println!("{} {} {ignore:?}", "Dry run:".yellow(), "Removed".red());
-        } else {
-            if save {
-                self.save()?;
-            }
-            println!("{} {ignore:?}", "Removed".red());
-        }
-        Ok(())
+    pub(crate) fn remove_ignore(&mut self, ignore: &str, save: bool) -> Result<()> {
+        self.apply(save, &format!("{} {ignore:?}", "Removed".red()), |config| {
+            config
+                .ignore
+                .retain(|entry| entry.path != Path::new(ignore));
+            Ok(())
+        })
     }
 
     /// add package spec of crate to clean, or of crate never cleaned when it
     /// starts with `!`
-    pub(crate) fn add_filter(&mut self, entry: &str, dry_run: bool, save: bool) -> Result<()> {
+    pub(crate) fn add_filter(&mut self, entry: &str, save: bool) -> Result<()> {
         // validate even when the value is not applied so an invalid spec is
         // reported under dry run too
         CrateFilter::default().add(entry)?;
-        if !dry_run || !save {
-            self.filter.add(entry)?;
-        }
-        if dry_run {
-            println!("{} Added filter {entry:?}", "Dry run:".yellow());
-        } else {
-            if save {
-                self.save()?;
-            }
-            println!("{} filter {entry:?}", "Added".red());
-        }
-        Ok(())
+        self.apply(
+            save,
+            &format!("{} filter {entry:?}", "Added".red()),
+            |config| config.filter.add(entry),
+        )
     }
 
     /// remove filter entry
-    pub(crate) fn remove_filter(&mut self, entry: &str, dry_run: bool, save: bool) -> Result<()> {
-        if !dry_run || !save {
-            self.filter.remove(entry);
-        }
-        if dry_run {
-            println!(
-                "{} {} filter {entry:?}",
-                "Dry run:".yellow(),
-                "Removed".red()
-            );
-        } else {
-            if save {
+    pub(crate) fn remove_filter(&mut self, entry: &str, save: bool) -> Result<()> {
+        self.apply(
+            save,
+            &format!("{} filter {entry:?}", "Removed".red()),
+            |config| {
+                config.filter.remove(entry);
+                Ok(())
+            },
+        )
+    }
+
+    /// apply change to config and print message about it. A change for this
+    /// run only still applies under dry run so the preview reflects the
+    /// requested value instead of the stored one, and its message is a progress
+    /// line hidden by quiet output. A change to save is neither applied nor
+    /// saved under dry run and its message is a result line
+    fn apply(
+        &mut self,
+        save: bool,
+        message: &str,
+        change: impl FnOnce(&mut Self) -> Result<()>,
+    ) -> Result<()> {
+        if save {
+            if !is_dry_run() {
+                change(self)?;
                 self.save()?;
             }
-            println!("{} filter {entry:?}", "Removed".red());
+            outcome!("{message}");
+        } else {
+            change(self)?;
+            info!("{message}");
         }
         Ok(())
     }
@@ -278,30 +220,37 @@ impl ConfigFile {
         if sym_meta.is_symlink() {
             return Ok(cargo_lock_files);
         }
-        if !self.need_to_be_ignored(path) {
-            if sym_meta.is_dir() && !has_ignore_marker(path) {
-                let skip_target = (!self.scan_target_folder() && path.join("Cargo.toml").is_file())
-                    .then(|| self.resolved_target_dir(path))
-                    .filter(|target| is_cargo_target_dir(target));
-                for entry in fs::read_dir(path)
-                    .context("failed to read directory while trying to find cargo.toml")?
-                {
-                    let entry_path = entry?.path();
-                    if skip_target.as_ref() == Some(&entry_path) {
-                        continue;
-                    }
-                    cargo_lock_files.append(self.list_cargo_locks(&entry_path)?);
+        if self.need_to_be_ignored(path) {
+            if self.matches_ignore_entry(path) {
+                verbose!("Skipping ignored path {}", path.display());
+            }
+        } else if sym_meta.is_dir() && has_ignore_marker(path) {
+            verbose!("Skipping {} holding {IGNORE_MARKER}", path.display());
+        } else if sym_meta.is_dir() {
+            let skip_target = (!self.scan_target_folder() && path.join("Cargo.toml").is_file())
+                .then(|| self.resolved_target_dir(path))
+                .filter(|target| is_cargo_target_dir(target));
+            for entry in fs::read_dir(path)
+                .context("failed to read directory while trying to find cargo.toml")?
+            {
+                let entry_path = entry?.path();
+                if skip_target.as_ref() == Some(&entry_path) {
+                    continue;
                 }
-            } else if sym_meta.is_file() && path.file_name() == Some(OsStr::new("Cargo.lock")) {
-                // a project is stale when nothing inside it changed since the
-                // cutoff
-                let stale_project = self.stale_cutoff().is_some_and(|cutoff| {
-                    path.parent()
-                        .is_some_and(|dir| !modified_since(dir, cutoff))
-                });
-                if !stale_project {
-                    cargo_lock_files.add_path(path.to_path_buf());
-                }
+                cargo_lock_files.append(self.list_cargo_locks(&entry_path)?);
+            }
+        } else if sym_meta.is_file() && path.file_name() == Some(OsStr::new("Cargo.lock")) {
+            // a project is stale when nothing inside it changed since the
+            // cutoff
+            let stale_project = self.stale_cutoff().is_some_and(|cutoff| {
+                path.parent()
+                    .is_some_and(|dir| !modified_since(dir, cutoff))
+            });
+            if stale_project {
+                verbose!("Skipping Cargo.lock of stale project {}", path.display());
+            } else {
+                verbose!("Found {}", path.display());
+                cargo_lock_files.add_path(path.to_path_buf());
             }
         }
         Ok(cargo_lock_files)
@@ -355,11 +304,15 @@ impl ConfigFile {
         Ok(())
     }
 
+    /// match ignore entries as relative or absolute paths
+    fn matches_ignore_entry(&self, path: &Path) -> bool {
+        self.ignore.iter().any(|entry| entry.matches(path))
+    }
+
     /// check if directory should be scanned for listing crates or not, a build
     /// output folder is recognised by resolution instead of by name
     fn need_to_be_ignored(&self, path: &Path) -> bool {
-        // match ignore entries as relative or absolute paths
-        if self.ignore.iter().any(|entry| entry.matches(path)) {
+        if self.matches_ignore_entry(path) {
             return true;
         }
         // a path without a final component cannot match the name based rules

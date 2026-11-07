@@ -7,7 +7,10 @@ use crate::list_crate::{CrateList, Selection};
 /// List crates and projects
 #[derive(Debug, Parser)]
 #[command(arg_required_else_help = true)]
-#[expect(clippy::struct_excessive_bools)]
+#[expect(
+    clippy::struct_excessive_bools,
+    reason = "each bool is an independent command line flag"
+)]
 pub(crate) struct List {
     /// List all installed crates
     #[arg(long, short)]

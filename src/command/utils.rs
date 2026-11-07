@@ -5,6 +5,7 @@ use anyhow::{Context as _, Result};
 
 use crate::color::Paint as _;
 use crate::installed::{CrateMetaData, Sources};
+use crate::output::{is_dry_run, outcome};
 use crate::utils::convert_pretty;
 
 /// warning shown when no rust project directory is set
@@ -14,11 +15,11 @@ pub(super) const NO_DIRECTORY_WARNING: &str = "WARNING: No rust project director
                                                or 'cargo trim set -d .' for current directory";
 
 /// check if crates classified as orphan can be cleaned.
-pub(super) fn confirm_orphan_clean(directory_is_empty: bool, dry_run: bool) -> Result<bool> {
+pub(super) fn confirm_orphan_clean(directory_is_empty: bool) -> Result<bool> {
     if !directory_is_empty {
         return Ok(true);
     }
-    if dry_run {
+    if is_dry_run() {
         println!("{}", NO_DIRECTORY_WARNING.yellow());
         return Ok(true);
     }
@@ -54,7 +55,7 @@ pub(super) fn print_removed(label: &str, (size, count): (u64, usize), kept: usiz
     } else {
         format!(", {kept} kept by filter")
     };
-    println!(
+    outcome!(
         "{}",
         format!(
             "{count} {label} removed which had occupied {}{kept}",

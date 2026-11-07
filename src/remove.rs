@@ -5,55 +5,59 @@ use anyhow::{Context as _, Result};
 
 use crate::color::Paint as _;
 use crate::installed::CrateMetaData;
+use crate::output::{dry_run_prefix, info, is_dry_run, verbose};
 
-/// delete file or folder, printing it under dry run
-pub(crate) fn delete_folder(path: &Path, dry_run: bool) -> Result<()> {
-    if dry_run && path.exists() {
-        println!(
-            "{} {} {}",
-            "Dry run:".yellow(),
-            "Removed".red(),
-            path.display()
-        );
+/// delete file or folder, nothing is deleted under dry run, returns whether
+/// path existed
+fn remove(path: &Path) -> io::Result<bool> {
+    let meta = match path.symlink_metadata() {
+        Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(false),
+        Err(error) => return Err(error),
+        Ok(meta) => meta,
+    };
+    if !is_dry_run() {
+        if meta.is_dir() {
+            fs::remove_dir_all(path)?;
+        } else {
+            fs::remove_file(path)?;
+        }
     }
-    remove_path(path, dry_run)?;
+    Ok(true)
+}
+
+/// delete file or folder which is an item of its own and print it as progress
+/// line, a missing path counts as deleted
+pub(crate) fn delete_folder(path: &Path) -> Result<()> {
+    if remove(path).with_context(|| format!("failed to remove {}", path.display()))? {
+        info!("{} {}", "Removed".red(), path.display());
+    }
     Ok(())
 }
 
-/// delete file or folder without printing, nothing is deleted under dry run
-/// and a missing path counts as deleted
-pub(crate) fn remove_path(path: &Path, dry_run: bool) -> io::Result<()> {
-    if dry_run {
-        return Ok(());
+/// delete file or folder which is part of an item printing its own line, so
+/// path is printed only with verbose output, a missing path counts as deleted
+pub(crate) fn remove_path(path: &Path) -> io::Result<()> {
+    match remove(path) {
+        Ok(true) => verbose!("{}Removed {}", dry_run_prefix(), path.display()),
+        Ok(false) => {}
+        Err(error) => {
+            verbose!("Failed to remove {}: {error}", path.display());
+            return Err(error);
+        }
     }
-    match path.symlink_metadata() {
-        Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(()),
-        Err(error) => Err(error),
-        Ok(meta) if meta.is_dir() => fs::remove_dir_all(path),
-        Ok(_) => fs::remove_file(path),
-    }
+    Ok(())
 }
 
 /// delete every path of crate along with extra paths and print a single line
 /// about it, returns whether everything was deleted
-pub(crate) fn remove_crate(
-    crate_metadata: &CrateMetaData,
-    extra_paths: &[PathBuf],
-    dry_run: bool,
-) -> bool {
+pub(crate) fn remove_crate(crate_metadata: &CrateMetaData, extra_paths: &[PathBuf]) -> bool {
     // attempt every deletion so an earlier failure does not skip the rest
     let mut removed = true;
     for path in crate_metadata.paths().iter().chain(extra_paths) {
-        removed = remove_path(path, dry_run).is_ok() && removed;
+        removed = remove_path(path).is_ok() && removed;
     }
-    if dry_run {
-        println!(
-            "{} {} {crate_metadata}",
-            "Dry run:".yellow(),
-            "Removed".red()
-        );
-    } else if removed {
-        println!("{} {crate_metadata}", "Removed".red());
+    if removed {
+        info!("{} {crate_metadata}", "Removed".red());
     } else {
         println!("Failed to remove {crate_metadata}");
     }
@@ -61,7 +65,7 @@ pub(crate) fn remove_crate(
 }
 
 /// delete index .cache file
-pub(crate) fn delete_index_cache(index_dir: &Path, dry_run: bool) -> Result<()> {
+pub(crate) fn delete_index_cache(index_dir: &Path) -> Result<()> {
     if index_dir.exists() && index_dir.is_dir() {
         for entry in fs::read_dir(index_dir)? {
             let registry_dir = entry?.path();
@@ -77,7 +81,7 @@ pub(crate) fn delete_index_cache(index_dir: &Path, dry_run: bool) -> Result<()> 
                         .file_name()
                         .context("failed to obtain index .cache file name")?;
                     if folder_name == ".cache" {
-                        delete_folder(&folder_path, dry_run)?;
+                        delete_folder(&folder_path)?;
                     }
                 }
             }
@@ -87,11 +91,11 @@ pub(crate) fn delete_index_cache(index_dir: &Path, dry_run: bool) -> Result<()> 
 }
 
 /// Remove list of git crates, returns total size and number of removed crates
-pub(crate) fn remove_git_crates(list: &[CrateMetaData], dry_run: bool) -> (u64, usize) {
+pub(crate) fn remove_git_crates(list: &[CrateMetaData]) -> (u64, usize) {
     let mut size_cleaned = 0;
     let mut crate_removed = 0;
     for crate_metadata in list {
-        if remove_crate(crate_metadata, &[], dry_run) {
+        if remove_crate(crate_metadata, &[]) {
             size_cleaned += crate_metadata.size();
             crate_removed += 1;
         }
@@ -129,7 +133,7 @@ impl RegistryDir {
 
     /// Remove crate from src & cache directory, along with its index cache
     /// once no other version of it is left in the registry
-    fn remove_crate(&mut self, crate_metadata: &CrateMetaData, dry_run: bool) -> Result<bool> {
+    fn remove_crate(&mut self, crate_metadata: &CrateMetaData) -> Result<bool> {
         let mut index_cache_paths = Vec::new();
         for index in &self.index_cache_dir {
             let index_name = index
@@ -154,25 +158,24 @@ impl RegistryDir {
             self.installed_crate
                 .retain(|installed| installed != crate_metadata);
         }
-        Ok(remove_crate(crate_metadata, &index_cache_paths, dry_run))
+        Ok(remove_crate(crate_metadata, &index_cache_paths))
     }
 
     /// Remove list of crates, returns total size and number of removed crates
     pub(crate) fn remove_crate_list(
         &mut self,
         crate_metadata_list: &[CrateMetaData],
-        dry_run: bool,
     ) -> Result<(u64, usize)> {
         let mut size_cleaned = 0;
         let mut crate_removed = 0;
         for crate_metadata in crate_metadata_list {
-            if self.remove_crate(crate_metadata, dry_run)? {
+            if self.remove_crate(crate_metadata)? {
                 size_cleaned += crate_metadata.size();
                 crate_removed += 1;
             }
         }
         for index in &self.index_cache_dir {
-            remove_empty_index_cache_dir(index, dry_run)?;
+            remove_empty_index_cache_dir(index)?;
         }
         Ok((size_cleaned, crate_removed))
     }
@@ -201,16 +204,16 @@ fn index_cache_path(index_cache_dir: &Path, name: &str) -> Result<PathBuf> {
 
 /// check if any index cache folder is empty if it is removed directory. First
 /// remove all dir entry than only remove main file if it is empty
-fn remove_empty_index_cache_dir(path: &Path, dry_run: bool) -> Result<()> {
+fn remove_empty_index_cache_dir(path: &Path) -> Result<()> {
     if path.exists() && path.is_dir() {
         for entry in fs::read_dir(path)? {
             let entry_path = entry?.path();
             if entry_path.is_dir() {
-                remove_empty_index_cache_dir(&entry_path, dry_run)?;
+                remove_empty_index_cache_dir(&entry_path)?;
             }
         }
         if fs::read_dir(path).map(|mut i| i.next().is_none())? {
-            delete_folder(path, dry_run)?;
+            remove_path(path)?;
         }
     }
     Ok(())

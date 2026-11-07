@@ -7,6 +7,7 @@ mod filter;
 mod installed;
 mod list_crate;
 mod lock_file;
+mod output;
 mod remove;
 mod utils;
 

@@ -1,6 +1,7 @@
 use anyhow::Result;
 use clap::Parser;
 
+use super::DryRun;
 use crate::config_file::ConfigFile;
 /// Add or change config values
 #[derive(Debug, Parser)]
@@ -12,6 +13,8 @@ pub(crate) struct Set {
     /// stored as absolute path
     #[arg(long, short, value_name = "path")]
     directory: Option<Vec<String>>,
+    #[command(flatten)]
+    pub(super) dry_run: DryRun,
     /// Add path ignored while scanning
     ///
     /// A relative path matches trailing path components anywhere, an absolute
@@ -46,10 +49,10 @@ pub(crate) struct Set {
 }
 
 impl Set {
-    pub(super) fn run(&self, config_file: &mut ConfigFile, dry_run: bool) -> Result<()> {
+    pub(super) fn run(&self, config_file: &mut ConfigFile) -> Result<()> {
         if let Some(directories) = &self.directory {
             for directory in directories {
-                config_file.add_directory(directory, dry_run, true)?;
+                config_file.add_directory(directory, true)?;
             }
         }
         if let Some(ignores) = &self.ignore {
@@ -57,22 +60,22 @@ impl Set {
                 // trim trailing separator so a path matches with or without it
                 let path_separator = std::path::MAIN_SEPARATOR;
                 let ignore = ignore.trim_end_matches(path_separator);
-                config_file.add_ignore(ignore, dry_run, true)?;
+                config_file.add_ignore(ignore, true)?;
             }
         }
         if let Some(filters) = &self.filter {
             for filter in filters {
-                config_file.add_filter(filter, dry_run, true)?;
+                config_file.add_filter(filter, true)?;
             }
         }
         if let Some(scan_hidden_folder) = self.scan_hidden_folder {
-            config_file.set_scan_hidden_folder(scan_hidden_folder, dry_run, true)?;
+            config_file.set_scan_hidden_folder(scan_hidden_folder, true)?;
         }
         if let Some(scan_target_folder) = self.scan_target_folder {
-            config_file.set_scan_target_folder(scan_target_folder, dry_run, true)?;
+            config_file.set_scan_target_folder(scan_target_folder, true)?;
         }
         if let Some(stale_days) = self.stale_days {
-            config_file.set_stale_days(stale_days, dry_run, true)?;
+            config_file.set_stale_days(stale_days, true)?;
         }
 
         Ok(())
